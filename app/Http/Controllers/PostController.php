@@ -72,7 +72,8 @@ class PostController extends Controller
         // Validação: aceita upload via chunks (uploaded_files), upload tradicional (media), ou sem mídia (R2 flow)
         $validated = $request->validate([
             'description' => 'nullable|string|max:5000',
-            'visibility' => ['required', Rule::in(['free', 'subscriber'])],
+            'visibility' => ['required', Rule::in(['free', 'subscriber', 'paid'])],
+            'price'      => 'required_if:visibility,paid|nullable|numeric|min:1|max:9999',
             'media' => 'nullable|array',
             'media.*' => 'file|mimes:jpeg,jpg,png,heic,heif,mp4,mov,avi|max:307200', // Upload tradicional
             'uploaded_files' => 'nullable|array', // Arquivos via chunks (ou vazio para R2)
@@ -89,9 +90,10 @@ class PostController extends Controller
 
         // Cria o post
         $post = Post::create([
-            'user_id' => $user->id,
+            'user_id'     => $user->id,
             'description' => $validated['description'],
-            'visibility' => $validated['visibility'],
+            'visibility'  => $validated['visibility'],
+            'price'       => $validated['visibility'] === 'paid' ? $validated['price'] : null,
         ]);
 
         $uploadErrors = [];
@@ -272,7 +274,8 @@ class PostController extends Controller
 
         $validated = $request->validate([
             'description' => 'nullable|string|max:5000',
-            'visibility' => ['required', Rule::in(['free', 'subscriber'])],
+            'visibility' => ['required', Rule::in(['free', 'subscriber', 'paid'])],
+            'price'      => 'required_if:visibility,paid|nullable|numeric|min:1|max:9999',
             'media' => 'nullable|array',
             'media.*' => 'file|mimes:jpeg,jpg,png,heic,heif,mp4,mov,avi|max:307200',
             'delete_media' => 'nullable|array',
@@ -314,7 +317,8 @@ class PostController extends Controller
         // Atualiza descrição e visibilidade
         $post->update([
             'description' => $validated['description'] ?? null,
-            'visibility' => $validated['visibility'],
+            'visibility'  => $validated['visibility'],
+            'price'       => $validated['visibility'] === 'paid' ? $validated['price'] : null,
         ]);
 
         // Deleta mídias selecionadas
