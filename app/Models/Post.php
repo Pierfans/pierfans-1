@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\PostPurchase;
 
 class Post extends Model
 {
@@ -15,6 +16,7 @@ class Post extends Model
         'user_id',
         'description',
         'visibility',
+        'price',
         'deleted_by_user_at',
         'featured_on_login',
         'featured_on_dashboard',
@@ -22,6 +24,7 @@ class Post extends Model
 
     protected $casts = [
         'deleted_by_user_at' => 'datetime',
+        'price'              => 'decimal:2',
     ];
 
     /**
@@ -90,5 +93,15 @@ class Post extends Model
     {
         $user = User::find($userId);
         return $user && $user->creator_status === 'approved';
+    }
+
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(PostPurchase::class);
+    }
+
+    public function isPurchasedBy(int $userId): bool
+    {
+        return $this->purchases()->where('user_id', $userId)->exists();
     }
 }

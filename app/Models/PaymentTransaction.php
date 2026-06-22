@@ -11,6 +11,7 @@ class PaymentTransaction extends Model
         'user_id',
         'subscription_plan_id',
         'creator_id',
+        'post_id',
         'request_number',
         'transaction_id',
         'type',
@@ -60,6 +61,14 @@ class PaymentTransaction extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    /**
+     * Relacionamento com Post (PPV)
+     */
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
     }
 
     /**
