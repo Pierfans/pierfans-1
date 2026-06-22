@@ -94,6 +94,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/{planId}/{method}', [\App\Http\Controllers\CheckoutController::class, 'process'])->name('process');
     });
 
+    // Rotas de Conteúdo Único (PPV)
+    Route::prefix('ppv')->name('ppv.')->group(function () {
+        Route::get('/success/{purchase}',                 [\App\Http\Controllers\PPVCheckoutController::class, 'success'])->name('success');
+        Route::get('/transaction/{transactionId}/status', [\App\Http\Controllers\PPVCheckoutController::class, 'checkStatus'])->name('transaction.status');
+        Route::get('/{post}/{method}',                    [\App\Http\Controllers\PPVCheckoutController::class, 'show'])->name('show');
+        Route::post('/{post}/{method}',                   [\App\Http\Controllers\PPVCheckoutController::class, 'process'])->name('process');
+    });
+
     // Rotas de Assinantes
     Route::prefix('subscribers')->name('subscribers.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SubscriberController::class, 'index'])->name('index');
