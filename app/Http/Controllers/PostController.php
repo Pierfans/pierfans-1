@@ -19,7 +19,7 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::with(['user', 'media', 'likes', 'comments'])
-            ->where('visibility', 'free')
+            ->whereIn('visibility', ['free', 'paid'])
             ->where('featured_on_dashboard', true)
             ->whereHas('user', function ($q) {
                 $q->where('creator_status', 'approved');
