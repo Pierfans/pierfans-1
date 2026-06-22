@@ -363,6 +363,7 @@
             _token: $('meta[name="csrf-token"]').attr('content'),
             description: $('#description').val(),
             visibility: $('#visibility').val(),
+            price: $('#price').val() || null,
             uploaded_files: uploadedFiles
                 .filter(f => f.uploaded && !f.error)
                 .map((f, index) => ({
