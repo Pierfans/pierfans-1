@@ -69,6 +69,11 @@ class PostController extends Controller
             ], 403);
         }
 
+        // Normaliza preço: troca vírgula por ponto (usuários brasileiros digitam 29,90)
+        if ($request->has('price') && $request->price) {
+            $request->merge(['price' => str_replace(',', '.', $request->price)]);
+        }
+
         // Validação: aceita upload via chunks (uploaded_files), upload tradicional (media), ou sem mídia (R2 flow)
         $validated = $request->validate([
             'description' => 'nullable|string|max:5000',
@@ -270,6 +275,11 @@ class PostController extends Controller
                 'success' => false,
                 'message' => 'Você não tem permissão para editar esta postagem.',
             ], 403);
+        }
+
+        // Normaliza preço: troca vírgula por ponto
+        if ($request->has('price') && $request->price) {
+            $request->merge(['price' => str_replace(',', '.', $request->price)]);
         }
 
         $validated = $request->validate([

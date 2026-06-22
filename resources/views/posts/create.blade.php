@@ -75,12 +75,10 @@
                                 Preço do conteúdo (R$)
                             </label>
                             <input
-                                type="number"
+                                type="text"
                                 id="price"
                                 name="price"
-                                min="1"
-                                max="9999"
-                                step="0.01"
+                                inputmode="decimal"
                                 placeholder="Ex: 29.90"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                             >
