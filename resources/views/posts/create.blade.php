@@ -211,8 +211,8 @@
         {{-- true = pelo menos um plano ativo (permite "Somente assinantes") --}}
         window.HAS_SUBSCRIPTION_PLANS = {{ $hasSubscriptionPlans ? 'true' : 'false' }};
     </script>
-    <script src="/js/post-subscriber-visibility-guard.js"></script>
-    <script src="/js/post-create.js"></script>
+    <script src="/js/post-subscriber-visibility-guard.js?v=2"></script>
+    <script src="/js/post-create.js?v=2"></script>
     <script>
         document.getElementById('visibility').addEventListener('change', function () {
             const priceField = document.getElementById('price-field');
