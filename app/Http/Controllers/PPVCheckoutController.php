@@ -26,6 +26,12 @@ class PPVCheckoutController extends Controller
         }
 
         $user = Auth::user();
+
+        if (!$user->hasCompleteIdentification()) {
+            return redirect()->route('user-identification.create', [
+                'redirect_to' => route('ppv.show', [$post->id, $method]),
+            ])->with('error', 'Complete seus dados de identificação antes de continuar.');
+        }
         $creator = $post->user;
         $transaction = null;
 
