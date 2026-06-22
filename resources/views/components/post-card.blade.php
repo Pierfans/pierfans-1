@@ -62,9 +62,30 @@
         }
     }
 
-    // Busca planos do criador se a postagem estiver bloqueada
+    // Verificação para Conteúdo Único (PPV)
+    $isPPVPost = $post->visibility === 'paid';
+    $hasPurchased = false;
+
+    if ($isPPVPost) {
+        if (Auth::check()) {
+            if ($post->user_id === Auth::id()) {
+                // Criador sempre vê o próprio conteúdo
+                $canViewPost = true;
+                $isPostLocked = false;
+            } else {
+                $hasPurchased = $post->isPurchasedBy(Auth::id());
+                $canViewPost = $hasPurchased;
+                $isPostLocked = !$hasPurchased;
+            }
+        } else {
+            $canViewPost = false;
+            $isPostLocked = true;
+        }
+    }
+
+    // Busca planos do criador se a postagem estiver bloqueada (apenas para subscriber)
     $creatorPlans = collect([]);
-    if ($isPostLocked) {
+    if ($isPostLocked && !$isPPVPost) {
         $creatorPlans = \App\Models\SubscriptionPlan::where('user_id', $post->user_id)
             ->where('is_active', true)
             ->orderBy('duration_days')
@@ -174,18 +195,42 @@
     @if ($mediaItems->count() > 0)
         <div class="relative">
             @if ($isPostLocked)
-                <!-- Div bloqueada para não assinantes -->
-                <div class="bg-gray-300  flex flex-col items-center justify-center py-16 px-4 min-h-[400px]">
-                    <svg class="w-16 h-16 text-gray-500  mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <p class="text-gray-700  text-lg font-semibold mb-4">Apenas para assinantes</p>
-                    <button
-                        onclick="handleUnlockContent({{ $post->user_id }}, {{ json_encode($post->user->name) }})"
-                        class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                        Desbloquear conteúdo
-                    </button>
-                </div>
+                @if ($isPPVPost)
+                    <!-- Conteúdo Único (PPV) — botão de compra -->
+                    <div class="bg-gray-900 flex flex-col items-center justify-center py-16 px-4 min-h-[400px]">
+                        <svg class="w-16 h-16 text-green-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p class="text-white text-lg font-semibold mb-1">Conteúdo Único</p>
+                        <p class="text-green-400 font-bold text-2xl mb-5">
+                            R$ {{ number_format($post->price, 2, ',', '.') }}
+                        </p>
+                        @auth
+                            <a href="{{ route('ppv.show', [$post->id, 'pix']) }}"
+                               class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-8 rounded-full transition-colors">
+                                Comprar agora
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}"
+                               class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-8 rounded-full transition-colors">
+                                Entrar para comprar
+                            </a>
+                        @endauth
+                    </div>
+                @else
+                    <!-- Div bloqueada para não assinantes -->
+                    <div class="bg-gray-300  flex flex-col items-center justify-center py-16 px-4 min-h-[400px]">
+                        <svg class="w-16 h-16 text-gray-500  mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p class="text-gray-700  text-lg font-semibold mb-4">Apenas para assinantes</p>
+                        <button
+                            onclick="handleUnlockContent({{ $post->user_id }}, {{ json_encode($post->user->name) }})"
+                            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                            Desbloquear conteúdo
+                        </button>
+                    </div>
+                @endif
             @else
                 <!-- Conteúdo normal da mídia -->
                 <div class="post-media-container relative" data-post-id="{{ $post->id }}">
