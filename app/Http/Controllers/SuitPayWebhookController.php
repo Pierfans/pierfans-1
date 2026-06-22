@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
+use App\Models\PostPurchase;
 use App\Models\Subscription;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
@@ -150,17 +151,21 @@ class SuitPayWebhookController extends Controller
                         'note' => $note,
                     ]);
 
-                    // Se foi pago, verifica se é transação de wallet ou assinatura
+                    // Se foi pago, detecta o tipo da transação
                     if ($newStatus === 'paid_out') {
-                        // Se não tem subscription_plan_id nem creator_id, é transação de wallet
-                        if (!$transaction->subscription_plan_id && !$transaction->creator_id) {
-                            $this->creditWalletFromTransaction($transaction);
-                        } else {
-                            // É transação de assinatura
+                        if ($transaction->post_id) {
+                            // Conteúdo Único (PPV)
+                            $ppvController = new \App\Http\Controllers\PPVCheckoutController();
+                            $ppvController->createPostPurchaseFromTransaction($transaction);
+                        } elseif ($transaction->subscription_plan_id && $transaction->creator_id) {
+                            // Assinatura
                             if (!$transaction->subscription_id) {
                                 $this->createSubscriptionFromTransaction($transaction);
-                                $transaction->refresh(); // Atualiza para pegar o subscription_id
+                                $transaction->refresh();
                             }
+                        } else {
+                            // Recarga de carteira
+                            $this->creditWalletFromTransaction($transaction);
                         }
                     }
                 }
@@ -248,17 +253,21 @@ class SuitPayWebhookController extends Controller
                         'note' => $note,
                     ]);
 
-                    // Se foi pago, verifica se é transação de wallet ou assinatura
+                    // Se foi pago, detecta o tipo da transação
                     if ($newStatus === 'paid_out') {
-                        // Se não tem subscription_plan_id nem creator_id, é transação de wallet
-                        if (!$transaction->subscription_plan_id && !$transaction->creator_id) {
-                            $this->creditWalletFromTransaction($transaction);
-                        } else {
-                            // É transação de assinatura
+                        if ($transaction->post_id) {
+                            // Conteúdo Único (PPV)
+                            $ppvController = new \App\Http\Controllers\PPVCheckoutController();
+                            $ppvController->createPostPurchaseFromTransaction($transaction);
+                        } elseif ($transaction->subscription_plan_id && $transaction->creator_id) {
+                            // Assinatura
                             if (!$transaction->subscription_id) {
                                 $this->createSubscriptionFromTransaction($transaction);
-                                $transaction->refresh(); // Atualiza para pegar o subscription_id
+                                $transaction->refresh();
                             }
+                        } else {
+                            // Recarga de carteira
+                            $this->creditWalletFromTransaction($transaction);
                         }
                     }
                 }
