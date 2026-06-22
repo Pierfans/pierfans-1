@@ -1,0 +1,396 @@
+/* Media Player Styles - OnlyFans Style with Plyr */
+
+/* Plyr CDN já carrega os estilos base, aqui fazemos customizações */
+
+/* Container Principal */
+.media-player-wrapper {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 80vh;
+}
+
+/* Video Container */
+.plyr-video-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    aspect-ratio: 16 / 9;
+}
+
+.plyr-video-container.locked {
+    filter: blur(18px);
+    -webkit-filter: blur(18px);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.plyr-video-container.locked video {
+    pointer-events: none !important;
+    user-select: none;
+}
+
+.plyr-video-container.locked .plyr {
+    pointer-events: none !important;
+}
+
+.plyr-video-container.locked .plyr__control {
+    pointer-events: none !important;
+}
+
+/* Image Container */
+.plyr-image-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    max-height: 80vh;
+}
+
+.plyr-image-container.locked {
+    filter: blur(18px);
+    -webkit-filter: blur(18px);
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.plyr-image-container.locked img {
+    pointer-events: none !important;
+    user-select: none;
+}
+
+.plyr-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    max-height: 80vh;
+}
+
+/* Customização do Plyr - Estilo OnlyFans */
+.plyr {
+    border-radius: 8px;
+    background: #000;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.plyr__video-wrapper {
+    background: #000;
+}
+
+.plyr__poster {
+    background-size: cover;
+    background-position: center;
+}
+
+/* Botão Play Grande Central - Customização */
+.plyr__control--overlaid {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 80px !important;
+    height: 80px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.plyr__control--overlaid:hover {
+    background: rgba(255, 255, 255, 1) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+.plyr__control--overlaid svg {
+    width: 36px !important;
+    height: 36px !important;
+    color: #000 !important;
+    margin-left: 4px !important; /* Ajuste visual do ícone de play */
+}
+
+/* Ocultar botão play grande quando está tocando */
+.plyr--playing .plyr__control--overlaid {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.8) !important;
+    transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+/* Garantir que o botão aparece quando pausado */
+.plyr--paused .plyr__control--overlaid {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: scale(1) !important;
+}
+
+/* Controles Inferiores */
+.plyr__controls {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%) !important;
+    border: none !important;
+    padding: 12px 16px !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Barra de Progresso */
+.plyr__progress {
+    height: 4px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 2px !important;
+    margin-bottom: 12px !important;
+    transition: height 0.2s ease !important;
+}
+
+.plyr__progress:hover {
+    height: 6px !important;
+}
+
+.plyr__progress__played {
+    background: #fff !important;
+    border-radius: 2px !important;
+}
+
+.plyr__progress__buffer {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.plyr__progress__bar {
+    background: #fff !important;
+    border-radius: 50% !important;
+    width: 12px !important;
+    height: 12px !important;
+    opacity: 0 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.plyr__progress:hover .plyr__progress__bar {
+    opacity: 1 !important;
+}
+
+/* Botões de Controle */
+.plyr__control {
+    background: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    padding: 8px !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+}
+
+.plyr__control:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+.plyr__control:focus {
+    outline: 2px solid #fff !important;
+    outline-offset: 2px !important;
+}
+
+.plyr__control svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Tempo do Vídeo */
+.plyr__time {
+    color: #fff !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+.plyr__time + .plyr__time::before {
+    content: '/' !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    margin: 0 4px !important;
+}
+
+/* Controle de Volume */
+.plyr__volume {
+    max-width: 100px !important;
+}
+
+.plyr__volume__input {
+    color: #fff !important;
+}
+
+/* Ocultar controles automaticamente */
+.plyr__controls {
+    opacity: 1 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.plyr--hide-controls .plyr__controls {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Garantir que controles aparecem ao pausar */
+.plyr--paused .plyr__controls {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Paywall Overlay */
+.media-paywall-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    pointer-events: auto;
+}
+
+.paywall-content {
+    text-align: center;
+    padding: 32px;
+    max-width: 320px;
+    z-index: 1001;
+    position: relative;
+}
+
+.paywall-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: #fff;
+    opacity: 0.9;
+}
+
+.paywall-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.paywall-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.paywall-text {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.paywall-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    pointer-events: auto;
+    z-index: 1002;
+    position: relative;
+}
+
+.paywall-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+}
+
+.paywall-button:active {
+    transform: translateY(0);
+}
+
+.paywall-button:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px) {
+    .media-player-wrapper {
+        max-height: 70vh;
+    }
+
+    .plyr-video-container {
+        aspect-ratio: 16 / 9;
+    }
+
+    .plyr__control--overlaid {
+        width: 64px !important;
+        height: 64px !important;
+    }
+
+    .plyr__control--overlaid svg {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .plyr__controls {
+        padding: 10px 12px !important;
+    }
+
+    .plyr__control svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .plyr__time {
+        font-size: 12px !important;
+    }
+
+    .plyr-image-container {
+        min-height: 200px;
+    }
+
+    .plyr-image {
+        max-height: 70vh;
+    }
+
+    .paywall-content {
+        padding: 24px;
+    }
+
+    .paywall-title {
+        font-size: 20px;
+    }
+
+    .paywall-text {
+        font-size: 14px;
+    }
+}
+
+/* Fullscreen */
+.plyr--fullscreen-active {
+    border-radius: 0 !important;
+}
+
+/* Acessibilidade */
+.plyr__control[aria-label] {
+    cursor: pointer;
+}
+
+/* Animações suaves */
+.plyr__control,
+.plyr__progress,
+.plyr__control--overlaid {
+    transition: all 0.2s ease !important;
+}

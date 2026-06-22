@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"upload_max_filesize\\\\|post_max_size\\\\|max_execution_time\\\\|max_input_time\" /etc/php/8.3/fpm/php.ini)",
+      "Read(//etc/php/8.3/fpm/**)",
+      "Bash(grep -n 'creator_onboarding\\\\|creator_status\\\\|return redirect\\\\|return $next' /home/pierfans/web/pierfans.com/public_html/app/Http/Middleware/EnsureCreatorOnboarding.php)",
+      "Bash(grep -n \"isHeic && typeof heic2any\\\\|previewItem.append\\(badge\\)\\\\|console.error.*HEIC\\\\|^\\\\s*}\\\\s*$\" /home/pierfans/web/pierfans.com/public_html/public/js/post-create.js)"
+    ]
+  }
+}
