@@ -128,7 +128,7 @@ class ProfileController extends Controller
             if (!$isOwner) {
                 // Busca todas as postagens (free e subscriber)
                 // O post-card verifica a assinatura e mostra bloqueado se necessário
-                $postsQuery->whereIn('visibility', ['free', 'subscriber']);
+                $postsQuery->whereIn('visibility', ['free', 'subscriber', 'paid']);
             }
             
             $posts = $postsQuery->paginate(12);
