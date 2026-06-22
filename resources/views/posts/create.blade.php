@@ -65,8 +65,27 @@
                         >
                             <option value="free">Gratuito</option>
                             <option value="subscriber">Somente Assinantes</option>
+                            <option value="paid">Conteúdo Único (pago)</option>
                         </select>
                         <div id="visibility-error" class="text-red-500 text-sm mt-1 hidden"></div>
+
+                        <!-- Campo de preço — visível apenas quando "Conteúdo Único" é selecionado -->
+                        <div id="price-field" class="mt-4 hidden">
+                            <label for="price" class="block text-sm font-medium text-gray-700 mb-2">
+                                Preço do conteúdo (R$)
+                            </label>
+                            <input
+                                type="number"
+                                id="price"
+                                name="price"
+                                min="1"
+                                max="9999"
+                                step="0.01"
+                                placeholder="Ex: 29.90"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                            >
+                            <div id="price-error" class="text-red-500 text-sm mt-1 hidden"></div>
+                        </div>
                     </div>
 
                     <!-- Mídias -->
@@ -196,6 +215,21 @@
     </script>
     <script src="/js/post-subscriber-visibility-guard.js"></script>
     <script src="/js/post-create.js"></script>
+    <script>
+        document.getElementById('visibility').addEventListener('change', function () {
+            const priceField = document.getElementById('price-field');
+            const priceInput = document.getElementById('price');
+
+            if (this.value === 'paid') {
+                priceField.classList.remove('hidden');
+                priceInput.required = true;
+            } else {
+                priceField.classList.add('hidden');
+                priceInput.required = false;
+                priceInput.value = '';
+            }
+        });
+    </script>
 </body>
 </html>
 
