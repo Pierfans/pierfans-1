@@ -6,5 +6,9 @@
       "Bash(grep -n 'creator_onboarding\\\\|creator_status\\\\|return redirect\\\\|return $next' /home/pierfans/web/pierfans.com/public_html/app/Http/Middleware/EnsureCreatorOnboarding.php)",
       "Bash(grep -n \"isHeic && typeof heic2any\\\\|previewItem.append\\(badge\\)\\\\|console.error.*HEIC\\\\|^\\\\s*}\\\\s*$\" /home/pierfans/web/pierfans.com/public_html/public/js/post-create.js)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "aidesigner"
+  ],
+  "enableAllProjectMcpServers": true
 }
