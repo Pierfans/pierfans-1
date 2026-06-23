@@ -209,6 +209,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('top-creators')->name('top-creators.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminTopCreatorsController::class, 'index'])->name('index');
             Route::post('/{id}/toggle', [\App\Http\Controllers\Admin\AdminTopCreatorsController::class, 'toggle'])->name('toggle');
+            Route::post('/order', [\App\Http\Controllers\Admin\AdminTopCreatorsController::class, 'updateOrder'])->name('order');
         });
 
         // Postagens

@@ -50,6 +50,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'creator_submitted_at',
         'featured_in_dashboard',
         'featured_in_top_creators',
+        'top_creators_order',
         'is_admin',
         'is_active',
         'registration_url',

@@ -29,8 +29,8 @@ class PostController extends Controller
 
         $featuredCreators = \App\Models\User::where('creator_status', 'approved')
             ->where('featured_in_top_creators', true)
-            ->whereNotNull('username') // Apenas criadores com username (necessário para acessar o perfil)
-            ->orderBy('created_at', 'desc')
+            ->whereNotNull('username')
+            ->orderByRaw('top_creators_order IS NULL, top_creators_order ASC')
             ->get();
 
         return view('dashboard', compact('posts', 'featuredCreators'));

@@ -5,19 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminTopCreatorsController extends Controller
 {
-    /**
-     * Lista todos os criadores aprovados para seleção do TOP
-     */
     public function index(Request $request)
     {
-        // Busca criadores aprovados
         $query = User::where('creator_status', 'approved')
-            ->whereNotNull('username'); // Apenas criadores com username
+            ->whereNotNull('username');
 
-        // Busca por nome, email ou username
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -30,22 +26,19 @@ class AdminTopCreatorsController extends Controller
 
         $creators = $query->orderBy('created_at', 'desc')->paginate(20)->appends($request->query());
 
-        // Conta quantos estão no TOP
-        $topCreatorsCount = User::where('creator_status', 'approved')
+        $topCreators = User::where('creator_status', 'approved')
             ->where('featured_in_top_creators', true)
             ->whereNotNull('username')
-            ->count();
+            ->orderByRaw('top_creators_order IS NULL, top_creators_order ASC')
+            ->get();
 
-        return view('admin.top-creators.index', compact('creators', 'topCreatorsCount'));
+        return view('admin.top-creators.index', compact('creators', 'topCreators'));
     }
 
-    /**
-     * Atualiza o status de TOP de um criador
-     */
     public function toggle(Request $request, $id)
     {
         $creator = User::findOrFail($id);
-        
+
         if ($creator->creator_status !== 'approved') {
             return response()->json([
                 'success' => false,
@@ -64,17 +57,34 @@ class AdminTopCreatorsController extends Controller
             'featured_in_top_creators' => 'required|boolean',
         ]);
 
-        $creator->update([
-            'featured_in_top_creators' => $request->featured_in_top_creators,
-        ]);
+        $data = ['featured_in_top_creators' => $request->featured_in_top_creators];
+        if (!$request->featured_in_top_creators) {
+            $data['top_creators_order'] = null;
+        }
+        $creator->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => $request->featured_in_top_creators 
-                ? 'Criador adicionado ao TOP com sucesso!' 
+            'message' => $request->featured_in_top_creators
+                ? 'Criador adicionado ao TOP com sucesso!'
                 : 'Criador removido do TOP com sucesso!',
             'featured_in_top_creators' => $creator->featured_in_top_creators,
         ]);
     }
-}
 
+    public function updateOrder(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:users,id',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->order as $position => $userId) {
+                User::where('id', $userId)->update(['top_creators_order' => $position + 1]);
+            }
+        });
+
+        return response()->json(['success' => true, 'message' => 'Ordem atualizada com sucesso!']);
+    }
+}
