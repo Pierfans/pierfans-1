@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewPPVSaleMail;
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
 use App\Models\Post;
@@ -9,6 +10,7 @@ use App\Models\PostPurchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PPVCheckoutController extends Controller
@@ -388,6 +390,17 @@ class PPVCheckoutController extends Controller
             'post_id'        => $purchase->post_id,
             'transaction_id' => $transaction->id,
         ]);
+
+        // Notifica o criador por email
+        try {
+            $purchase->load(['buyer', 'creator', 'post']);
+            Mail::to($purchase->creator->email)->send(new NewPPVSaleMail($purchase));
+        } catch (\Exception $e) {
+            Log::error('PPV: Falha ao enviar email de notificação para o criador', [
+                'purchase_id' => $purchase->id,
+                'error'       => $e->getMessage(),
+            ]);
+        }
 
         return $purchase;
     }
