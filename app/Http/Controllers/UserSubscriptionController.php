@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Subscription;
+use App\Models\PostPurchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,8 +19,8 @@ class UserSubscriptionController extends Controller
         // Desativa assinaturas expiradas
         Subscription::deactivateExpired();
         
-        // Filtro: active ou expired
-        $filter = $request->get('filter', 'active'); // 'active' ou 'expired'
+        // Filtro: active, expired, ou ppv
+        $filter = $request->get('filter', 'active'); // 'active', 'expired' ou 'ppv'
         
         $query = Subscription::with(['creator', 'plan'])
             ->where('user_id', $user->id);
@@ -45,19 +46,29 @@ class UserSubscriptionController extends Controller
             ->where('is_active', true)
             ->where('end_date', '>=', now()->toDateString())
             ->count();
-        
+
         $expiredCount = Subscription::where('user_id', $user->id)
             ->where(function($q) {
                 $q->where('is_active', false)
                   ->orWhere('end_date', '<', now()->toDateString());
             })
             ->count();
-        
+
+        // Compras de Conteúdo Único (PPV)
+        $ppvPurchases = PostPurchase::where('user_id', $user->id)
+            ->with(['post', 'creator'])
+            ->orderBy('purchased_at', 'desc')
+            ->get();
+
+        $ppvCount = $ppvPurchases->count();
+
         return view('user-subscriptions.index', [
-            'subscriptions' => $subscriptions,
-            'filter' => $filter,
-            'active_count' => $activeCount,
-            'expired_count' => $expiredCount,
+            'subscriptions'  => $subscriptions,
+            'filter'         => $filter,
+            'active_count'   => $activeCount,
+            'expired_count'  => $expiredCount,
+            'ppv_purchases'  => $ppvPurchases,
+            'ppv_count'      => $ppvCount,
         ]);
     }
 }

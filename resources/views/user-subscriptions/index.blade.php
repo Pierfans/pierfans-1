@@ -266,23 +266,31 @@
 
             <!-- Filtros -->
             <div class="filter-tabs">
-                <button 
-                    class="filter-tab {{ $filter === 'active' ? 'active' : '' }}" 
+                <button
+                    class="filter-tab {{ $filter === 'active' ? 'active' : '' }}"
                     onclick="window.location.href='{{ route('my-subscriptions.index', ['filter' => 'active']) }}'"
                 >
-                    Assinaturas Ativas
+                    Ativas
                     <span class="filter-tab-count">({{ $active_count }})</span>
                 </button>
-                <button 
-                    class="filter-tab {{ $filter === 'expired' ? 'active' : '' }}" 
+                <button
+                    class="filter-tab {{ $filter === 'expired' ? 'active' : '' }}"
                     onclick="window.location.href='{{ route('my-subscriptions.index', ['filter' => 'expired']) }}'"
                 >
-                    Assinaturas Expiradas
+                    Expiradas
                     <span class="filter-tab-count">({{ $expired_count }})</span>
+                </button>
+                <button
+                    class="filter-tab {{ $filter === 'ppv' ? 'active' : '' }}"
+                    onclick="window.location.href='{{ route('my-subscriptions.index', ['filter' => 'ppv']) }}'"
+                >
+                    Conteúdo Único
+                    <span class="filter-tab-count">({{ $ppv_count }})</span>
                 </button>
             </div>
 
             <!-- Grid de Assinaturas -->
+            @if($filter !== 'ppv')
             @if($subscriptions->count() > 0)
                 <div class="subscriptions-grid">
                     @foreach($subscriptions as $subscription)
@@ -380,6 +388,71 @@
                         @endif
                     </p>
                 </div>
+            @endif
+            @endif {{-- fim @if($filter !== 'ppv') --}}
+
+            <!-- Grid de Conteúdo Único (PPV) -->
+            @if($filter === 'ppv')
+                @if($ppv_purchases->count() > 0)
+                    <div class="subscriptions-grid">
+                        @foreach($ppv_purchases as $purchase)
+                            <a href="{{ route('profile.show', $purchase->creator->username) }}" class="subscription-card">
+                                <div class="subscription-card-header">
+                                    @if($purchase->creator->profile_photo)
+                                        <img src="{{ $purchase->creator->profile_photo_url }}"
+                                             alt="{{ $purchase->creator->name }}"
+                                             class="subscription-avatar">
+                                    @else
+                                        <div class="subscription-avatar-placeholder">
+                                            {{ strtoupper(substr($purchase->creator->name, 0, 2)) }}
+                                        </div>
+                                    @endif
+                                    <div class="subscription-creator-info">
+                                        <div class="subscription-creator-name">{{ $purchase->creator->name }}</div>
+                                        <div class="subscription-plan-name">Conteúdo Único</div>
+                                    </div>
+                                </div>
+
+                                <div class="subscription-status active">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Acesso permanente
+                                </div>
+
+                                <div class="subscription-details">
+                                    <div class="subscription-detail-row">
+                                        <span class="subscription-detail-label">Valor pago</span>
+                                        <span class="subscription-amount">R$ {{ number_format($purchase->amount_paid, 2, ',', '.') }}</span>
+                                    </div>
+                                    <div class="subscription-detail-row">
+                                        <span class="subscription-detail-label">Comprado em</span>
+                                        <span class="subscription-detail-value">{{ $purchase->purchased_at->format('d/m/Y') }}</span>
+                                    </div>
+                                    @if($purchase->post && $purchase->post->description)
+                                        <div class="subscription-detail-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #E2E8F0;">
+                                            <span class="subscription-detail-label" style="font-style:italic">
+                                                {{ mb_strimwidth($purchase->post->description, 0, 60, '...') }}
+                                            </span>
+                                        </div>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        </div>
+                        <h2 class="empty-state-title">Nenhum Conteúdo Único comprado</h2>
+                        <p class="empty-state-message">Você ainda não comprou nenhum Conteúdo Único. Explore os perfis dos criadores!</p>
+                    </div>
+                @endif
             @endif
         </div>
     </div>

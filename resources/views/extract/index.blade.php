@@ -177,9 +177,9 @@
                         </label>
                         <select name="status" class="input-field">
                             <option value="all" {{ $status === 'all' ? 'selected' : '' }}>Todos</option>
-                            <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pendente</option>
-                            <option value="transferred" {{ $status === 'transferred' ? 'selected' : '' }}>Completa</option>
-                            <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Reprovado</option>
+                            <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Saque Pendente</option>
+                            <option value="transferred" {{ $status === 'transferred' ? 'selected' : '' }}>Saque Completo</option>
+                            <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Saque Reprovado</option>
                         </select>
                     </div>
 
@@ -220,6 +220,8 @@
                                                 @elseif($transaction['status'] === 'rejected')
                                                     <span class="status-badge status-rejected">{{ $transaction['status_label'] }}</span>
                                                 @endif
+                                            @elseif($transaction['type'] === 'ppv_sale')
+                                                <span class="status-badge status-complete">{{ $transaction['status_label'] }}</span>
                                             @else
                                                 @if($transaction['status'] === 'active')
                                                     <span class="status-badge status-active">{{ $transaction['status_label'] }}</span>
@@ -303,51 +305,81 @@
             
             let html = '';
 
-            // Apenas saques são exibidos
-            const withdrawal = transaction;
-            const statusLabels = {
-                'pending': 'Pendente',
-                'transferred': 'Completa',
-                'rejected': 'Reprovado',
-            };
-            
-            html = `
-                <div class="space-y-4">
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Valor do saque</span>
-                        <span class="font-semibold text-[#1b1b18]">R$ ${parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}</span>
+            if (transactionType === 'ppv_sale') {
+                html = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Post</span>
+                            <span class="font-semibold text-[#1b1b18]" style="max-width:220px;text-align:right">${transaction.post_description || '—'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Comprado por</span>
+                            <span class="font-semibold text-[#1b1b18]">${transaction.buyer_name || '—'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Valor pago</span>
+                            <span class="font-semibold text-[#1b1b18]">R$ ${parseFloat(transaction.amount_paid).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Sua parte (80%)</span>
+                            <span class="font-semibold text-green-600">R$ ${parseFloat(transaction.amount).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Comprado em</span>
+                            <span class="font-semibold text-[#1b1b18]">${formatDateTime(transaction.purchased_at)}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Status</span>
+                            <span class="font-semibold text-green-600">Confirmado</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Taxa</span>
-                        <span class="font-semibold text-[#1b1b18]">Gratuita</span>
+                `;
+            } else {
+                const withdrawal = transaction;
+                const statusLabels = {
+                    'pending': 'Pendente',
+                    'transferred': 'Completa',
+                    'rejected': 'Reprovado',
+                };
+
+                html = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Valor do saque</span>
+                            <span class="font-semibold text-[#1b1b18]">R$ ${parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Taxa</span>
+                            <span class="font-semibold text-[#1b1b18]">Gratuita</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Valor a receber</span>
+                            <span class="font-semibold text-[#1b1b18]">R$ ${parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Solicitado em</span>
+                            <span class="font-semibold text-[#1b1b18]">${formatDateTime(withdrawal.created_at)}</span>
+                        </div>
+                        ${withdrawal.processed_at ? `
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Transferido em</span>
+                            <span class="font-semibold text-[#1b1b18]">${formatDateTime(withdrawal.processed_at)}</span>
+                        </div>
+                        ` : ''}
+                        <div class="flex justify-between">
+                            <span class="text-[#706f6c]">Status</span>
+                            <span class="font-semibold text-[#1b1b18]">${statusLabels[withdrawal.status] || withdrawal.status}</span>
+                        </div>
+                        ${withdrawal.bank_account ? `
+                        <div class="pt-4 border-t border-[#E2E8F0]">
+                            <p class="text-sm font-medium text-[#1b1b18] mb-2">Conta bancária</p>
+                            <p class="text-sm text-[#706f6c]">${withdrawal.bank_account.bank_name}</p>
+                            <p class="text-sm text-[#706f6c]">${withdrawal.bank_account.pix_key_type ? withdrawal.bank_account.pix_key_type.charAt(0).toUpperCase() + withdrawal.bank_account.pix_key_type.slice(1) : ''}: ${withdrawal.bank_account.pix_key || ''}</p>
+                        </div>
+                        ` : ''}
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Valor a receber</span>
-                        <span class="font-semibold text-[#1b1b18]">R$ ${parseFloat(withdrawal.amount).toFixed(2).replace('.', ',')}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Solicitado em</span>
-                        <span class="font-semibold text-[#1b1b18]">${formatDateTime(withdrawal.created_at)}</span>
-                    </div>
-                    ${withdrawal.processed_at ? `
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Transferido em</span>
-                        <span class="font-semibold text-[#1b1b18]">${formatDateTime(withdrawal.processed_at)}</span>
-                    </div>
-                    ` : ''}
-                    <div class="flex justify-between">
-                        <span class="text-[#706f6c]">Status</span>
-                        <span class="font-semibold text-[#1b1b18]">${statusLabels[withdrawal.status] || withdrawal.status}</span>
-                    </div>
-                    ${withdrawal.bank_account ? `
-                    <div class="pt-4 border-t border-[#E2E8F0]">
-                        <p class="text-sm font-medium text-[#1b1b18] mb-2">Conta bancária</p>
-                        <p class="text-sm text-[#706f6c]">${withdrawal.bank_account.bank_name}</p>
-                        <p class="text-sm text-[#706f6c]">${withdrawal.bank_account.pix_key_type ? withdrawal.bank_account.pix_key_type.charAt(0).toUpperCase() + withdrawal.bank_account.pix_key_type.slice(1) : ''}: ${withdrawal.bank_account.pix_key || ''}</p>
-                    </div>
-                    ` : ''}
-                </div>
-            `;
+                `;
+            }
 
             content.innerHTML = html;
             modal.classList.add('active');

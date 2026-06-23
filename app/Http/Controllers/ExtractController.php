@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Subscription;
 use App\Models\Withdrawal;
+use App\Models\PostPurchase;
 use Carbon\Carbon;
 
 class ExtractController extends Controller
@@ -61,12 +62,50 @@ class ExtractController extends Controller
                 ];
             });
 
-        // Transações são apenas os saques
-        $transactions = $withdrawals;
+        // Vendas PPV do criador
+        $ppvSales = PostPurchase::where('creator_id', $user->id)
+            ->with(['post', 'buyer'])
+            ->when($startDate, fn($q) => $q->whereDate('purchased_at', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('purchased_at', '<=', $endDate))
+            ->orderBy('purchased_at', 'desc')
+            ->get()
+            ->map(function ($purchase) {
+                return [
+                    'id'           => 'ppv_' . $purchase->id,
+                    'type'         => 'ppv_sale',
+                    'type_label'   => 'Venda PPV',
+                    'amount'       => $purchase->creator_amount,
+                    'status'       => 'confirmed',
+                    'status_label' => 'Confirmado',
+                    'date'         => $purchase->purchased_at,
+                    'data'         => $purchase,
+                ];
+            });
 
-        // Prepara dados para JavaScript (apenas saques)
+        // Mescla saques e vendas PPV; quando filtro por status de saque, oculta PPV
+        if (!$status || $status === 'all') {
+            $transactions = $withdrawals->concat($ppvSales)->sortByDesc('date')->values();
+        } else {
+            $transactions = $withdrawals;
+        }
+
+        // Prepara dados para JavaScript
         $transactionsForJs = $transactions->map(function ($t) {
             $data = $t['data'];
+
+            if ($t['type'] === 'ppv_sale') {
+                return [
+                    'id'            => $t['id'],
+                    'type'          => $t['type'],
+                    'amount'        => $data->creator_amount,
+                    'amount_paid'   => $data->amount_paid,
+                    'status'        => 'confirmed',
+                    'purchased_at'  => $data->purchased_at->toISOString(),
+                    'post_description' => $data->post ? mb_strimwidth($data->post->description ?? '', 0, 80, '...') : '',
+                    'buyer_name'    => $data->buyer ? $data->buyer->name : '',
+                ];
+            }
+
             return [
                 'id' => $t['id'],
                 'type' => $t['type'],
