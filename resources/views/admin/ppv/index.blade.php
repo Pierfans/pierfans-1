@@ -86,7 +86,7 @@
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900">{{ $purchase->creator->name }}</div>
-                                        <div class="text-xs text-gray-500">@{{ $purchase->creator->username }}</div>
+                                        <div class="text-xs text-gray-500">{{ $purchase->creator->username }}</div>
                                     </td>
                                     <td class="px-4 py-4">
                                         <div class="text-sm text-gray-700 max-w-xs truncate">
