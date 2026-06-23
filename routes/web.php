@@ -259,6 +259,11 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/add-balance', [\App\Http\Controllers\Admin\AdminWalletController::class, 'addBalance'])->name('add-balance');
         });
 
+        // Conteúdo Único (PPV)
+        Route::prefix('ppv')->name('ppv.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminPPVController::class, 'index'])->name('index');
+        });
+
         // Posts em Destaque
         Route::prefix('featured-posts')->name('featured-posts.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminFeaturedPostController::class, 'index'])->name('index');
