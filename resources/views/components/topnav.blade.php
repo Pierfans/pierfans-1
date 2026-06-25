@@ -36,7 +36,7 @@
                             </svg>
                         </a>
                     @endif
-                    <a href="/chat"
+                    <a href="{{ route('chat.index') }}"
                        class="p-2 text-gray-700 hover:text-pink-500 transition-colors rounded-md hover:bg-gray-50"
                        title="Mensagens">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
