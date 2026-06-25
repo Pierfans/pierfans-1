@@ -1,4 +1,5 @@
 HANDOFF.md
+.superpowers/
 *.log
 .DS_Store
 .env
