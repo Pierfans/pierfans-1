@@ -36,9 +36,13 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full {{ $post->visibility === 'free' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
-                                            {{ $post->visibility === 'free' ? 'Gratuito' : 'Assinantes' }}
-                                        </span>
+                                        @if($post->visibility === 'free')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Gratuito</span>
+                                        @elseif($post->visibility === 'paid')
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">Conteúdo Único</span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Assinantes</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">{{ $post->media->count() }} arquivo(s)</div>

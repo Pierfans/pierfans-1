@@ -28,9 +28,13 @@
             <!-- Visibilidade -->
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 mb-2">Visibilidade</h2>
-                <span class="px-3 py-1 text-sm font-medium rounded-full {{ $post->visibility === 'free' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
-                    {{ $post->visibility === 'free' ? 'Gratuito' : 'Somente Assinantes' }}
-                </span>
+                @if($post->visibility === 'free')
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">Gratuito</span>
+                @elseif($post->visibility === 'paid')
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">Conteúdo Único</span>
+                @else
+                    <span class="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">Somente Assinantes</span>
+                @endif
             </div>
 
             <!-- Mídias -->
