@@ -61,6 +61,11 @@
             </div>
         </div>
 
+        <!-- Aviso de estimativa -->
+        <p class="text-xs text-gray-500 mb-6 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            ⚠️ A taxa de <strong>entrada (PIX)</strong> é <strong>estimada</strong> (~3,75%) — o SuitPay não informa a taxa de PIX recebido por transação. Saque (3,5%) e cartão são exatos. A fonte exata das taxas é o extrato do SuitPay (Exportar Excel); a diferença típica é de ~R$1/mês.
+        </p>
+
         <!-- Tabela -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
