@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CreatorStatusMail;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class AdminCreatorController extends Controller
@@ -105,6 +108,8 @@ class AdminCreatorController extends Controller
 
         $creator->update($updateData);
 
+        $this->notifyCreator($creator, 'approved');
+
         return response()->json([
             'success' => true,
             'message' => 'Criador aprovado com sucesso!',
@@ -143,6 +148,11 @@ class AdminCreatorController extends Controller
         $user->is_active = !$user->is_active;
         $user->save();
 
+        // Só notifica criadoras aprovadas (toggleActive nunca deveria rodar em usuário comum)
+        if ($user->creator_status === 'approved') {
+            $this->notifyCreator($user, $user->is_active ? 'activated' : 'deactivated');
+        }
+
         return response()->json([
             'success'   => true,
             'message'   => $user->is_active
@@ -150,5 +160,22 @@ class AdminCreatorController extends Controller
                 : 'Criadora desativada com sucesso!',
             'is_active' => $user->is_active,
         ]);
+    }
+
+    /**
+     * Envia email de mudança de status para a criadora.
+     * Falha de email nunca quebra a ação do admin (mesmo padrão do PPV).
+     */
+    private function notifyCreator(User $creator, string $type): void
+    {
+        try {
+            Mail::to($creator->email)->send(new CreatorStatusMail($creator, $type));
+        } catch (\Exception $e) {
+            Log::error('Falha ao enviar email de status de criadora', [
+                'user_id' => $creator->id,
+                'type'    => $type,
+                'error'   => $e->getMessage(),
+            ]);
+        }
     }
 }
