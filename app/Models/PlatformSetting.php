@@ -209,4 +209,25 @@ class PlatformSetting extends Model
             'Quando ativado, upload de mídia de posts é feito no R2. Quando desativado, é feito localmente.'
         );
     }
+
+    /**
+     * Taxa do SuitPay numa entrada PIX (recebimento): 1% do valor, mínimo R$ 0,50.
+     * Fórmula confirmada por evidência (2026-06-29). Usada quando o webhook não traz a taxa (PIX).
+     * ponytail: tarifa em config = knob de calibração; ajusta sem deploy se o SuitPay mudar.
+     */
+    public static function suitpayFeeIn(float $amount): float
+    {
+        $pct = (float) self::getValue('suitpay_fee_pix_in_percent', 1);
+        $min = (float) self::getValue('suitpay_fee_pix_in_min', 0.50);
+        return round(max($amount * $pct / 100, $min), 2);
+    }
+
+    /**
+     * Taxa do SuitPay numa saída PIX (saque/cashout): 3,5% do valor.
+     */
+    public static function suitpayFeeOut(float $amount): float
+    {
+        $pct = (float) self::getValue('suitpay_fee_pix_out_percent', 3.5);
+        return round($amount * $pct / 100, 2);
+    }
 }

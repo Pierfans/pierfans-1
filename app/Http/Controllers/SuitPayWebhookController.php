@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LedgerEntry;
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
 use App\Models\PostPurchase;
@@ -305,6 +306,19 @@ class SuitPayWebhookController extends Controller
                     'destinataria'   => $payload['destinationName'] ?? null,
                 ]);
 
+                // Ledger: registra a taxa de saque (3,5%) só quando o saque saiu de fato
+                if ($statusTransaction === 'PAID_OUT') {
+                    LedgerEntry::record([
+                        'entry_type'   => 'cashout',
+                        'withdrawal_id' => $withdrawal->id,
+                        'gross_amount' => $withdrawal->amount,
+                        'suitpay_fee'  => PlatformSetting::suitpayFeeOut((float) $withdrawal->amount),
+                        'creator_amount'   => 0,
+                        'affiliate_amount' => 0,
+                        'occurred_at'  => now(),
+                    ]);
+                }
+
                 break;
 
             /**
@@ -441,6 +455,17 @@ class SuitPayWebhookController extends Controller
                 'subscriptionId' => $subscription->id,
                 'userId' => $user->id,
                 'creatorId' => $creator->id,
+            ]);
+
+            // Ledger de conciliação (não quebra a venda se falhar — record() é resiliente)
+            LedgerEntry::record([
+                'entry_type'             => 'subscription_sale',
+                'payment_transaction_id' => $transaction->id,
+                'gross_amount'           => $totalAmount,
+                'suitpay_fee'            => LedgerEntry::saleFee($transaction),
+                'creator_amount'         => $creatorAmount,
+                'affiliate_amount'       => round($referrerAmount + $creatorAffiliateAmount, 2),
+                'occurred_at'            => now(),
             ]);
 
         } catch (\Exception $e) {

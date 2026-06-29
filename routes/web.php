@@ -265,6 +265,11 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminPPVController::class, 'index'])->name('index');
         });
 
+        // Conciliação Financeira (ledger)
+        Route::prefix('conciliacao')->name('conciliacao.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'index'])->name('index');
+        });
+
         // Posts em Destaque
         Route::prefix('featured-posts')->name('featured-posts.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminFeaturedPostController::class, 'index'])->name('index');

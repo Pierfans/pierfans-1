@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\NewPPVSaleMail;
+use App\Models\LedgerEntry;
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
 use App\Models\Post;
@@ -389,6 +390,17 @@ class PPVCheckoutController extends Controller
             'user_id'        => $purchase->user_id,
             'post_id'        => $purchase->post_id,
             'transaction_id' => $transaction->id,
+        ]);
+
+        // Ledger de conciliação (PPV não tem afiliado)
+        LedgerEntry::record([
+            'entry_type'             => 'ppv_sale',
+            'payment_transaction_id' => $transaction->id,
+            'gross_amount'           => $transaction->amount,
+            'suitpay_fee'            => LedgerEntry::saleFee($transaction),
+            'creator_amount'         => $creatorAmount,
+            'affiliate_amount'       => 0,
+            'occurred_at'            => now(),
         ]);
 
         // Notifica o criador por email
