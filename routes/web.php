@@ -49,6 +49,9 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', [\App\Http\Controllers\PostController::class, 'destroy'])->name('destroy');
     });
 
+    // Meu Conteúdo: lista de publicações do próprio criador para gerenciar
+    Route::get('/meu-conteudo', [\App\Http\Controllers\PostController::class, 'myContent'])->name('posts.my-content');
+
     // Post Media (R2 presigned upload + confirm)
     Route::prefix('post-media')->name('post-media.')->group(function () {
         Route::post('/request-upload-url', [\App\Http\Controllers\PostMediaController::class, 'requestUploadUrl'])->name('request-upload-url');
@@ -218,6 +221,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}', [\App\Http\Controllers\Admin\AdminPostController::class, 'show'])->name('show');
             Route::get('/{id}/edit', [\App\Http\Controllers\Admin\AdminPostController::class, 'edit'])->name('edit');
             Route::put('/{id}', [\App\Http\Controllers\Admin\AdminPostController::class, 'update'])->name('update');
+            Route::post('/{id}/disable', [\App\Http\Controllers\Admin\AdminPostController::class, 'disable'])->name('disable');
             Route::delete('/{id}', [\App\Http\Controllers\Admin\AdminPostController::class, 'destroy'])->name('destroy');
             Route::delete('/{postId}/media/{mediaId}', [\App\Http\Controllers\Admin\AdminPostController::class, 'deleteMedia'])->name('media.delete');
             Route::delete('/{id}/media', [\App\Http\Controllers\Admin\AdminPostController::class, 'deleteAllMedia'])->name('media.delete-all');

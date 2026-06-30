@@ -82,9 +82,11 @@
                                         <div class="flex space-x-2">
                                             <a href="{{ route('admin.posts.show', $post->id) }}" 
                                                class="text-blue-600 hover:text-blue-900">Ver</a>
-                                            <a href="{{ route('admin.posts.edit', $post->id) }}" 
+                                            <a href="{{ route('admin.posts.edit', $post->id) }}"
                                                class="text-green-600 hover:text-green-900">Editar</a>
-                                            <button onclick="deletePost({{ $post->id }})" 
+                                            <button onclick="disablePost({{ $post->id }})"
+                                                    class="text-orange-600 hover:text-orange-900">Desabilitar</button>
+                                            <button onclick="deletePost({{ $post->id }})"
                                                     class="text-red-600 hover:text-red-900">Deletar</button>
                                         </div>
                                     </td>
@@ -126,6 +128,29 @@
     </div>
 
     <script>
+        function disablePost(id) {
+            if (!confirm('Desabilitar esta postagem? Ela some do site e vai para a Lixeira, mas pode ser restaurada.')) {
+                return;
+            }
+
+            $.ajax({
+                url: `/admin/posts/${id}/disable`,
+                type: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    alert(xhr.responseJSON?.message || 'Erro ao desabilitar postagem');
+                }
+            });
+        }
+
         function deletePost(id) {
             if (!confirm('Tem certeza que deseja deletar esta postagem? Esta ação não pode ser desfeita.')) {
                 return;

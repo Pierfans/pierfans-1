@@ -119,6 +119,26 @@ class AdminPostController extends Controller
     }
 
     /**
+     * Desabilita uma postagem (esconde sem apagar): manda pra Lixeira via
+     * deleted_by_user_at. Reversível pelo restore da Lixeira. Não toca mídia/compras.
+     */
+    public function disable($id)
+    {
+        $post = Post::findOrFail($id);
+        $post->update(['deleted_by_user_at' => now()]);
+
+        Log::info('Postagem desabilitada via admin', [
+            'post_id' => $id,
+            'admin_id' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Postagem desabilitada e movida para a Lixeira.',
+        ]);
+    }
+
+    /**
      * Deleta uma postagem completa
      */
     public function destroy($id)
