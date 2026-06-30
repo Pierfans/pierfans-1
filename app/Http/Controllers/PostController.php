@@ -37,6 +37,25 @@ class PostController extends Controller
     }
 
     /**
+     * Lista as publicações do próprio criador para gerenciar (ver/editar/excluir)
+     */
+    public function myContent()
+    {
+        $user = Auth::user();
+
+        if ($user->creator_status !== 'approved') {
+            return redirect()->route('dashboard')->with('error', 'Área exclusiva para criadores aprovados.');
+        }
+
+        $posts = Post::where('user_id', $user->id)
+            ->with('media')
+            ->orderBy('created_at', 'desc')
+            ->paginate(12);
+
+        return view('posts.my-content', compact('posts'));
+    }
+
+    /**
      * Mostra o formulário de criação de postagem
      */
     public function create()

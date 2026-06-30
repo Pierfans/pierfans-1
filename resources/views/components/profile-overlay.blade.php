@@ -111,6 +111,18 @@
                                 <p class="profile-card-description">Edite suas informações pessoais</p>
                             </a>
 
+                            <!-- Meu Conteúdo -->
+                            <a href="{{ route('posts.my-content') }}" class="profile-card">
+                                <div class="profile-card-icon">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+                                    </svg>
+                                </div>
+                                <h4 class="profile-card-title">Meu Conteúdo</h4>
+                                <p class="profile-card-description">Veja e gerencie suas publicações</p>
+                            </a>
+
                             <!-- Ofertas -->
                             <a href="{{ route('subscription-plans.index') }}" class="profile-card">
                                 <div class="profile-card-icon">
