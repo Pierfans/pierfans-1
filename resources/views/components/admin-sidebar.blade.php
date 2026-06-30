@@ -93,7 +93,7 @@
                     </svg>
                     <span class="font-medium">Lixeira</span>
                     @php
-                        $trashCount = \App\Models\Post::withoutGlobalScope('notDeletedByUser')->whereNotNull('deleted_by_user_at')->count();
+                        $trashCount = \App\Models\Post::withoutGlobalScope('notDeletedByUser')->whereNotNull('deleted_by_user_at')->whereHas('user')->count();
                     @endphp
                     @if($trashCount > 0)
                         <span class="ml-auto bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">{{ $trashCount }}</span>

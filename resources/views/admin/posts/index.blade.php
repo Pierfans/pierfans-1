@@ -9,6 +9,32 @@
             <p class="text-gray-600 mt-2">Todas as postagens da plataforma</p>
         </div>
 
+        <!-- Filtros -->
+        <form method="GET" action="{{ route('admin.posts.index') }}" class="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-wrap items-end gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Criador</label>
+                <select name="creator_id" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Todos</option>
+                    @foreach($creators as $creator)
+                        <option value="{{ $creator->id }}" @selected(request('creator_id') == $creator->id)>{{ $creator->name }} ({{ '@'.$creator->username }})</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Status</label>
+                <select name="visibility" class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Todos</option>
+                    <option value="free" @selected(request('visibility') === 'free')>Gratuito</option>
+                    <option value="subscriber" @selected(request('visibility') === 'subscriber')>Assinantes</option>
+                    <option value="paid" @selected(request('visibility') === 'paid')>Conteúdo Único</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white text-sm font-medium px-4 py-2 rounded-lg">Filtrar</button>
+            @if(request('creator_id') || request('visibility'))
+                <a href="{{ route('admin.posts.index') }}" class="text-sm text-gray-500 hover:text-gray-700 px-2 py-2">Limpar</a>
+            @endif
+        </form>
+
         @if($posts->count() > 0)
             <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">

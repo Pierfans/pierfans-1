@@ -17,6 +17,7 @@ class AdminTrashController extends Controller
     {
         $posts = Post::withoutGlobalScope('notDeletedByUser')
             ->whereNotNull('deleted_by_user_at')
+            ->whereHas('user') // criadora desativada: posts somem tambem da Lixeira
             ->with(['user', 'media'])
             ->orderBy('deleted_by_user_at', 'desc')
             ->paginate(20);

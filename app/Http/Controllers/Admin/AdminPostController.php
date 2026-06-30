@@ -15,13 +15,25 @@ class AdminPostController extends Controller
     /**
      * Lista todas as postagens
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::with(['user' => fn($q) => $q->withoutGlobalScope('active'), 'media'])
+        // whereHas('user') aplica o scope global 'active' do User: posts de criadora
+        // desativada (is_active=false) somem desta tela, como deve ser.
+        $posts = Post::whereHas('user')
+            ->with(['user' => fn($q) => $q->withoutGlobalScope('active'), 'media'])
+            ->when($request->filled('creator_id'), fn($q) => $q->where('user_id', $request->creator_id))
+            ->when($request->filled('visibility'), fn($q) => $q->where('visibility', $request->visibility))
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query());
 
-        return view('admin.posts.index', compact('posts'));
+        // Só criadoras ativas (scope default) — desativadas não têm posts visíveis aqui.
+        $creators = \App\Models\User::where('creator_status', 'approved')
+            ->whereNotNull('username')
+            ->orderBy('name')
+            ->get(['id', 'name', 'username']);
+
+        return view('admin.posts.index', compact('posts', 'creators'));
     }
 
     /**
