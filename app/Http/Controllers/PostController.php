@@ -424,6 +424,14 @@ class PostController extends Controller
             ], 403);
         }
 
+        // Conteúdo Único já comprado não pode ser excluído (tiraria o acesso de quem pagou)
+        if ($post->isPurchasedUnique()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este Conteúdo Único já foi comprado e não pode ser excluído — quem pagou perderia o acesso. Fale com o suporte se for um caso excepcional.',
+            ], 403);
+        }
+
         // Marca como deletada pelo usuário ao invés de deletar fisicamente
         $post->update(['deleted_by_user_at' => now()]);
 

@@ -104,4 +104,14 @@ class Post extends Model
     {
         return $this->purchases()->where('user_id', $userId)->exists();
     }
+
+    /**
+     * Conteúdo Único (paid) que já tem comprador não pode ser excluído/desabilitado:
+     * o soft-delete tiraria o acesso de quem pagou e o hard-delete cascatearia o
+     * registro em post_purchases. Único caminho é remoção manual no servidor (admin).
+     */
+    public function isPurchasedUnique(): bool
+    {
+        return $this->visibility === 'paid' && $this->purchases()->exists();
+    }
 }

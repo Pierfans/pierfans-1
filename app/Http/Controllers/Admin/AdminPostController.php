@@ -113,6 +113,15 @@ class AdminPostController extends Controller
     {
         $post = Post::with('media')->findOrFail($id);
 
+        // Conteúdo Único com compra: hard-delete cascatearia o registro em post_purchases.
+        // Bloqueia o botão; caso gritante = remoção manual no servidor (como combinado).
+        if ($post->isPurchasedUnique()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este Conteúdo Único tem compra registrada. Excluir apagaria o registro da compra (post_purchases). Remova manualmente no servidor se for realmente necessário.',
+            ], 403);
+        }
+
         foreach ($post->media as $media) {
             $media->delete(); // evento do model remove do storage (R2 ou local)
         }
