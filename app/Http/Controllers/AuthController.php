@@ -152,9 +152,9 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'slug' => $slug,
-                // Criadoras: email null (e-mail enviado mas não bloqueia o fluxo)
-                // Usuárias normais: null se verificação obrigatória, senão now()
-                'email_verified_at' => (!$isCreator && !PlatformSetting::isEmailVerificationRequired()) ? now() : null,
+                // Verificação desativada: todos (incl. criadora) já entram verificados.
+                // Verificação obrigatória: null até confirmar o e-mail.
+                'email_verified_at' => !PlatformSetting::isEmailVerificationRequired() ? now() : null,
             ];
 
             // Adiciona registration_url apenas se existir
@@ -200,14 +200,17 @@ class AuthController extends Controller
 
         // Fluxo especial para criadoras: login imediato sem bloqueio por e-mail
         if ($isCreator) {
-            try {
-                $this->sendVerificationEmail($user);
-                \Log::info('E-mail de verificação enviado para criadora', ['user_id' => $user->id]);
-            } catch (\Exception $e) {
-                \Log::error('Erro ao enviar e-mail de verificação para criadora', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage(),
-                ]);
+            // Só envia e-mail de verificação se a verificação estiver ativada
+            if (PlatformSetting::isEmailVerificationRequired()) {
+                try {
+                    $this->sendVerificationEmail($user);
+                    \Log::info('E-mail de verificação enviado para criadora', ['user_id' => $user->id]);
+                } catch (\Exception $e) {
+                    \Log::error('Erro ao enviar e-mail de verificação para criadora', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             $user->creator_onboarding = true;

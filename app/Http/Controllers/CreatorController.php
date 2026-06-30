@@ -165,6 +165,15 @@ class CreatorController extends Controller
             request()->session()->invalidate();
             request()->session()->regenerateToken();
 
+            // Verificação de e-mail desativada: já entra verificada, pula a tela de verificar
+            if ($emailVerified) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cadastro enviado! Aguarde a aprovação da equipe PierFans.',
+                    'redirect' => route('login'),
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Cadastro enviado! Verifique seu e-mail e aguarde a aprovação da equipe PierFans.',
