@@ -274,6 +274,12 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'index'])->name('index');
         });
 
+        // Vendas por Criador (desempenho dos influenciadores)
+        Route::prefix('vendas')->name('vendas.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\AdminSalesController::class, 'index'])->name('index');
+            Route::get('/{creatorId}', [\App\Http\Controllers\Admin\AdminSalesController::class, 'show'])->name('show');
+        });
+
         // Posts em Destaque
         Route::prefix('featured-posts')->name('featured-posts.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminFeaturedPostController::class, 'index'])->name('index');

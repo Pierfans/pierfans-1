@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -33,6 +34,37 @@ class LedgerEntry extends Model
         'affiliate_amount' => 'decimal:2',
         'occurred_at'      => 'datetime',
     ];
+
+    public function paymentTransaction(): BelongsTo
+    {
+        return $this->belongsTo(PaymentTransaction::class);
+    }
+
+    public function withdrawal(): BelongsTo
+    {
+        return $this->belongsTo(Withdrawal::class);
+    }
+
+    /**
+     * Id de Controle no SuitPay (o UUID que aparece no extrato "Exportar Excel").
+     * Vendas casam pelo request_number da transação; saques pelo suitpay_external_id.
+     */
+    public function suitpayControlId(): ?string
+    {
+        return $this->paymentTransaction?->request_number
+            ?? $this->withdrawal?->suitpay_external_id
+            ?? null;
+    }
+
+    /** Rótulo do tipo de lançamento em PT. */
+    public function typeLabel(): string
+    {
+        return [
+            'subscription_sale' => 'Assinatura',
+            'ppv_sale'          => 'Conteúdo Único',
+            'cashout'           => 'Saque',
+        ][$this->entry_type] ?? $this->entry_type;
+    }
 
     /**
      * Grava uma entrada de forma idempotente (chaveada pela origem) e resiliente:

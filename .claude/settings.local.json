@@ -4,11 +4,15 @@
       "Bash(grep -n \"upload_max_filesize\\\\|post_max_size\\\\|max_execution_time\\\\|max_input_time\" /etc/php/8.3/fpm/php.ini)",
       "Read(//etc/php/8.3/fpm/**)",
       "Bash(grep -n 'creator_onboarding\\\\|creator_status\\\\|return redirect\\\\|return $next' /home/pierfans/web/pierfans.com/public_html/app/Http/Middleware/EnsureCreatorOnboarding.php)",
-      "Bash(grep -n \"isHeic && typeof heic2any\\\\|previewItem.append\\(badge\\)\\\\|console.error.*HEIC\\\\|^\\\\s*}\\\\s*$\" /home/pierfans/web/pierfans.com/public_html/public/js/post-create.js)"
+      "Bash(grep -n \"isHeic && typeof heic2any\\\\|previewItem.append\\(badge\\)\\\\|console.error.*HEIC\\\\|^\\\\s*}\\\\s*$\" /home/pierfans/web/pierfans.com/public_html/public/js/post-create.js)",
+      "mcp__claude_ai_Google_Drive__read_file_content",
+      "mcp__claude_ai_Google_Drive__get_file_metadata",
+      "Read(//c/Users/PC/**)",
+      "Bash(node -e \"const j=require\\('./.claude.json'\\); console.log\\('has projects key:', !!j.projects\\); console.log\\('pierfans entry:', JSON.stringify\\(j.projects && j.projects['C:/Users/PC/Documents/pierfans'] ? Object.keys\\(j.projects['C:/Users/PC/Documents/pierfans']\\) : 'MISSING'\\)\\);\")"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "aidesigner"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

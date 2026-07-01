@@ -52,20 +52,28 @@ class AdminLedgerController extends Controller
 
     private function exportCsv($query, string $from, string $to)
     {
-        $rows = $query->latest('occurred_at')->get();
+        $rows = $query->with(['paymentTransaction', 'withdrawal'])->latest('occurred_at')->get();
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Data', 'Tipo', 'Bruto', 'Taxa SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
+            fputcsv($out, ['Data', 'Tipo', 'Id SuitPay', 'Bruto', 'Taxa SuitPay', 'Liquido SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
             foreach ($rows as $e) {
-                $platform = $e->entry_type === 'cashout'
-                    ? -$e->suitpay_fee
-                    : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
+                if ($e->entry_type === 'cashout') {
+                    $platform = -$e->suitpay_fee;
+                    // Saque: SuitPay debita o valor + a taxa da conta
+                    $liquidoSuitpay = -round($e->gross_amount + $e->suitpay_fee, 2);
+                } else {
+                    $platform = $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
+                    // Venda: o que de fato cai no saldo SuitPay é o bruto menos a taxa
+                    $liquidoSuitpay = round($e->gross_amount - $e->suitpay_fee, 2);
+                }
                 fputcsv($out, [
                     $e->occurred_at->format('d/m/Y H:i'),
-                    $e->entry_type,
+                    $e->typeLabel(),
+                    $e->suitpayControlId() ?? '',
                     number_format($e->gross_amount, 2, ',', '.'),
                     number_format($e->suitpay_fee, 2, ',', '.'),
+                    number_format($liquidoSuitpay, 2, ',', '.'),
                     number_format($e->creator_amount, 2, ',', '.'),
                     number_format($e->affiliate_amount, 2, ',', '.'),
                     number_format(round($platform, 2), 2, ',', '.'),

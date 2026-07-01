@@ -211,17 +211,18 @@ class PlatformSetting extends Model
     }
 
     /**
-     * Taxa do SuitPay numa entrada PIX (recebimento). ESTIMATIVA ~3,75%.
-     * O SuitPay NÃO envia a taxa de PIX recebido no webhook, então estimamos pela
-     * média de 3 extratos reais (jun 3,72% / mai 3,82% / ano 3,76%). O "1%" anunciado
-     * na tela do SuitPay é falso — o extrato cobra ~3,75%. Erro ~R$1/mês vs extrato.
+     * Taxa do SuitPay numa entrada PIX (recebimento): max(3,5% do valor, R$0,99).
+     * O SuitPay NÃO envia a taxa de PIX recebido no webhook, então estimamos por fórmula.
+     * CRAVADO com o extrato de jun/2026 que traz a taxa de CADA linha: +29,90→1,05 (3,5%),
+     * +50,00→1,75 (3,5%), +19,90→0,99, +1,00→0,99 (piso R$0,99, morde abaixo de ~R$28,28).
+     * Modelo 3,5%+0,99 fecha o mês em R$0,14 (R$76,96 vs R$77,10 real); o antigo 3,75%+0,50
+     * errava +R$1,70. O "1%" anunciado na tela do SuitPay é falso.
      * ponytail: estimativa proposital; fonte EXATA = extrato/Exportar Excel do SuitPay.
-     *           Se um dia precisar de exatidão (volume/fiscal), importar o real do extrato/API.
      */
     public static function suitpayFeeIn(float $amount): float
     {
-        $pct = (float) self::getValue('suitpay_fee_pix_in_percent', 3.75);
-        $min = (float) self::getValue('suitpay_fee_pix_in_min', 0.50);
+        $pct = (float) self::getValue('suitpay_fee_pix_in_percent', 3.5);
+        $min = (float) self::getValue('suitpay_fee_pix_in_min', 0.99);
         return round(max($amount * $pct / 100, $min), 2);
     }
 
