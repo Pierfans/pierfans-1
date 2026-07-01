@@ -576,6 +576,7 @@
                     _method: 'PUT',
                     description: $('#description').val(),
                     visibility: $('#visibility').val(),
+                    price: $('#price').val(),
                     delete_media: deletedMediaIds,
                     uploaded_files: uploadedFiles
                         .filter(f => f.uploaded && !f.error)
