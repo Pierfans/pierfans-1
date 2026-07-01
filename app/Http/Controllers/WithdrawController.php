@@ -78,23 +78,35 @@ class WithdrawController extends Controller
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        // Verifica saldo disponível ANTES de criar o saque
-        $availableBalance = $user->getAvailableBalance();
-        if ($validated['amount'] > $availableBalance) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Valor solicitado excede o saldo disponível para saque.',
-            ], 400);
-        }
-
-        // Cria a solicitação de saque
+        // Cria a solicitação de saque (teto diário + taxa avaliados dentro da transação)
         DB::beginTransaction();
         try {
+            $assess = Withdrawal::assessDailyFee($user->id, 'creator');
+            if (!$assess['allowed']) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => "Você atingiu o limite de {$assess['limit']} saques por dia.",
+                ], 400);
+            }
+            $fee = $assess['fee'];
+
+            // Saldo precisa cobrir o valor + a taxa do saque
+            $availableBalance = $user->getAvailableBalance();
+            if ($validated['amount'] + $fee > $availableBalance) {
+                DB::rollBack();
+                $msg = $fee > 0
+                    ? 'Saldo insuficiente para o valor + a taxa de R$ ' . number_format($fee, 2, ',', '.') . ' deste saque.'
+                    : 'Valor solicitado excede o saldo disponível para saque.';
+                return response()->json(['success' => false, 'message' => $msg], 400);
+            }
+
             $withdrawal = Withdrawal::create([
                 'user_id' => $user->id,
                 'type' => 'creator',
                 'bank_account_id' => $bankAccount->id,
                 'amount' => $validated['amount'],
+                'fee' => $fee,
                 'status' => 'pending',
             ]);
 

@@ -12,6 +12,7 @@ class Withdrawal extends Model
         'type', // 'creator' ou 'affiliate'
         'bank_account_id',
         'amount',
+        'fee',
         'status',
         'admin_notes',
         'processed_at',
@@ -22,9 +23,40 @@ class Withdrawal extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'fee' => 'decimal:2',
         'processed_at' => 'datetime',
         'suitpay_response_data' => 'array',
     ];
+
+    /**
+     * Regra de saque estilo Privacy: 1 saque grátis por dia (por tipo criador/afiliado),
+     * os demais custam uma taxa fixa; teto de N/dia. Conta só saques válidos
+     * (pending/transferred) para que um saque recusado não queime a franquia nem o teto.
+     *
+     * ponytail: global — chame DENTRO de uma transação. O lockForUpdate serializa os
+     * saques já existentes do dia; o caso raro do 1º-do-dia em duplo-clique não é coberto
+     * (upgrade: índice único (user_id, type, dia) ou lock por usuário se virar problema).
+     *
+     * @return array{count:int, fee:float, allowed:bool, limit:int}
+     */
+    public static function assessDailyFee(int $userId, string $type): array
+    {
+        $todayCount = self::where('user_id', $userId)
+            ->where('type', $type)
+            ->whereDate('created_at', now()->toDateString())
+            ->whereIn('status', ['pending', 'transferred'])
+            ->lockForUpdate()
+            ->count();
+
+        $limit = PlatformSetting::getDailyWithdrawLimit();
+
+        return [
+            'count'   => $todayCount,
+            'fee'     => $todayCount >= 1 ? PlatformSetting::getWithdrawExtraFee() : 0.0,
+            'allowed' => $todayCount < $limit,
+            'limit'   => $limit,
+        ];
+    }
 
     /**
      * Relacionamento com User

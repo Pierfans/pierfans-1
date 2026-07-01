@@ -22,13 +22,15 @@ class AdminLedgerController extends Controller
         $affiliatePaid = (float) (clone $sales)->sum('affiliate_amount');
         $feeIn         = (float) (clone $sales)->sum('suitpay_fee');
         $feeOut        = (float) (clone $cashouts)->sum('suitpay_fee');
+        $withdrawFee   = (float) (clone $cashouts)->sum('withdraw_fee');
         $cashoutTotal  = (float) (clone $cashouts)->sum('gross_amount');
 
         $subTotal = (float) (clone $base)->where('entry_type', 'subscription_sale')->sum('gross_amount');
         $ppvTotal = (float) (clone $base)->where('entry_type', 'ppv_sale')->sum('gross_amount');
 
-        // Receita líquida da plataforma = parte da plataforma nas vendas, menos as taxas do SuitPay (entrada + saída)
-        $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut;
+        // Receita líquida da plataforma = parte da plataforma nas vendas, menos as taxas do
+        // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
+        $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
 
         if ($request->get('export') === 'csv') {
             return $this->exportCsv((clone $base), $from, $to);
@@ -38,7 +40,7 @@ class AdminLedgerController extends Controller
 
         return view('admin.ledger.index', compact(
             'entries', 'from', 'to',
-            'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut',
+            'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal'
         ));
     }
@@ -59,8 +61,9 @@ class AdminLedgerController extends Controller
             fputcsv($out, ['Data', 'Tipo', 'Id SuitPay', 'Bruto', 'Taxa SuitPay', 'Liquido SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
             foreach ($rows as $e) {
                 if ($e->entry_type === 'cashout') {
-                    $platform = -$e->suitpay_fee;
-                    // Saque: SuitPay debita o valor + a taxa da conta
+                    // Saque: plataforma embolsa a taxa cobrada do usuário e paga o custo do SuitPay
+                    $platform = round($e->withdraw_fee - $e->suitpay_fee, 2);
+                    // SuitPay debita o valor + a taxa da conta
                     $liquidoSuitpay = -round($e->gross_amount + $e->suitpay_fee, 2);
                 } else {
                     $platform = $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;

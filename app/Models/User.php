@@ -308,11 +308,11 @@ class User extends Authenticatable implements MustVerifyEmail
             })
             ->sum('creator_amount');
         
-        // Subtrai saques pendentes e transferidos
+        // Subtrai saques pendentes e transferidos (valor + taxa do saque)
         $pendingWithdrawals = $this->withdrawals()
             ->where('type', 'creator')
             ->whereIn('status', ['pending', 'transferred'])
-            ->sum('amount');
+            ->sum(\DB::raw('amount + COALESCE(fee, 0)'));
         
         // Adiciona créditos manuais do tipo creator
         $manualCredits = $this->manualCredits()
@@ -488,10 +488,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
         });
         
-        // Subtrai saques pendentes e transferidos do afiliado
+        // Subtrai saques pendentes e transferidos do afiliado (valor + taxa do saque)
         $pendingWithdrawals = $this->affiliateWithdrawals()
             ->whereIn('status', ['pending', 'transferred'])
-            ->sum('amount');
+            ->sum(\DB::raw('amount + COALESCE(fee, 0)'));
         
         // Adiciona créditos manuais do tipo affiliate
         $manualCredits = $this->manualCredits()

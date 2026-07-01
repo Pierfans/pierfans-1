@@ -22,6 +22,7 @@ class LedgerEntry extends Model
         'withdrawal_id',
         'gross_amount',
         'suitpay_fee',
+        'withdraw_fee',
         'creator_amount',
         'affiliate_amount',
         'occurred_at',
@@ -30,6 +31,7 @@ class LedgerEntry extends Model
     protected $casts = [
         'gross_amount'     => 'decimal:2',
         'suitpay_fee'      => 'decimal:2',
+        'withdraw_fee'     => 'decimal:2',
         'creator_amount'   => 'decimal:2',
         'affiliate_amount' => 'decimal:2',
         'occurred_at'      => 'datetime',

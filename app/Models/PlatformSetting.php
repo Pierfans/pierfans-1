@@ -68,7 +68,15 @@ class PlatformSetting extends Model
      */
     public static function getMinWithdrawAmount(): float
     {
-        return (float) self::getValue('min_withdraw_amount', 30.00);
+        return (float) self::getValue('min_withdraw_amount', 50.00);
+    }
+
+    /**
+     * Taxa fixa cobrada do usuário nos saques além do 1º grátis do dia (modelo Privacy).
+     */
+    public static function getWithdrawExtraFee(): float
+    {
+        return (float) self::getValue('withdraw_extra_fee', 3.50);
     }
 
     /**

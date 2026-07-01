@@ -94,7 +94,7 @@
                                 @php
                                     $label = ['subscription_sale' => 'Assinatura', 'ppv_sale' => 'PPV', 'cashout' => 'Saque'][$e->entry_type] ?? $e->entry_type;
                                     $platform = $e->entry_type === 'cashout'
-                                        ? -$e->suitpay_fee
+                                        ? $e->withdraw_fee - $e->suitpay_fee
                                         : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
                                 @endphp
                                 <tr class="hover:bg-gray-50">

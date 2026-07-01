@@ -313,6 +313,7 @@ class SuitPayWebhookController extends Controller
                         'withdrawal_id' => $withdrawal->id,
                         'gross_amount' => $withdrawal->amount,
                         'suitpay_fee'  => PlatformSetting::suitpayFeeOut((float) $withdrawal->amount),
+                        'withdraw_fee' => (float) ($withdrawal->fee ?? 0), // taxa cobrada do usuário = receita da plataforma
                         'creator_amount'   => 0,
                         'affiliate_amount' => 0,
                         'occurred_at'  => now(),
