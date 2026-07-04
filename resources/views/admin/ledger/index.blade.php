@@ -61,11 +61,6 @@
             </div>
         </div>
 
-        <!-- Aviso de estimativa -->
-        <p class="text-xs text-gray-500 mb-6 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            ⚠️ A taxa de <strong>entrada (PIX)</strong> é <strong>estimada</strong> por <strong>max(3,5%; R$0,99)</strong> por transação — o SuitPay não informa a taxa de PIX recebido no webhook. Modelo cravado com o extrato de jun/2026 (fecha o mês em ~R$0,14). Saque (3,5%) e cartão são exatos. A fonte exata continua sendo o extrato do SuitPay (Exportar Excel).
-        </p>
-
         <!-- Tabela -->
         <div class="bg-white rounded-lg shadow-sm p-6">
             <div class="flex items-center justify-between mb-4">
