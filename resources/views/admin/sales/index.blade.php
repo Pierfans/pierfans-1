@@ -19,6 +19,23 @@
                     <label class="block text-xs text-gray-500 mb-1">Até</label>
                     <input type="date" name="to" value="{{ $to }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+                    <select name="tipo" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="todos" @selected($tipo === 'todos')>Todos</option>
+                        <option value="sub" @selected($tipo === 'sub')>Assinatura</option>
+                        <option value="ppv" @selected($tipo === 'ppv')>Conteúdo Único</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Criador</label>
+                    <select name="creator" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="">Todos</option>
+                        @foreach($allCreators as $c)
+                            <option value="{{ $c->id }}" @selected($creator === $c->id)>{{ $c->name }} ({{ '@' . $c->username }})</option>
+                        @endforeach
+                    </select>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">Filtrar</button>
                 <a href="{{ route('admin.vendas.index', array_merge(request()->query(), ['export' => 'csv'])) }}"
                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">Exportar CSV</a>
