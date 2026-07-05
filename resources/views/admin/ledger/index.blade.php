@@ -29,6 +29,19 @@
                         <option value="cashout" @selected($tipo === 'cashout')>Saque</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Pessoa</label>
+                    <div id="pessoaChips" class="flex flex-wrap items-center gap-1 min-w-[220px] px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white cursor-text">
+                        <input type="text" id="pessoaInput" list="pessoas-list" autocomplete="off" placeholder="Nome ou @usuário"
+                               class="flex-1 min-w-[120px] border-0 outline-none focus:ring-0 py-1 text-sm">
+                    </div>
+                    <datalist id="pessoas-list">
+                        @foreach($allCreators as $c)
+                            <option value="{{ $c->name }}"></option>
+                            @if($c->username)<option value="{{ $c->username }}"></option>@endif
+                        @endforeach
+                    </datalist>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
                     Filtrar
                 </button>
@@ -86,6 +99,7 @@
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pessoa</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bruto</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Taxa SuitPay</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criador</th>
@@ -100,6 +114,18 @@
                                     $platform = $e->entry_type === 'cashout'
                                         ? $e->withdraw_fee - $e->suitpay_fee
                                         : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
+
+                                    // Pessoa da linha: solicitante no saque, criador na venda (+ comprador como contexto).
+                                    if ($e->entry_type === 'cashout') {
+                                        $person  = $e->withdrawal?->user;
+                                        $context = $e->withdrawal?->type === 'affiliate' ? 'afiliado' : 'criador';
+                                    } else {
+                                        $person  = $e->paymentTransaction?->creator;
+                                        $buyer   = $e->paymentTransaction?->user;
+                                        $context = $buyer ? 'comprado por ' . $buyer->name : null;
+                                    }
+                                    $palette = ['bg-indigo-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-purple-500', 'bg-rose-500', 'bg-teal-500'];
+                                    $avatarColor = $person ? $palette[crc32($person->name) % count($palette)] : 'bg-gray-300';
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $e->occurred_at->format('d/m/Y H:i') }}</td>
@@ -108,12 +134,22 @@
                                             {{ $e->entry_type === 'cashout' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700' }}">
                                             {{ $label }}
                                         </span>
-                                        @if($e->entry_type === 'cashout' && $e->withdrawal?->user)
-                                            <div class="text-xs text-gray-500 mt-1">
-                                                {{ $e->withdrawal->user->name }}
-                                                <span class="text-gray-400">{{ '@' . $e->withdrawal->user->username }}</span>
-                                                · {{ $e->withdrawal->type === 'affiliate' ? 'afiliado' : 'criador' }}
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        @if($person)
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold text-white {{ $avatarColor }}">
+                                                    {{ mb_strtoupper(mb_substr($person->name, 0, 1)) }}
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <div class="text-sm font-medium text-gray-900 truncate">{{ $person->name }}</div>
+                                                    <div class="text-xs text-gray-400 truncate">
+                                                        {{ '@' . $person->username }}@if($context) · {{ $context }}@endif
+                                                    </div>
+                                                </div>
                                             </div>
+                                        @else
+                                            <span class="text-sm text-gray-300">—</span>
                                         @endif
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($e->gross_amount, 2, ',', '.') }}</td>
@@ -137,4 +173,66 @@
             @endif
         </div>
     </div>
+
+    <script>
+    (function () {
+        var box = document.getElementById('pessoaChips');
+        var input = document.getElementById('pessoaInput');
+        var form = input.closest('form');
+        var options = new Set(
+            Array.prototype.map.call(document.querySelectorAll('#pessoas-list option'), function (o) {
+                return o.value.toLowerCase();
+            })
+        );
+
+        function addChip(value) {
+            value = value.trim();
+            if (!value) return;
+            var exists = Array.prototype.some.call(box.querySelectorAll('input[name="pessoa[]"]'), function (h) {
+                return h.value.toLowerCase() === value.toLowerCase();
+            });
+            if (exists) { input.value = ''; return; }
+            var chip = document.createElement('span');
+            chip.className = 'inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 rounded-full px-2 py-0.5 text-xs font-medium';
+            var label = document.createElement('span');
+            label.textContent = value;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'text-indigo-500 hover:text-indigo-800';
+            btn.innerHTML = '&times;';
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'pessoa[]';
+            hidden.value = value;
+            btn.addEventListener('click', function () { chip.remove(); });
+            chip.appendChild(label);
+            chip.appendChild(btn);
+            chip.appendChild(hidden);
+            box.insertBefore(chip, input);
+            input.value = '';
+        }
+
+        box.addEventListener('click', function () { input.focus(); });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addChip(input.value);
+            } else if (e.key === 'Backspace' && input.value === '') {
+                var chips = box.querySelectorAll(':scope > span');
+                if (chips.length) chips[chips.length - 1].remove();
+            }
+        });
+
+        input.addEventListener('input', function () {
+            if (options.has(input.value.trim().toLowerCase())) addChip(input.value);
+        });
+
+        form.addEventListener('submit', function () {
+            if (input.value.trim()) addChip(input.value);
+        });
+
+        (@json($personTerms) || []).forEach(addChip);
+    })();
+    </script>
 @endsection
