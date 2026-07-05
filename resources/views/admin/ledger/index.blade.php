@@ -124,8 +124,6 @@
                                         $buyer   = $e->paymentTransaction?->user;
                                         $context = $buyer ? 'comprado por ' . $buyer->name : null;
                                     }
-                                    $palette = ['bg-indigo-500', 'bg-pink-500', 'bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-purple-500', 'bg-rose-500', 'bg-teal-500'];
-                                    $avatarColor = $person ? $palette[crc32($person->name) % count($palette)] : 'bg-gray-300';
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $e->occurred_at->format('d/m/Y H:i') }}</td>
@@ -137,16 +135,9 @@
                                     </td>
                                     <td class="px-4 py-4">
                                         @if($person)
-                                            <div class="flex items-center gap-2">
-                                                <div class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold text-white {{ $avatarColor }}">
-                                                    {{ mb_strtoupper(mb_substr($person->name, 0, 1)) }}
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <div class="text-sm font-medium text-gray-900 truncate">{{ $person->name }}</div>
-                                                    <div class="text-xs text-gray-400 truncate">
-                                                        {{ '@' . $person->username }}@if($context) · {{ $context }}@endif
-                                                    </div>
-                                                </div>
+                                            <div class="text-sm font-medium text-gray-900">{{ $person->name }}</div>
+                                            <div class="text-xs text-gray-400">
+                                                {{ '@' . $person->username }}@if($context) · {{ $context }}@endif
                                             </div>
                                         @else
                                             <span class="text-sm text-gray-300">—</span>
