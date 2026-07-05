@@ -264,8 +264,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/add-balance', [\App\Http\Controllers\Admin\AdminWalletController::class, 'addBalance'])->name('add-balance');
         });
 
-        // Conciliação Financeira (ledger)
-        Route::prefix('conciliacao')->name('conciliacao.')->group(function () {
+        // Fluxo de Caixa (ledger)
+        Route::prefix('fluxo-caixa')->name('fluxo-caixa.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'index'])->name('index');
         });
 

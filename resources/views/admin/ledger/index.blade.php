@@ -11,7 +11,7 @@
 
         <!-- Filtro de período + export -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <form method="GET" action="{{ route('admin.conciliacao.index') }}" class="flex flex-wrap items-end gap-3">
+            <form method="GET" action="{{ route('admin.fluxo-caixa.index') }}" class="flex flex-wrap items-end gap-3">
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">De</label>
                     <input type="date" name="from" value="{{ $from }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
@@ -23,7 +23,7 @@
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
                     Filtrar
                 </button>
-                <a href="{{ route('admin.conciliacao.index', array_merge(request()->query(), ['export' => 'csv'])) }}"
+                <a href="{{ route('admin.fluxo-caixa.index', array_merge(request()->query(), ['export' => 'csv'])) }}"
                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
                     Exportar CSV
                 </a>
