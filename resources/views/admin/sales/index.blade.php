@@ -29,12 +29,15 @@
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Criador</label>
-                    <select name="creator" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        <option value="">Todos</option>
-                        @foreach($allCreators as $c)
-                            <option value="{{ $c->id }}" @selected($creator === $c->id)>{{ $c->name }} ({{ '@' . $c->username }})</option>
-                        @endforeach
-                    </select>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                            </svg>
+                        </span>
+                        <input type="text" name="creator" value="{{ $creatorSearch }}" placeholder="Nome ou @usuário"
+                               class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    </div>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">Filtrar</button>
                 <a href="{{ route('admin.vendas.index', array_merge(request()->query(), ['export' => 'csv'])) }}"

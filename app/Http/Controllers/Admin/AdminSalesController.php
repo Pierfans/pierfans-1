@@ -19,15 +19,24 @@ class AdminSalesController extends Controller
     public function index(Request $request)
     {
         [$from, $to] = $this->period($request);
-        $tipo    = in_array($request->get('tipo'), ['sub', 'ppv']) ? $request->get('tipo') : 'todos';
-        $creator = (int) $request->get('creator') ?: null;
+        $tipo          = in_array($request->get('tipo'), ['sub', 'ppv']) ? $request->get('tipo') : 'todos';
+        $creatorSearch = trim((string) $request->get('creator', ''));
+
+        // Busca por nome ou @usuário — resolve os ids que batem antes de agregar.
+        $creatorIds = null;
+        if ($creatorSearch !== '') {
+            $creatorIds = User::where('creator_status', 'approved')
+                ->where(fn ($q) => $q->where('name', 'like', "%{$creatorSearch}%")
+                                     ->orWhere('username', 'like', "%{$creatorSearch}%"))
+                ->pluck('id');
+        }
 
         $subs = collect();
         if ($tipo !== 'ppv') {
             $q = Subscription::where('total_amount', '>', 0)
                 ->whereBetween('created_at', ["$from 00:00:00", "$to 23:59:59"]);
-            if ($creator) {
-                $q->where('creator_id', $creator);
+            if ($creatorIds !== null) {
+                $q->whereIn('creator_id', $creatorIds);
             }
             $subs = $q->selectRaw('creator_id, count(*) as qtd, sum(total_amount) as bruto, sum(creator_amount) as criador')
                 ->groupBy('creator_id')->get()->keyBy('creator_id');
@@ -36,8 +45,8 @@ class AdminSalesController extends Controller
         $ppv = collect();
         if ($tipo !== 'sub') {
             $q = PostPurchase::whereBetween('purchased_at', ["$from 00:00:00", "$to 23:59:59"]);
-            if ($creator) {
-                $q->where('creator_id', $creator);
+            if ($creatorIds !== null) {
+                $q->whereIn('creator_id', $creatorIds);
             }
             $ppv = $q->selectRaw('creator_id, count(*) as qtd, sum(amount_paid) as bruto, sum(creator_amount) as criador')
                 ->groupBy('creator_id')->get()->keyBy('creator_id');
@@ -69,10 +78,7 @@ class AdminSalesController extends Controller
         $totSubs  = $rows->sum('subs_qtd');
         $totPpv   = $rows->sum('ppv_qtd');
 
-        $allCreators = User::where('creator_status', 'approved')
-            ->orderBy('name')->get(['id', 'name', 'username']);
-
-        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creator', 'allCreators'));
+        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorSearch'));
     }
 
     public function show(Request $request, int $creatorId)
