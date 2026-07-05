@@ -11,6 +11,7 @@ class AdminLedgerController extends Controller
     public function index(Request $request)
     {
         [$from, $to] = $this->period($request);
+        $tipo = in_array($request->get('tipo'), ['subscription_sale', 'ppv_sale', 'cashout']) ? $request->get('tipo') : 'todos';
 
         $base = LedgerEntry::whereBetween('occurred_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
 
@@ -32,14 +33,20 @@ class AdminLedgerController extends Controller
         // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
         $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
 
-        if ($request->get('export') === 'csv') {
-            return $this->exportCsv((clone $base), $from, $to);
+        // Cards = visão geral do período; o filtro de tipo afeta só a lista de movimentos.
+        $listing = (clone $base);
+        if ($tipo !== 'todos') {
+            $listing->where('entry_type', $tipo);
         }
 
-        $entries = (clone $base)->latest('occurred_at')->paginate(50)->appends($request->query());
+        if ($request->get('export') === 'csv') {
+            return $this->exportCsv((clone $listing), $from, $to);
+        }
+
+        $entries = $listing->with('withdrawal.user')->latest('occurred_at')->paginate(50)->appends($request->query());
 
         return view('admin.ledger.index', compact(
-            'entries', 'from', 'to',
+            'entries', 'from', 'to', 'tipo',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal'
         ));
@@ -54,11 +61,11 @@ class AdminLedgerController extends Controller
 
     private function exportCsv($query, string $from, string $to)
     {
-        $rows = $query->with(['paymentTransaction', 'withdrawal'])->latest('occurred_at')->get();
+        $rows = $query->with(['paymentTransaction', 'withdrawal.user'])->latest('occurred_at')->get();
 
         return response()->streamDownload(function () use ($rows) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Data', 'Tipo', 'Id SuitPay', 'Bruto', 'Taxa SuitPay', 'Liquido SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
+            fputcsv($out, ['Data', 'Tipo', 'Solicitante', 'Id SuitPay', 'Bruto', 'Taxa SuitPay', 'Liquido SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
             foreach ($rows as $e) {
                 if ($e->entry_type === 'cashout') {
                     // Saque: plataforma embolsa a taxa cobrada do usuário e paga o custo do SuitPay
@@ -70,9 +77,13 @@ class AdminLedgerController extends Controller
                     // Venda: o que de fato cai no saldo SuitPay é o bruto menos a taxa
                     $liquidoSuitpay = round($e->gross_amount - $e->suitpay_fee, 2);
                 }
+                $solicitante = $e->entry_type === 'cashout' && $e->withdrawal?->user
+                    ? $e->withdrawal->user->name . ' (@' . $e->withdrawal->user->username . ')'
+                    : '';
                 fputcsv($out, [
                     $e->occurred_at->format('d/m/Y H:i'),
                     $e->typeLabel(),
+                    $solicitante,
                     $e->suitpayControlId() ?? '',
                     number_format($e->gross_amount, 2, ',', '.'),
                     number_format($e->suitpay_fee, 2, ',', '.'),

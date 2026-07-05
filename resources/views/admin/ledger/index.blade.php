@@ -20,6 +20,15 @@
                     <label class="block text-xs text-gray-500 mb-1">Até</label>
                     <input type="date" name="to" value="{{ $to }}" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+                    <select name="tipo" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="todos" @selected($tipo === 'todos')>Todos</option>
+                        <option value="subscription_sale" @selected($tipo === 'subscription_sale')>Assinatura</option>
+                        <option value="ppv_sale" @selected($tipo === 'ppv_sale')>Conteúdo Único</option>
+                        <option value="cashout" @selected($tipo === 'cashout')>Saque</option>
+                    </select>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
                     Filtrar
                 </button>
@@ -99,6 +108,13 @@
                                             {{ $e->entry_type === 'cashout' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700' }}">
                                             {{ $label }}
                                         </span>
+                                        @if($e->entry_type === 'cashout' && $e->withdrawal?->user)
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                {{ $e->withdrawal->user->name }}
+                                                <span class="text-gray-400">{{ '@' . $e->withdrawal->user->username }}</span>
+                                                · {{ $e->withdrawal->type === 'affiliate' ? 'afiliado' : 'criador' }}
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($e->gross_amount, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-red-600">R$ {{ number_format($e->suitpay_fee, 2, ',', '.') }}</td>
