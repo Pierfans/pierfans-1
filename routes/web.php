@@ -264,11 +264,6 @@ Route::middleware('auth')->group(function () {
             Route::post('/{id}/add-balance', [\App\Http\Controllers\Admin\AdminWalletController::class, 'addBalance'])->name('add-balance');
         });
 
-        // Conteúdo Único (PPV)
-        Route::prefix('ppv')->name('ppv.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\AdminPPVController::class, 'index'])->name('index');
-        });
-
         // Conciliação Financeira (ledger)
         Route::prefix('conciliacao')->name('conciliacao.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'index'])->name('index');

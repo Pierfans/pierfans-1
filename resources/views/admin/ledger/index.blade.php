@@ -1,11 +1,11 @@
 @extends('layouts.admin')
 
-@section('title', 'Conciliação Financeira')
+@section('title', 'Fluxo de Caixa')
 
 @section('content')
     <div class="max-w-7xl mx-auto">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Conciliação Financeira</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Fluxo de Caixa</h1>
             <p class="text-gray-600 mt-2">Entradas, taxas do SuitPay e repasses — receita líquida real da plataforma</p>
         </div>
 

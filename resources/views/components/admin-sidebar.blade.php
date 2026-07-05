@@ -118,17 +118,6 @@
                 </a>
             </li>
 
-            <!-- Conteúdo Único (PPV) -->
-            <li>
-                <a href="{{ route('admin.ppv.index') }}"
-                   class="flex items-center px-4 py-3 rounded-lg hover:bg-gray-900 transition-colors {{ request()->routeIs('admin.ppv.*') ? 'bg-gray-900' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8h12a2 2 0 012 2v4a2 2 0 01-2 2H3a2 2 0 01-2-2v-4a2 2 0 012-2z" />
-                    </svg>
-                    <span class="font-medium">Conteúdo Único</span>
-                </a>
-            </li>
-
             <!-- Conciliação Financeira -->
             <li>
                 <a href="{{ route('admin.conciliacao.index') }}"
@@ -136,7 +125,7 @@
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
                     </svg>
-                    <span class="font-medium">Taxas e Repasses</span>
+                    <span class="font-medium">Fluxo de Caixa</span>
                 </a>
             </li>
 
