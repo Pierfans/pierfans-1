@@ -29,22 +29,16 @@
                 </div>
                 <div>
                     <label class="block text-xs text-gray-500 mb-1">Criador</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
-                            </svg>
-                        </span>
-                        <input type="text" name="creator" value="{{ $creatorSearch }}" placeholder="Nome ou @usuário"
-                               list="creators-list" autocomplete="off"
-                               class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        <datalist id="creators-list">
-                            @foreach($allCreators as $c)
-                                <option value="{{ $c->name }}"></option>
-                                @if($c->username)<option value="{{ $c->username }}"></option>@endif
-                            @endforeach
-                        </datalist>
+                    <div id="creatorChips" class="flex flex-wrap items-center gap-1 min-w-[220px] px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white cursor-text">
+                        <input type="text" id="creatorInput" list="creators-list" autocomplete="off" placeholder="Nome ou @usuário"
+                               class="flex-1 min-w-[120px] border-0 outline-none focus:ring-0 py-1 text-sm">
                     </div>
+                    <datalist id="creators-list">
+                        @foreach($allCreators as $c)
+                            <option value="{{ $c->name }}"></option>
+                            @if($c->username)<option value="{{ $c->username }}"></option>@endif
+                        @endforeach
+                    </datalist>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">Filtrar</button>
                 <a href="{{ route('admin.vendas.index', array_merge(request()->query(), ['export' => 'csv'])) }}"
@@ -111,4 +105,69 @@
             @endif
         </div>
     </div>
+
+    <script>
+    (function () {
+        var box = document.getElementById('creatorChips');
+        var input = document.getElementById('creatorInput');
+        var form = input.closest('form');
+        var options = new Set(
+            Array.prototype.map.call(document.querySelectorAll('#creators-list option'), function (o) {
+                return o.value.toLowerCase();
+            })
+        );
+
+        function addChip(value) {
+            value = value.trim();
+            if (!value) return;
+            var exists = Array.prototype.some.call(box.querySelectorAll('input[name="creator[]"]'), function (h) {
+                return h.value.toLowerCase() === value.toLowerCase();
+            });
+            if (exists) { input.value = ''; return; }
+            var chip = document.createElement('span');
+            chip.className = 'inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 rounded-full px-2 py-0.5 text-xs font-medium';
+            var label = document.createElement('span');
+            label.textContent = value;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'text-indigo-500 hover:text-indigo-800';
+            btn.innerHTML = '&times;';
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'creator[]';
+            hidden.value = value;
+            btn.addEventListener('click', function () { chip.remove(); });
+            chip.appendChild(label);
+            chip.appendChild(btn);
+            chip.appendChild(hidden);
+            box.insertBefore(chip, input);
+            input.value = '';
+        }
+
+        box.addEventListener('click', function () { input.focus(); });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addChip(input.value);
+            } else if (e.key === 'Backspace' && input.value === '') {
+                var chips = box.querySelectorAll(':scope > span');
+                if (chips.length) chips[chips.length - 1].remove();
+            }
+        });
+
+        // Selecionou uma sugestao do datalist -> vira chip na hora
+        input.addEventListener('input', function () {
+            if (options.has(input.value.trim().toLowerCase())) addChip(input.value);
+        });
+
+        // Nao perde um termo digitado sem Enter ao filtrar
+        form.addEventListener('submit', function () {
+            if (input.value.trim()) addChip(input.value);
+        });
+
+        // Recria os chips dos termos ja aplicados
+        (@json($creatorTerms) || []).forEach(addChip);
+    })();
+    </script>
 @endsection

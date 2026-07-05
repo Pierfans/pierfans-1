@@ -20,15 +20,19 @@ class AdminSalesController extends Controller
     {
         [$from, $to] = $this->period($request);
         $tipo          = in_array($request->get('tipo'), ['sub', 'ppv']) ? $request->get('tipo') : 'todos';
-        $creatorSearch = trim((string) $request->get('creator', ''));
+        $creatorTerms = collect((array) $request->get('creator'))
+            ->map(fn ($t) => trim((string) $t))->filter()->unique()->values();
 
-        // Busca por nome ou @usuário — resolve os ids que batem antes de agregar.
+        // Busca por nome ou @usuário — qualquer termo casa (OR). Resolve os ids antes de agregar.
         $creatorIds = null;
-        if ($creatorSearch !== '') {
+        if ($creatorTerms->isNotEmpty()) {
             $creatorIds = User::where('creator_status', 'approved')
-                ->where(fn ($q) => $q->where('name', 'like', "%{$creatorSearch}%")
-                                     ->orWhere('username', 'like', "%{$creatorSearch}%"))
-                ->pluck('id');
+                ->where(function ($q) use ($creatorTerms) {
+                    foreach ($creatorTerms as $t) {
+                        $q->orWhere('name', 'like', "%{$t}%")
+                          ->orWhere('username', 'like', "%{$t}%");
+                    }
+                })->pluck('id');
         }
 
         $subs = collect();
@@ -81,7 +85,7 @@ class AdminSalesController extends Controller
         $allCreators = User::where('creator_status', 'approved')
             ->orderBy('name')->get(['name', 'username']);
 
-        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorSearch', 'allCreators'));
+        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorTerms', 'allCreators'));
     }
 
     public function show(Request $request, int $creatorId)
