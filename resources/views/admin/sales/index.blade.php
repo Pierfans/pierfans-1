@@ -36,7 +36,14 @@
                             </svg>
                         </span>
                         <input type="text" name="creator" value="{{ $creatorSearch }}" placeholder="Nome ou @usuário"
+                               list="creators-list" autocomplete="off"
                                class="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <datalist id="creators-list">
+                            @foreach($allCreators as $c)
+                                <option value="{{ $c->name }}"></option>
+                                @if($c->username)<option value="{{ $c->username }}"></option>@endif
+                            @endforeach
+                        </datalist>
                     </div>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">Filtrar</button>

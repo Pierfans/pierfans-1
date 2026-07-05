@@ -78,7 +78,10 @@ class AdminSalesController extends Controller
         $totSubs  = $rows->sum('subs_qtd');
         $totPpv   = $rows->sum('ppv_qtd');
 
-        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorSearch'));
+        $allCreators = User::where('creator_status', 'approved')
+            ->orderBy('name')->get(['name', 'username']);
+
+        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorSearch', 'allCreators'));
     }
 
     public function show(Request $request, int $creatorId)
