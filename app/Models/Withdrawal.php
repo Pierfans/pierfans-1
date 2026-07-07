@@ -39,7 +39,7 @@ class Withdrawal extends Model
      *
      * @return array{count:int, fee:float, allowed:bool, limit:int}
      */
-    public static function assessDailyFee(int $userId, string $type): array
+    public static function assessDailyFee(int $userId, string $type, float $amount = 0): array
     {
         $todayCount = self::where('user_id', $userId)
             ->where('type', $type)
@@ -52,7 +52,9 @@ class Withdrawal extends Model
 
         return [
             'count'   => $todayCount,
-            'fee'     => $todayCount >= 1 ? PlatformSetting::getWithdrawExtraFee() : 0.0,
+            // 1º saque do dia grátis (plataforma absorve o custo SuitPay); nos extras, quem saca
+            // paga a taxa real de saída da SuitPay (3,5%) — repassa o custo, plataforma fica zero a zero.
+            'fee'     => $todayCount >= 1 ? PlatformSetting::suitpayFeeOut($amount) : 0.0,
             'allowed' => $todayCount < $limit,
             'limit'   => $limit,
         ];

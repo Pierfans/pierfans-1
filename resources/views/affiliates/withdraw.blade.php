@@ -302,7 +302,7 @@
                 @else
                     <!-- Formulário de saque -->
                     <p class="text-sm text-[#706f6c] mb-6">
-                        Faça até {{ $dailyWithdrawLimit }} saques diários, sendo o primeiro inteiramente grátis. Os próximos saques do dia custam apenas R$ 3,50.
+                        Faça até {{ $dailyWithdrawLimit }} saques diários, sendo o primeiro inteiramente grátis. Os próximos saques do dia custam 3,5% do valor sacado.
                     </p>
 
                     <div class="mb-6">

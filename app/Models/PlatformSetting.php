@@ -72,14 +72,6 @@ class PlatformSetting extends Model
     }
 
     /**
-     * Taxa fixa cobrada do usuário nos saques além do 1º grátis do dia (modelo Privacy).
-     */
-    public static function getWithdrawExtraFee(): float
-    {
-        return (float) self::getValue('withdraw_extra_fee', 3.50);
-    }
-
-    /**
      * Define o valor mínimo de saque
      */
     public static function setMinWithdrawAmount(float $amount): void

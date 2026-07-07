@@ -81,7 +81,7 @@ class WithdrawController extends Controller
         // Cria a solicitação de saque (teto diário + taxa avaliados dentro da transação)
         DB::beginTransaction();
         try {
-            $assess = Withdrawal::assessDailyFee($user->id, 'creator');
+            $assess = Withdrawal::assessDailyFee($user->id, 'creator', (float) $validated['amount']);
             if (!$assess['allowed']) {
                 DB::rollBack();
                 return response()->json([

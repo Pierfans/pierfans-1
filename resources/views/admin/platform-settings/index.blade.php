@@ -362,7 +362,7 @@
                             <ul class="text-sm text-yellow-700 mt-2 ml-4 list-disc">
                                 <li>Os criadores podem fazer até <strong>{{ $daily_withdraw_limit }} saques por dia</strong></li>
                                 <li>O primeiro saque do dia é <strong>gratuito</strong></li>
-                                <li>Os próximos saques do dia custam <strong>R$ 3,50</strong> cada</li>
+                                <li>Os próximos saques do dia custam <strong>3,5% do valor</strong> (a taxa real do SuitPay, repassada a quem saca)</li>
                                 <li>O valor mínimo para saque é <strong>R$ {{ number_format($min_withdraw_amount, 2, ',', '.') }}</strong></li>
                             </ul>
                         </div>
