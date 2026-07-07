@@ -49,6 +49,9 @@ class AdminLedgerController extends Controller
                       + (float) (clone $allCash)->sum('withdraw_fee');
         // Ponte: a diferença é o que ainda é dos criadores/afiliados (ganharam mas não sacaram).
         $owedToCreators = $accountBalance - $platformCash;
+        // Desde quando o fluxo é registrado (o "saldo" abaixo é fluxo desde essa data, NÃO o saldo real do SuitPay:
+        // ignora a abertura da conta e retiradas manuais que não passam pelo gateway).
+        $ledgerStart = LedgerEntry::min('occurred_at');
 
         // Cards = visão geral do período; o filtro de tipo afeta só a lista de movimentos.
         $listing = (clone $base);
@@ -66,7 +69,7 @@ class AdminLedgerController extends Controller
             'entries', 'from', 'to', 'tipo',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'accountBalance', 'platformCash', 'owedToCreators'
+            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart'
         ));
     }
 

@@ -9,18 +9,18 @@
             <p class="text-gray-600 mt-2">Entradas, taxas do SuitPay e repasses — receita líquida real da plataforma</p>
         </div>
 
-        <!-- Caixa agora (all-time — NÃO muda com o filtro abaixo) -->
+        <!-- Resumo registrado (all-time — NÃO muda com o filtro abaixo) -->
         <div class="mb-6">
             <div class="flex items-baseline gap-2 mb-2">
-                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Caixa agora</h2>
-                <span class="text-xs text-gray-400">total — não muda com o filtro abaixo</span>
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Resumo registrado</h2>
+                <span class="text-xs text-gray-400">acumulado — não muda com o filtro abaixo</span>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-emerald-500">
-                    <p class="text-sm text-gray-500">Saldo em conta <span class="text-xs text-gray-400">(estimado)</span></p>
+                    <p class="text-sm text-gray-500">Líquido movimentado</p>
                     <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($accountBalance, 2, ',', '.') }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Tudo que está na conta SuitPay hoje — inclui R$ {{ number_format($owedToCreators, 2, ',', '.') }} que ainda são dos criadores/afiliados (ganharam, não sacaram).</p>
-                    <p class="text-xs text-gray-400 mt-1">Estimado por vendas/saques; compare com o saldo real no painel SuitPay.</p>
+                    <p class="text-xs text-gray-400 mt-1">Vendas − saques, já fora as taxas, desde o início do registro ({{ $ledgerStart ? \Illuminate\Support\Carbon::parse($ledgerStart)->format('d/m/Y') : '—' }}). Inclui R$ {{ number_format($owedToCreators, 2, ',', '.') }} que ainda são dos criadores (ganharam, não sacaram).</p>
+                    <p class="text-xs text-amber-600 mt-1">Não é o saldo real do SuitPay — ignora a abertura da conta e retiradas manuais. Saldo real: reconciliação por extrato (em breve).</p>
                 </div>
                 <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
