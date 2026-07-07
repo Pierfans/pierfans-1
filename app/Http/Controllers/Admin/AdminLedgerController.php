@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\LedgerEntry;
+use App\Models\SuitpayStatementEntry;
 use Illuminate\Http\Request;
 
 class AdminLedgerController extends Controller
@@ -65,12 +66,82 @@ class AdminLedgerController extends Controller
 
         $entries = $listing->with('withdrawal.user')->latest('occurred_at')->paginate(50)->appends($request->query());
 
+        // Reconciliação contra o extrato real do SuitPay (se algum foi importado).
+        $recon = $this->reconciliation($ledgerStart);
+
         return view('admin.ledger.index', compact(
             'entries', 'from', 'to', 'tipo',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart'
+            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart', 'recon'
         ));
+    }
+
+    /**
+     * Importa um ou mais CSVs de extrato do SuitPay (painel → Exportar).
+     * Idempotente (line_hash): re-subir o mesmo arquivo não duplica.
+     */
+    public function importExtrato(Request $request)
+    {
+        $request->validate([
+            'extrato'   => 'required|array',
+            'extrato.*' => 'file|max:5120', // 5MB por arquivo; o parser ignora linhas fora do formato
+        ]);
+
+        $novas = 0;
+        $arquivos = 0;
+        foreach ($request->file('extrato') as $file) {
+            $novas += SuitpayStatementEntry::importCsv(file_get_contents($file->getRealPath()));
+            $arquivos++;
+        }
+
+        return redirect()->route('admin.fluxo-caixa.index')
+            ->with('status', "Extrato importado: {$arquivos} arquivo(s), {$novas} linha(s) nova(s).");
+    }
+
+    /**
+     * Reconcilia o ledger interno contra o extrato real importado.
+     * Retorna null se nenhum extrato foi importado ainda.
+     * O extrato é o dado-verdade: saldo real + taxa real + retiradas manuais que o ledger não vê.
+     */
+    private function reconciliation(?string $ledgerStart): ?array
+    {
+        if (!SuitpayStatementEntry::exists()) {
+            return null;
+        }
+
+        // Saldo real = saldo corrente da linha mais recente do extrato.
+        $latest = SuitpayStatementEntry::whereNotNull('saldo')->orderByDesc('occurred_at')->orderByDesc('id')->first();
+        $stmtMin = SuitpayStatementEntry::min('occurred_at');
+        $stmtMax = SuitpayStatementEntry::max('occurred_at');
+
+        // Retiradas manuais (não passam pelo gateway → o ledger não as tem). O buraco de conciliação.
+        $manual = SuitpayStatementEntry::where('tipo', 'manual_out')->orderByDesc('occurred_at')->get();
+
+        // Conferência de taxa: janela = interseção do alcance do ledger com o do extrato.
+        $from = max($ledgerStart, $stmtMin);
+        $to   = min(now()->toDateTimeString(), $stmtMax);
+        $win  = fn ($q) => $q->whereBetween('occurred_at', [$from, $to]);
+
+        $realFeeIn  = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_in'))->sum('valor');
+        $realFeeOut = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_out'))->sum('valor');
+        $ledgerFeeIn  = (float) $win(LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale']))->sum('suitpay_fee');
+        $ledgerFeeOut = (float) $win(LedgerEntry::where('entry_type', 'cashout'))->sum('suitpay_fee');
+
+        return [
+            'realBalance'   => $latest?->saldo,
+            'realBalanceAt' => $latest?->occurred_at,
+            'stmtMin'       => $stmtMin,
+            'stmtMax'       => $stmtMax,
+            'manual'        => $manual,
+            'manualTotal'   => (float) $manual->sum('valor'),
+            'winFrom'       => $from,
+            'winTo'         => $to,
+            'realFeeIn'     => abs($realFeeIn),   // extrato guarda taxa como negativa
+            'ledgerFeeIn'   => $ledgerFeeIn,
+            'realFeeOut'    => abs($realFeeOut),
+            'ledgerFeeOut'  => $ledgerFeeOut,
+        ];
     }
 
     private function period(Request $request): array
