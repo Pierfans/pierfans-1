@@ -53,21 +53,20 @@
                     $diffIn = round($recon['realFeeIn'] - $recon['ledgerFeeIn'], 2);
                     $diffOut = round($recon['realFeeOut'] - $recon['ledgerFeeOut'], 2);
                 @endphp
+                @php $feeInOk = abs($diffIn) < 1; $manualTotal = abs($recon['manualTotal']); @endphp
                 <details class="mt-3 bg-white rounded-lg shadow-sm">
-                    <summary class="cursor-pointer select-none px-4 py-3 text-sm text-gray-600">
-                        Reconciliação · <b>R$ {{ number_format(abs($recon['manualTotal']), 2, ',', '.') }}</b> em {{ $recon['manual']->count() }} retirada(s) manual(is) · taxa entrada real R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} vs nossa R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }} <span class="text-gray-400">(ver detalhes)</span>
+                    <summary class="cursor-pointer select-none px-4 py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span class="{{ $feeInOk ? 'text-green-600' : 'text-amber-600' }} font-semibold">{{ $feeInOk ? '✓ As contas batem com o SuitPay' : '⚠ Diferença a conferir' }}</span>
+                        @if($manualTotal > 0)
+                            <span class="text-gray-500">· R$ {{ number_format($manualTotal, 2, ',', '.') }} saíram da conta por fora do app</span>
+                        @endif
+                        <span class="text-gray-400 ml-auto text-xs">ver conferência</span>
                     </summary>
-                    <div class="border-t border-gray-100 px-4 py-4 space-y-4">
-                        <div class="text-sm text-gray-600">
-                            <p>Taxa de <b>entrada</b>: real R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} · nossa R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }}
-                                <span class="{{ abs($diffIn) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffIn >= 0 ? '+' : '' }}{{ number_format($diffIn, 2, ',', '.') }})</span></p>
-                            <p>Taxa de <b>saída</b>: real R$ {{ number_format($recon['realFeeOut'], 2, ',', '.') }} · nossa R$ {{ number_format($recon['ledgerFeeOut'], 2, ',', '.') }}
-                                <span class="{{ abs($diffOut) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffOut >= 0 ? '+' : '' }}{{ number_format($diffOut, 2, ',', '.') }})</span></p>
-                            <p class="text-xs text-gray-400 mt-1">Janela {{ \Illuminate\Support\Carbon::parse($recon['winFrom'])->format('d/m/Y') }}–{{ \Illuminate\Support\Carbon::parse($recon['winTo'])->format('d/m/Y') }}. Perto de zero = fórmula boa. A diferença de saída é a taxa das retiradas manuais, que o ledger não tem.</p>
-                        </div>
+                    <div class="border-t border-gray-100 px-4 py-4 space-y-5 text-sm">
                         @if($recon['manual']->count() > 0)
                             <div>
-                                <p class="text-sm font-semibold text-gray-700 mb-2">Retiradas manuais (só no extrato)</p>
+                                <p class="font-semibold text-gray-800">Dinheiro que saiu por fora do app</p>
+                                <p class="text-gray-500 text-xs mt-0.5 mb-2">Retiradas feitas direto no painel do SuitPay — não são saques de criador nem afiliado, então o sistema não registra. É por isso que o saldo real fica menor que o total movimentado.</p>
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full text-sm">
                                         <tbody class="divide-y divide-gray-100">
@@ -83,6 +82,22 @@
                                 </div>
                             </div>
                         @endif
+                        <div>
+                            <p class="font-semibold text-gray-800">As taxas do SuitPay batem com a nossa estimativa?</p>
+                            <p class="text-gray-600 mt-1"><b>Entrada:</b>
+                                @if($feeInOk)
+                                    <span class="text-green-600 font-medium">batem ✓</span> — o SuitPay cobrou R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }} (diferença de só R$ {{ number_format(abs($diffIn), 2, ',', '.') }}).
+                                @else
+                                    <span class="text-amber-600 font-medium">diferença de R$ {{ number_format(abs($diffIn), 2, ',', '.') }}</span> — o SuitPay cobrou R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }}. Vale conferir a fórmula da taxa de entrada.
+                                @endif
+                            </p>
+                            <p class="text-gray-600 mt-1"><b>Saída:</b> o SuitPay cobrou R$ {{ number_format($recon['realFeeOut'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeOut'], 2, ',', '.') }}.
+                                @if($manualTotal > 0)
+                                    A diferença de R$ {{ number_format(abs($diffOut), 2, ',', '.') }} é a taxa daquelas retiradas por fora do app (que o sistema não vê).
+                                @endif
+                            </p>
+                            <p class="text-xs text-gray-400 mt-2">Período conferido: {{ \Illuminate\Support\Carbon::parse($recon['winFrom'])->format('d/m/Y') }} a {{ \Illuminate\Support\Carbon::parse($recon['winTo'])->format('d/m/Y') }}. Se um dia a diferença não for explicada por retirada manual, aí sim é sinal de taxa errada ou venda/saque não registrado.</p>
+                        </div>
                     </div>
                 </details>
             @endif
