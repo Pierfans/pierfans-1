@@ -13,6 +13,8 @@ class AdminLedgerController extends Controller
     {
         [$from, $to] = $this->period($request);
         $tipo = in_array($request->get('tipo'), ['subscription_sale', 'ppv_sale', 'cashout']) ? $request->get('tipo') : 'todos';
+        // Dono do saque (criador/afiliado). Só faz sentido em cashout — filtra pelo withdrawal.type.
+        $dono = in_array($request->get('dono'), ['creator', 'affiliate']) ? $request->get('dono') : 'todos';
 
         $base = LedgerEntry::whereBetween('occurred_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
 
@@ -54,11 +56,34 @@ class AdminLedgerController extends Controller
         // ignora a abertura da conta e retiradas manuais que não passam pelo gateway).
         $ledgerStart = LedgerEntry::min('occurred_at');
 
-        // Cards = visão geral do período; o filtro de tipo afeta só a lista de movimentos.
+        // Cards = visão geral do período; os filtros de tipo/dono afetam só a lista de movimentos.
         $listing = (clone $base);
         if ($tipo !== 'todos') {
             $listing->where('entry_type', $tipo);
         }
+        // Dono do saque: whereHas withdrawal.type restringe a cashouts daquele dono (vendas não têm withdrawal).
+        if ($dono !== 'todos') {
+            $listing->whereHas('withdrawal', fn ($q) => $q->where('type', $dono));
+        }
+
+        // Total do que está filtrado (respeita período + tipo + dono), sobre TODO o conjunto (não só a página).
+        $ft = clone $listing;
+        $ftGross     = (float) (clone $ft)->sum('gross_amount');
+        $ftFee       = (float) (clone $ft)->sum('suitpay_fee');
+        $ftCreator   = (float) (clone $ft)->sum('creator_amount');
+        $ftAffiliate = (float) (clone $ft)->sum('affiliate_amount');
+        $ftWithdraw  = (float) (clone $ft)->sum('withdraw_fee');
+        $ftSalesGross = (float) (clone $ft)->whereIn('entry_type', ['subscription_sale', 'ppv_sale'])->sum('gross_amount');
+        // Plataforma: vendas (gross - criador - afiliado - taxa) + saques (withdraw_fee - taxa).
+        $ftPlatform = $ftSalesGross - $ftCreator - $ftAffiliate - $ftFee + $ftWithdraw;
+        $filtered = [
+            'count'     => (clone $ft)->count(),
+            'gross'     => $ftGross,
+            'fee'       => $ftFee,
+            'creator'   => $ftCreator,
+            'affiliate' => $ftAffiliate,
+            'platform'  => $ftPlatform,
+        ];
 
         if ($request->get('export') === 'csv') {
             return $this->exportCsv((clone $listing), $from, $to);
@@ -70,10 +95,10 @@ class AdminLedgerController extends Controller
         $recon = $this->reconciliation($ledgerStart);
 
         return view('admin.ledger.index', compact(
-            'entries', 'from', 'to', 'tipo',
+            'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart', 'recon'
+            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart', 'recon', 'filtered'
         ));
     }
 

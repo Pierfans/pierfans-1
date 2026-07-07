@@ -123,6 +123,14 @@
                         <option value="cashout" @selected($tipo === 'cashout')>Saque</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Dono do saque</label>
+                    <select name="dono" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="todos" @selected($dono === 'todos')>Todos</option>
+                        <option value="creator" @selected($dono === 'creator')>Criador</option>
+                        <option value="affiliate" @selected($dono === 'affiliate')>Afiliado</option>
+                    </select>
+                </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
                     Filtrar
                 </button>
@@ -219,11 +227,23 @@
                                 </tr>
                             @endforeach
                         </tbody>
+                        <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                            <tr class="font-semibold text-gray-900">
+                                <td class="px-4 py-3 text-sm">Total do filtro</td>
+                                <td class="px-4 py-3 text-sm text-gray-500">{{ $filtered['count'] }} registro(s)</td>
+                                <td class="px-4 py-3 text-sm">R$ {{ number_format($filtered['gross'], 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-sm text-red-600">R$ {{ number_format($filtered['fee'], 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-sm text-blue-600">R$ {{ number_format($filtered['creator'], 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-sm text-purple-600">R$ {{ number_format($filtered['affiliate'], 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-sm {{ $filtered['platform'] >= 0 ? 'text-orange-600' : 'text-red-600' }}">R$ {{ number_format(round($filtered['platform'], 2), 2, ',', '.') }}</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
                 @if($entries->hasPages())
-                    <div class="mt-4">{{ $entries->links() }}</div>
+                    <div class="mt-4 text-xs text-gray-400">O "Total do filtro" acima soma todos os {{ $filtered['count'] }} registros filtrados, não só esta página.</div>
+                    <div class="mt-2">{{ $entries->links() }}</div>
                 @endif
             @else
                 <div class="text-center py-12 text-gray-500">
