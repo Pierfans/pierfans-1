@@ -16,29 +16,28 @@
             <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">{{ $errors->first() }}</div>
         @endif
 
-        <!-- Caixa: saldo real (extrato) + caixa da plataforma. Reconciliação em "ver detalhes". -->
+        <!-- Caixa: saldo real (base do extrato + vendas/saques do app) + caixa da plataforma. -->
         <div class="mb-6">
-            <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
+            <div class="mb-2">
                 <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Caixa</h2>
-                <form method="POST" action="{{ route('admin.fluxo-caixa.importar-extrato') }}" enctype="multipart/form-data" class="flex items-center gap-2">
-                    @csrf
-                    <input type="file" name="extrato[]" multiple accept=".csv,text/csv" required
-                           class="text-xs text-gray-600 file:mr-2 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-gray-100 file:text-gray-700 file:cursor-pointer">
-                    <button type="submit" class="px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-xs font-medium whitespace-nowrap">Importar extrato</button>
-                </form>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 @if($recon)
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-teal-500">
                         <p class="text-sm text-gray-500">Saldo real (SuitPay)</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($recon['realBalance'], 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Extrato até {{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->format('d/m/Y H:i') }} · cobre {{ \Illuminate\Support\Carbon::parse($recon['stmtMin'])->format('d/m/Y') }} a {{ \Illuminate\Support\Carbon::parse($recon['stmtMax'])->format('d/m/Y') }}</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($recon['liveBalance'], 2, ',', '.') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Base do extrato R$ {{ number_format($recon['realBalance'], 2, ',', '.') }} ({{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->format('d/m/Y H:i') }})
+                            @if($recon['appDelta'] != 0)
+                                {{ $recon['appDelta'] > 0 ? '+' : '−' }} R$ {{ number_format(abs($recon['appDelta']), 2, ',', '.') }} de vendas/saques registrados depois
+                            @endif
+                        </p>
                     </div>
                 @else
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-gray-300 text-sm text-gray-500">
                         <p class="font-semibold text-gray-700 mb-1">Saldo real (SuitPay)</p>
-                        Importe o extrato (CSV do painel) pra ver o saldo real da conta e reconciliar.
+                        Sem base do extrato ainda. Importe um CSV do painel pelo terminal pra ancorar no saldo real; daí as vendas e saques do app somam sozinhos em cima.
                     </div>
                 @endif
                 <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
@@ -48,59 +47,6 @@
                 </div>
             </div>
 
-            @if($recon)
-                @php
-                    $diffIn = round($recon['realFeeIn'] - $recon['ledgerFeeIn'], 2);
-                    $diffOut = round($recon['realFeeOut'] - $recon['ledgerFeeOut'], 2);
-                @endphp
-                @php $feeInOk = abs($diffIn) < 1; $manualTotal = abs($recon['manualTotal']); @endphp
-                <details class="mt-3 bg-white rounded-lg shadow-sm">
-                    <summary class="cursor-pointer select-none px-4 py-3 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span class="{{ $feeInOk ? 'text-green-600' : 'text-amber-600' }} font-semibold">{{ $feeInOk ? '✓ As contas batem com o SuitPay' : '⚠ Diferença a conferir' }}</span>
-                        @if($manualTotal > 0)
-                            <span class="text-gray-500">· R$ {{ number_format($manualTotal, 2, ',', '.') }} saíram da conta por fora do app</span>
-                        @endif
-                        <span class="text-gray-400 ml-auto text-xs">ver conferência</span>
-                    </summary>
-                    <div class="border-t border-gray-100 px-4 py-4 space-y-5 text-sm">
-                        @if($recon['manual']->count() > 0)
-                            <div>
-                                <p class="font-semibold text-gray-800">Dinheiro que saiu por fora do app</p>
-                                <p class="text-gray-500 text-xs mt-0.5 mb-2">Retiradas feitas direto no painel do SuitPay — não são saques de criador nem afiliado, então o sistema não registra. É por isso que o saldo real fica menor que o total movimentado.</p>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full text-sm">
-                                        <tbody class="divide-y divide-gray-100">
-                                            @foreach($recon['manual'] as $m)
-                                                <tr>
-                                                    <td class="py-2 pr-4 text-gray-900 whitespace-nowrap">{{ $m->occurred_at->format('d/m/Y H:i') }}</td>
-                                                    <td class="py-2 pr-4 text-gray-500">{{ $m->beneficiario ?: '—' }}</td>
-                                                    <td class="py-2 text-right font-medium text-rose-600 whitespace-nowrap">R$ {{ number_format(abs($m->valor), 2, ',', '.') }}</td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        @endif
-                        <div>
-                            <p class="font-semibold text-gray-800">As taxas do SuitPay batem com a nossa estimativa?</p>
-                            <p class="text-gray-600 mt-1"><b>Entrada:</b>
-                                @if($feeInOk)
-                                    <span class="text-green-600 font-medium">batem ✓</span> — o SuitPay cobrou R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }} (diferença de só R$ {{ number_format(abs($diffIn), 2, ',', '.') }}).
-                                @else
-                                    <span class="text-amber-600 font-medium">diferença de R$ {{ number_format(abs($diffIn), 2, ',', '.') }}</span> — o SuitPay cobrou R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }}. Vale conferir a fórmula da taxa de entrada.
-                                @endif
-                            </p>
-                            <p class="text-gray-600 mt-1"><b>Saída:</b> o SuitPay cobrou R$ {{ number_format($recon['realFeeOut'], 2, ',', '.') }} e a gente estimou R$ {{ number_format($recon['ledgerFeeOut'], 2, ',', '.') }}.
-                                @if($manualTotal > 0)
-                                    A diferença de R$ {{ number_format(abs($diffOut), 2, ',', '.') }} é a taxa daquelas retiradas por fora do app (que o sistema não vê).
-                                @endif
-                            </p>
-                            <p class="text-xs text-gray-400 mt-2">Período conferido: {{ \Illuminate\Support\Carbon::parse($recon['winFrom'])->format('d/m/Y') }} a {{ \Illuminate\Support\Carbon::parse($recon['winTo'])->format('d/m/Y') }}. Se um dia a diferença não for explicada por retirada manual, aí sim é sinal de taxa errada ou venda/saque não registrado.</p>
-                        </div>
-                    </div>
-                </details>
-            @endif
         </div>
 
         <!-- Filtro de período + export -->

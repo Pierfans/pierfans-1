@@ -140,6 +140,19 @@ class AdminLedgerController extends Controller
         $stmtMin = SuitpayStatementEntry::min('occurred_at');
         $stmtMax = SuitpayStatementEntry::max('occurred_at');
 
+        // Saldo real ao vivo = base do extrato + o que o app registrou DEPOIS da última linha dele.
+        // O extrato ancora (pega abertura da conta + retiradas manuais que o app não vê); vendas/saques
+        // novos somam em cima, sem precisar reimportar. Venda cai (bruto - taxa), saque sai (bruto + taxa).
+        $after = $latest?->occurred_at;
+        $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])->where('occurred_at', '>', $after);
+        $newCash  = LedgerEntry::where('entry_type', 'cashout')->where('occurred_at', '>', $after);
+        $appDelta = $after ? round(
+            ((float) (clone $newSales)->sum('gross_amount') - (float) (clone $newSales)->sum('suitpay_fee'))
+            - ((float) (clone $newCash)->sum('gross_amount') + (float) (clone $newCash)->sum('suitpay_fee')),
+            2
+        ) : 0.0;
+        $liveBalance = round((float) ($latest?->saldo ?? 0) + $appDelta, 2);
+
         // Retiradas manuais (não passam pelo gateway → o ledger não as tem). O buraco de conciliação.
         $manual = SuitpayStatementEntry::where('tipo', 'manual_out')->orderByDesc('occurred_at')->get();
 
@@ -156,6 +169,8 @@ class AdminLedgerController extends Controller
         return [
             'realBalance'   => $latest?->saldo,
             'realBalanceAt' => $latest?->occurred_at,
+            'liveBalance'   => $liveBalance,
+            'appDelta'      => $appDelta,
             'stmtMin'       => $stmtMin,
             'stmtMax'       => $stmtMax,
             'manual'        => $manual,
