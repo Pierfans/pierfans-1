@@ -28,6 +28,14 @@
                     </select>
                 </div>
                 <div>
+                    <label class="block text-xs text-gray-500 mb-1">Agrupar por</label>
+                    <select name="grupo" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="criador" @selected($grupo === 'criador')>Criador</option>
+                        <option value="dia" @selected($grupo === 'dia')>Dia</option>
+                        <option value="mes" @selected($grupo === 'mes')>Mês</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-xs text-gray-500 mb-1">Criador</label>
                     <div id="creatorChips" class="flex flex-wrap items-center gap-1 min-w-[220px] px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white cursor-text">
                         <input type="text" id="creatorInput" list="creators-list" autocomplete="off" placeholder="Nome ou @usuário"
@@ -62,46 +70,96 @@
         </div>
 
         <div class="bg-white rounded-lg shadow-sm p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold text-gray-900">Ranking</h2>
-                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">{{ $rows->count() }} criador(es)</span>
-            </div>
-
-            @if($rows->count() > 0)
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criador</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinaturas</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conteúdo Único</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bruto vendido</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor do criador</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($rows as $r)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $r['name'] }}</div>
-                                        <div class="text-xs text-gray-500">{{ '@' . $r['username'] }}</div>
-                                    </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['subs_qtd'] }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['ppv_qtd'] }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($r['gross'], 2, ',', '.') }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($r['creator_amount'], 2, ',', '.') }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
-                                        <a href="{{ route('admin.vendas.show', array_merge(['creatorId' => $r['creator_id']], request()->only('from', 'to'))) }}"
-                                           class="text-indigo-600 hover:text-indigo-900 font-medium">Ver compradores</a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+            @if($grupo === 'criador')
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Ranking</h2>
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">{{ $rows->count() }} criador(es)</span>
                 </div>
+
+                @if($rows->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Criador</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinaturas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conteúdo Único</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bruto vendido</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor do criador</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($rows as $r)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ $r['name'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ '@' . $r['username'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['subs_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['ppv_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($r['gross'], 2, ',', '.') }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($r['creator_amount'], 2, ',', '.') }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                            <a href="{{ route('admin.vendas.show', array_merge(['creatorId' => $r['creator_id']], request()->only('from', 'to'))) }}"
+                                               class="text-indigo-600 hover:text-indigo-900 font-medium">Ver compradores</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12 text-gray-500"><p>Nenhuma venda no período selecionado.</p></div>
+                @endif
             @else
-                <div class="text-center py-12 text-gray-500"><p>Nenhuma venda no período selecionado.</p></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">{{ $grupo === 'mes' ? 'Vendas por mês' : 'Vendas por dia' }}</h2>
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">{{ $timeRows->count() }} {{ $grupo === 'mes' ? 'mês(es)' : 'dia(s)' }}</span>
+                </div>
+
+                @if($timeRows->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $grupo === 'mes' ? 'Mês' : 'Dia' }}</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinaturas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conteúdo Único</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bruto vendido</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor dos criadores</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($timeRows as $r)
+                                    @php
+                                        $rotulo = $grupo === 'mes'
+                                            ? substr($r['periodo'], 5, 2) . '/' . substr($r['periodo'], 0, 4)
+                                            : \Illuminate\Support\Carbon::parse($r['periodo'])->format('d/m/Y');
+                                    @endphp
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $rotulo }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['subs_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['ppv_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($r['gross'], 2, ',', '.') }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($r['creator_amount'], 2, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                                <tr class="font-semibold text-gray-900">
+                                    <td class="px-4 py-3 text-sm">Total</td>
+                                    <td class="px-4 py-3 text-sm">{{ $timeRows->sum('subs_qtd') }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $timeRows->sum('ppv_qtd') }}</td>
+                                    <td class="px-4 py-3 text-sm">R$ {{ number_format($timeRows->sum('gross'), 2, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-sm text-blue-600">R$ {{ number_format($timeRows->sum('creator_amount'), 2, ',', '.') }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12 text-gray-500"><p>Nenhuma venda no período selecionado.</p></div>
+                @endif
             @endif
         </div>
     </div>

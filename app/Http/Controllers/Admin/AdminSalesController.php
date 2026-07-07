@@ -20,6 +20,7 @@ class AdminSalesController extends Controller
     {
         [$from, $to] = $this->period($request);
         $tipo          = in_array($request->get('tipo'), ['sub', 'ppv']) ? $request->get('tipo') : 'todos';
+        $grupo         = in_array($request->get('grupo'), ['dia', 'mes']) ? $request->get('grupo') : 'criador';
         $creatorTerms = collect((array) $request->get('creator'))
             ->map(fn ($t) => trim((string) $t))->filter()->unique()->values();
 
@@ -74,8 +75,47 @@ class AdminSalesController extends Controller
             ];
         })->sortByDesc('gross')->values();
 
+        // Agrupamento por tempo (dia/mês) — mesma fonte, mesmos filtros, só muda a chave.
+        $timeRows = collect();
+        if ($grupo !== 'criador') {
+            $fmt = $grupo === 'mes' ? '%Y-%m' : '%Y-%m-%d'; // whitelist, não é input do usuário
+            $subsT = collect();
+            if ($tipo !== 'ppv') {
+                $q = Subscription::where('total_amount', '>', 0)
+                    ->whereBetween('created_at', ["$from 00:00:00", "$to 23:59:59"]);
+                if ($creatorIds !== null) {
+                    $q->whereIn('creator_id', $creatorIds);
+                }
+                $subsT = $q->selectRaw("DATE_FORMAT(created_at, '$fmt') as periodo, count(*) as qtd, sum(total_amount) as bruto, sum(creator_amount) as criador")
+                    ->groupBy('periodo')->get()->keyBy('periodo');
+            }
+            $ppvT = collect();
+            if ($tipo !== 'sub') {
+                $q = PostPurchase::whereBetween('purchased_at', ["$from 00:00:00", "$to 23:59:59"]);
+                if ($creatorIds !== null) {
+                    $q->whereIn('creator_id', $creatorIds);
+                }
+                $ppvT = $q->selectRaw("DATE_FORMAT(purchased_at, '$fmt') as periodo, count(*) as qtd, sum(amount_paid) as bruto, sum(creator_amount) as criador")
+                    ->groupBy('periodo')->get()->keyBy('periodo');
+            }
+            $timeRows = $subsT->keys()->merge($ppvT->keys())->unique()->sortDesc()->values()
+                ->map(function ($p) use ($subsT, $ppvT) {
+                    $s = $subsT->get($p);
+                    $pp = $ppvT->get($p);
+                    return [
+                        'periodo'        => $p,
+                        'subs_qtd'       => (int) ($s->qtd ?? 0),
+                        'ppv_qtd'        => (int) ($pp->qtd ?? 0),
+                        'gross'          => round((float) ($s->bruto ?? 0) + (float) ($pp->bruto ?? 0), 2),
+                        'creator_amount' => round((float) ($s->criador ?? 0) + (float) ($pp->criador ?? 0), 2),
+                    ];
+                });
+        }
+
         if ($request->get('export') === 'csv') {
-            return $this->exportRankingCsv($rows, $from, $to);
+            return $grupo === 'criador'
+                ? $this->exportRankingCsv($rows, $from, $to)
+                : $this->exportTimeCsv($timeRows, $grupo, $from, $to);
         }
 
         $totGross = $rows->sum('gross');
@@ -85,7 +125,7 @@ class AdminSalesController extends Controller
         $allCreators = User::where('creator_status', 'approved')
             ->orderBy('name')->get(['name', 'username']);
 
-        return view('admin.sales.index', compact('rows', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorTerms', 'allCreators'));
+        return view('admin.sales.index', compact('rows', 'timeRows', 'grupo', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorTerms', 'allCreators'));
     }
 
     public function show(Request $request, int $creatorId)
@@ -150,6 +190,25 @@ class AdminSalesController extends Controller
             }
             fclose($out);
         }, "vendas_por_criador_{$from}_a_{$to}.csv");
+    }
+
+    private function exportTimeCsv($rows, string $grupo, string $from, string $to)
+    {
+        $header = $grupo === 'mes' ? 'Mes' : 'Dia';
+        return response()->streamDownload(function () use ($rows, $header) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, [$header, 'Assinaturas', 'Conteudo Unico (pacotes)', 'Bruto vendido', 'Valor dos criadores']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r['periodo'],
+                    $r['subs_qtd'],
+                    $r['ppv_qtd'],
+                    number_format($r['gross'], 2, ',', '.'),
+                    number_format($r['creator_amount'], 2, ',', '.'),
+                ]);
+            }
+            fclose($out);
+        }, "vendas_por_{$grupo}_{$from}_a_{$to}.csv");
     }
 
     private function exportBuyersCsv($sales, $buyers, $creator, string $from, string $to)
