@@ -33,6 +33,23 @@ class AdminLedgerController extends Controller
         // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
         $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
 
+        // Caixa "agora" = all-time, NÃO sofre filtro de período nem de tipo (é o estado atual do caixa).
+        // Saldo em conta = o que de fato entra/sai da conta SuitPay: venda cai (bruto - taxa entrada),
+        // saque sai (bruto + taxa saída). Espelha o saldo real do painel (a menos do erro da taxa estimada de PIX).
+        $allSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale']);
+        $allCash  = LedgerEntry::where('entry_type', 'cashout');
+        $accountBalance = ((float) (clone $allSales)->sum('gross_amount') - (float) (clone $allSales)->sum('suitpay_fee'))
+                        - ((float) (clone $allCash)->sum('gross_amount') + (float) (clone $allCash)->sum('suitpay_fee'));
+        // Caixa da plataforma = receita líquida acumulada (mesma fórmula do card, sem filtro).
+        $platformCash = (float) (clone $allSales)->sum('gross_amount')
+                      - (float) (clone $allSales)->sum('creator_amount')
+                      - (float) (clone $allSales)->sum('affiliate_amount')
+                      - (float) (clone $allSales)->sum('suitpay_fee')
+                      - (float) (clone $allCash)->sum('suitpay_fee')
+                      + (float) (clone $allCash)->sum('withdraw_fee');
+        // Ponte: a diferença é o que ainda é dos criadores/afiliados (ganharam mas não sacaram).
+        $owedToCreators = $accountBalance - $platformCash;
+
         // Cards = visão geral do período; o filtro de tipo afeta só a lista de movimentos.
         $listing = (clone $base);
         if ($tipo !== 'todos') {
@@ -48,7 +65,8 @@ class AdminLedgerController extends Controller
         return view('admin.ledger.index', compact(
             'entries', 'from', 'to', 'tipo',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
-            'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal'
+            'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
+            'accountBalance', 'platformCash', 'owedToCreators'
         ));
     }
 

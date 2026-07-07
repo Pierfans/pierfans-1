@@ -9,6 +9,27 @@
             <p class="text-gray-600 mt-2">Entradas, taxas do SuitPay e repasses — receita líquida real da plataforma</p>
         </div>
 
+        <!-- Caixa agora (all-time — NÃO muda com o filtro abaixo) -->
+        <div class="mb-6">
+            <div class="flex items-baseline gap-2 mb-2">
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Caixa agora</h2>
+                <span class="text-xs text-gray-400">total — não muda com o filtro abaixo</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-emerald-500">
+                    <p class="text-sm text-gray-500">Saldo em conta <span class="text-xs text-gray-400">(estimado)</span></p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($accountBalance, 2, ',', '.') }}</p>
+                    <p class="text-xs text-gray-400 mt-1">Tudo que está na conta SuitPay hoje — inclui R$ {{ number_format($owedToCreators, 2, ',', '.') }} que ainda são dos criadores/afiliados (ganharam, não sacaram).</p>
+                    <p class="text-xs text-gray-400 mt-1">Estimado por vendas/saques; compare com o saldo real no painel SuitPay.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
+                    <p class="text-sm text-gray-500">Caixa da plataforma</p>
+                    <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
+                    <p class="text-xs text-gray-400 mt-1">O que é de fato seu — receita líquida acumulada, já descontado criadores, afiliados e taxas.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Filtro de período + export -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
             <form method="GET" action="{{ route('admin.fluxo-caixa.index') }}" class="flex flex-wrap items-end gap-3">
@@ -40,6 +61,7 @@
         </div>
 
         <!-- Cards de totais -->
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Movimento do período</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-green-500">
                 <p class="text-sm text-gray-500">Bruto recebido (vendas)</p>
