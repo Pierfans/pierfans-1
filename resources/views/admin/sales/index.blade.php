@@ -31,6 +31,8 @@
                     <label class="block text-xs text-gray-500 mb-1">Agrupar por</label>
                     <select name="grupo" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                         <option value="criador" @selected($grupo === 'criador')>Criador</option>
+                        <option value="cliente" @selected($grupo === 'cliente')>Cliente</option>
+                        <option value="afiliado" @selected($grupo === 'afiliado')>Afiliado</option>
                         <option value="dia" @selected($grupo === 'dia')>Dia</option>
                         <option value="mes" @selected($grupo === 'mes')>Mês</option>
                     </select>
@@ -111,6 +113,92 @@
                     </div>
                 @else
                     <div class="text-center py-12 text-gray-500"><p>Nenhuma venda no período selecionado.</p></div>
+                @endif
+            @elseif($grupo === 'cliente')
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Vendas por cliente</h2>
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">{{ $clienteRows->count() }} cliente(s)</span>
+                </div>
+
+                @if($clienteRows->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinaturas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conteúdo Único</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total gasto</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($clienteRows as $r)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ $r['name'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ '@' . $r['username'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['subs_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['ppv_qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($r['gross'], 2, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                                <tr class="font-semibold text-gray-900">
+                                    <td class="px-4 py-3 text-sm">Total</td>
+                                    <td class="px-4 py-3 text-sm">{{ $clienteRows->sum('subs_qtd') }}</td>
+                                    <td class="px-4 py-3 text-sm">{{ $clienteRows->sum('ppv_qtd') }}</td>
+                                    <td class="px-4 py-3 text-sm">R$ {{ number_format($clienteRows->sum('gross'), 2, ',', '.') }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12 text-gray-500"><p>Nenhuma venda no período selecionado.</p></div>
+                @endif
+            @elseif($grupo === 'afiliado')
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Vendas por afiliado</h2>
+                    <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-semibold">{{ $afiliadoRows->count() }} afiliado(s)</span>
+                </div>
+
+                @if($afiliadoRows->count() > 0)
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Afiliado</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendas atribuídas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bruto gerado</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comissão do afiliado</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach($afiliadoRows as $r)
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900">{{ $r['name'] }}</div>
+                                            <div class="text-xs text-gray-500">{{ '@' . $r['username'] }}</div>
+                                        </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $r['qtd'] }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">R$ {{ number_format($r['gross'], 2, ',', '.') }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-purple-600">R$ {{ number_format($r['comissao'], 2, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                                <tr class="font-semibold text-gray-900">
+                                    <td class="px-4 py-3 text-sm">Total</td>
+                                    <td class="px-4 py-3 text-sm">{{ $afiliadoRows->sum('qtd') }}</td>
+                                    <td class="px-4 py-3 text-sm">R$ {{ number_format($afiliadoRows->sum('gross'), 2, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-sm text-purple-600">R$ {{ number_format($afiliadoRows->sum('comissao'), 2, ',', '.') }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center py-12 text-gray-500"><p>Nenhuma venda com afiliado no período. (Só assinaturas de criadores indicados por afiliado geram atribuição.)</p></div>
                 @endif
             @else
                 <div class="flex items-center justify-between mb-4">

@@ -20,7 +20,7 @@ class AdminSalesController extends Controller
     {
         [$from, $to] = $this->period($request);
         $tipo          = in_array($request->get('tipo'), ['sub', 'ppv']) ? $request->get('tipo') : 'todos';
-        $grupo         = in_array($request->get('grupo'), ['dia', 'mes']) ? $request->get('grupo') : 'criador';
+        $grupo         = in_array($request->get('grupo'), ['dia', 'mes', 'cliente', 'afiliado']) ? $request->get('grupo') : 'criador';
         $creatorTerms = collect((array) $request->get('creator'))
             ->map(fn ($t) => trim((string) $t))->filter()->unique()->values();
 
@@ -112,10 +112,74 @@ class AdminSalesController extends Controller
                 });
         }
 
+        // Agrupamento por cliente (comprador) — subs + ppv chaveados pelo user_id do comprador.
+        $clienteRows = collect();
+        if ($grupo === 'cliente') {
+            $subsC = collect();
+            if ($tipo !== 'ppv') {
+                $q = Subscription::where('total_amount', '>', 0)
+                    ->whereBetween('created_at', ["$from 00:00:00", "$to 23:59:59"]);
+                if ($creatorIds !== null) {
+                    $q->whereIn('creator_id', $creatorIds);
+                }
+                $subsC = $q->selectRaw('user_id, count(*) as qtd, sum(total_amount) as bruto')
+                    ->groupBy('user_id')->get()->keyBy('user_id');
+            }
+            $ppvC = collect();
+            if ($tipo !== 'sub') {
+                $q = PostPurchase::whereBetween('purchased_at', ["$from 00:00:00", "$to 23:59:59"]);
+                if ($creatorIds !== null) {
+                    $q->whereIn('creator_id', $creatorIds);
+                }
+                $ppvC = $q->selectRaw('user_id, count(*) as qtd, sum(amount_paid) as bruto')
+                    ->groupBy('user_id')->get()->keyBy('user_id');
+            }
+            $cids = $subsC->keys()->merge($ppvC->keys())->unique()->values();
+            $buyers = User::whereIn('id', $cids)->get()->keyBy('id');
+            $clienteRows = $cids->map(function ($id) use ($subsC, $ppvC, $buyers) {
+                $s = $subsC->get($id);
+                $p = $ppvC->get($id);
+                $b = $buyers->get($id);
+                return [
+                    'name'     => $b->name ?? '—',
+                    'username' => $b->username ?? '',
+                    'subs_qtd' => (int) ($s->qtd ?? 0),
+                    'ppv_qtd'  => (int) ($p->qtd ?? 0),
+                    'gross'    => round((float) ($s->bruto ?? 0) + (float) ($p->bruto ?? 0), 2),
+                ];
+            })->sortByDesc('gross')->values();
+        }
+
+        // Agrupamento por afiliado — só assinaturas com comissão de afiliado do criador (única atribuição no banco).
+        $afiliadoRows = collect();
+        if ($grupo === 'afiliado') {
+            $q = Subscription::where('creator_affiliate_amount', '>', 0)
+                ->whereBetween('created_at', ["$from 00:00:00", "$to 23:59:59"]);
+            if ($creatorIds !== null) {
+                $q->whereIn('creator_id', $creatorIds);
+            }
+            $aff = $q->selectRaw('creator_affiliate_user_id as aff_id, count(*) as qtd, sum(total_amount) as bruto, sum(creator_affiliate_amount) as comissao')
+                ->groupBy('creator_affiliate_user_id')->get();
+            $affUsers = User::whereIn('id', $aff->pluck('aff_id'))->get()->keyBy('id');
+            $afiliadoRows = $aff->map(function ($r) use ($affUsers) {
+                $u = $affUsers->get($r->aff_id);
+                return [
+                    'name'     => $u->name ?? '—',
+                    'username' => $u->username ?? '',
+                    'qtd'      => (int) $r->qtd,
+                    'gross'    => round((float) $r->bruto, 2),
+                    'comissao' => round((float) $r->comissao, 2),
+                ];
+            })->sortByDesc('gross')->values();
+        }
+
         if ($request->get('export') === 'csv') {
-            return $grupo === 'criador'
-                ? $this->exportRankingCsv($rows, $from, $to)
-                : $this->exportTimeCsv($timeRows, $grupo, $from, $to);
+            return match ($grupo) {
+                'dia', 'mes' => $this->exportTimeCsv($timeRows, $grupo, $from, $to),
+                'cliente'    => $this->exportClienteCsv($clienteRows, $from, $to),
+                'afiliado'   => $this->exportAfiliadoCsv($afiliadoRows, $from, $to),
+                default      => $this->exportRankingCsv($rows, $from, $to),
+            };
         }
 
         $totGross = $rows->sum('gross');
@@ -125,7 +189,7 @@ class AdminSalesController extends Controller
         $allCreators = User::where('creator_status', 'approved')
             ->orderBy('name')->get(['name', 'username']);
 
-        return view('admin.sales.index', compact('rows', 'timeRows', 'grupo', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorTerms', 'allCreators'));
+        return view('admin.sales.index', compact('rows', 'timeRows', 'clienteRows', 'afiliadoRows', 'grupo', 'from', 'to', 'totGross', 'totSubs', 'totPpv', 'tipo', 'creatorTerms', 'allCreators'));
     }
 
     public function show(Request $request, int $creatorId)
@@ -209,6 +273,37 @@ class AdminSalesController extends Controller
             }
             fclose($out);
         }, "vendas_por_{$grupo}_{$from}_a_{$to}.csv");
+    }
+
+    private function exportClienteCsv($rows, string $from, string $to)
+    {
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Cliente', 'Username', 'Assinaturas', 'Conteudo Unico (pacotes)', 'Total gasto']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r['name'], $r['username'], $r['subs_qtd'], $r['ppv_qtd'],
+                    number_format($r['gross'], 2, ',', '.'),
+                ]);
+            }
+            fclose($out);
+        }, "vendas_por_cliente_{$from}_a_{$to}.csv");
+    }
+
+    private function exportAfiliadoCsv($rows, string $from, string $to)
+    {
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Afiliado', 'Username', 'Vendas atribuidas', 'Bruto gerado', 'Comissao do afiliado']);
+            foreach ($rows as $r) {
+                fputcsv($out, [
+                    $r['name'], $r['username'], $r['qtd'],
+                    number_format($r['gross'], 2, ',', '.'),
+                    number_format($r['comissao'], 2, ',', '.'),
+                ]);
+            }
+            fclose($out);
+        }, "vendas_por_afiliado_{$from}_a_{$to}.csv");
     }
 
     private function exportBuyersCsv($sales, $buyers, $creator, string $from, string $to)
