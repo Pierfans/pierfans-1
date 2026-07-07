@@ -155,12 +155,14 @@
                 <p class="text-xs text-gray-400 mt-1">Entrada R$ {{ number_format($feeIn, 2, ',', '.') }} · Saída R$ {{ number_format($feeOut, 2, ',', '.') }}</p>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-blue-500">
-                <p class="text-sm text-gray-500">Pago aos criadores</p>
+                <p class="text-sm text-gray-500">Comissão dos criadores</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($creatorPaid, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Creditada nas vendas do período (não é o que foi sacado)</p>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-purple-500">
-                <p class="text-sm text-gray-500">Pago a afiliados</p>
+                <p class="text-sm text-gray-500">Comissão dos afiliados</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($affiliatePaid, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Creditada nas vendas do período (não é o que foi sacado)</p>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-gray-400">
                 <p class="text-sm text-gray-500">Total sacado (saídas)</p>
