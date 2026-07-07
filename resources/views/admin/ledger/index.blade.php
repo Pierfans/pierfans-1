@@ -16,13 +16,10 @@
             <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">{{ $errors->first() }}</div>
         @endif
 
-        <!-- Saldo real (SuitPay) + reconciliação contra o extrato -->
+        <!-- Caixa: saldo real (extrato) + caixa da plataforma. Reconciliação em "ver detalhes". -->
         <div class="mb-6">
             <div class="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-                <div class="flex items-baseline gap-2">
-                    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Saldo real (SuitPay)</h2>
-                    <span class="text-xs text-gray-400">do extrato importado — a verdade da conta</span>
-                </div>
+                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Caixa</h2>
                 <form method="POST" action="{{ route('admin.fluxo-caixa.importar-extrato') }}" enctype="multipart/form-data" class="flex items-center gap-2">
                     @csrf
                     <input type="file" name="extrato[]" multiple accept=".csv,text/csv" required
@@ -31,76 +28,64 @@
                 </form>
             </div>
 
-            @if($recon)
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @if($recon)
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-teal-500">
-                        <p class="text-sm text-gray-500">Saldo real na conta</p>
+                        <p class="text-sm text-gray-500">Saldo real (SuitPay)</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($recon['realBalance'], 2, ',', '.') }}</p>
                         <p class="text-xs text-gray-400 mt-1">Extrato até {{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->format('d/m/Y H:i') }} · cobre {{ \Illuminate\Support\Carbon::parse($recon['stmtMin'])->format('d/m/Y') }} a {{ \Illuminate\Support\Carbon::parse($recon['stmtMax'])->format('d/m/Y') }}</p>
                     </div>
-                    <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-rose-500">
-                        <p class="text-sm text-gray-500">Retiradas manuais</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format(abs($recon['manualTotal']), 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">{{ $recon['manual']->count() }} saída(s) fora do gateway — não aparecem no ledger interno.</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-indigo-500">
-                        <p class="text-sm text-gray-500">Taxa real vs estimada</p>
-                        @php
-                            $diffIn = round($recon['realFeeIn'] - $recon['ledgerFeeIn'], 2);
-                            $diffOut = round($recon['realFeeOut'] - $recon['ledgerFeeOut'], 2);
-                        @endphp
-                        <p class="text-sm mt-1">Entrada: real <b>R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }}</b> · nossa R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }}
-                            <span class="{{ abs($diffIn) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffIn >= 0 ? '+' : '' }}{{ number_format($diffIn, 2, ',', '.') }})</span></p>
-                        <p class="text-sm">Saída: real <b>R$ {{ number_format($recon['realFeeOut'], 2, ',', '.') }}</b> · nossa R$ {{ number_format($recon['ledgerFeeOut'], 2, ',', '.') }}
-                            <span class="{{ abs($diffOut) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffOut >= 0 ? '+' : '' }}{{ number_format($diffOut, 2, ',', '.') }})</span></p>
-                        <p class="text-xs text-gray-400 mt-1">Na janela {{ \Illuminate\Support\Carbon::parse($recon['winFrom'])->format('d/m/Y') }}–{{ \Illuminate\Support\Carbon::parse($recon['winTo'])->format('d/m/Y') }}. Perto de zero = fórmula boa.</p>
-                    </div>
-                </div>
-
-                @if($recon['manual']->count() > 0)
-                    <div class="bg-white rounded-lg shadow-sm p-5 mt-4">
-                        <p class="text-sm font-semibold text-gray-700 mb-2">Retiradas manuais (só no extrato do SuitPay)</p>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full text-sm">
-                                <tbody class="divide-y divide-gray-100">
-                                    @foreach($recon['manual'] as $m)
-                                        <tr>
-                                            <td class="py-2 pr-4 text-gray-900 whitespace-nowrap">{{ $m->occurred_at->format('d/m/Y H:i') }}</td>
-                                            <td class="py-2 pr-4 text-gray-500">{{ $m->beneficiario ?: '—' }}</td>
-                                            <td class="py-2 text-right font-medium text-rose-600 whitespace-nowrap">R$ {{ number_format(abs($m->valor), 2, ',', '.') }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                @else
+                    <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-gray-300 text-sm text-gray-500">
+                        <p class="font-semibold text-gray-700 mb-1">Saldo real (SuitPay)</p>
+                        Importe o extrato (CSV do painel) pra ver o saldo real da conta e reconciliar.
                     </div>
                 @endif
-            @else
-                <div class="bg-white rounded-lg shadow-sm p-5 text-sm text-gray-500 border-l-4 border-gray-300">
-                    Nenhum extrato importado ainda. Suba o CSV do painel SuitPay (Exportar) pra ver o <b>saldo real</b>, as retiradas manuais e conferir a taxa estimada contra a real.
-                </div>
-            @endif
-        </div>
-
-        <!-- Resumo registrado (all-time — NÃO muda com o filtro abaixo) -->
-        <div class="mb-6">
-            <div class="flex items-baseline gap-2 mb-2">
-                <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Resumo registrado</h2>
-                <span class="text-xs text-gray-400">acumulado — não muda com o filtro abaixo</span>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-emerald-500">
-                    <p class="text-sm text-gray-500">Líquido movimentado</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($accountBalance, 2, ',', '.') }}</p>
-                    <p class="text-xs text-gray-400 mt-1">Vendas − saques, já fora as taxas, desde o início do registro ({{ $ledgerStart ? \Illuminate\Support\Carbon::parse($ledgerStart)->format('d/m/Y') : '—' }}). Inclui R$ {{ number_format($owedToCreators, 2, ',', '.') }} que ainda são dos criadores (ganharam, não sacaram).</p>
-                    <p class="text-xs text-amber-600 mt-1">Não é o saldo real do SuitPay — ignora a abertura da conta e retiradas manuais. Saldo real: reconciliação por extrato (em breve).</p>
-                </div>
                 <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
                     <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
                     <p class="text-xs text-gray-400 mt-1">O que é de fato seu — receita líquida acumulada, já descontado criadores, afiliados e taxas.</p>
                 </div>
             </div>
+
+            @if($recon)
+                @php
+                    $diffIn = round($recon['realFeeIn'] - $recon['ledgerFeeIn'], 2);
+                    $diffOut = round($recon['realFeeOut'] - $recon['ledgerFeeOut'], 2);
+                @endphp
+                <details class="mt-3 bg-white rounded-lg shadow-sm">
+                    <summary class="cursor-pointer select-none px-4 py-3 text-sm text-gray-600">
+                        Reconciliação · <b>R$ {{ number_format(abs($recon['manualTotal']), 2, ',', '.') }}</b> em {{ $recon['manual']->count() }} retirada(s) manual(is) · taxa entrada real R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} vs nossa R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }} <span class="text-gray-400">(ver detalhes)</span>
+                    </summary>
+                    <div class="border-t border-gray-100 px-4 py-4 space-y-4">
+                        <div class="text-sm text-gray-600">
+                            <p>Taxa de <b>entrada</b>: real R$ {{ number_format($recon['realFeeIn'], 2, ',', '.') }} · nossa R$ {{ number_format($recon['ledgerFeeIn'], 2, ',', '.') }}
+                                <span class="{{ abs($diffIn) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffIn >= 0 ? '+' : '' }}{{ number_format($diffIn, 2, ',', '.') }})</span></p>
+                            <p>Taxa de <b>saída</b>: real R$ {{ number_format($recon['realFeeOut'], 2, ',', '.') }} · nossa R$ {{ number_format($recon['ledgerFeeOut'], 2, ',', '.') }}
+                                <span class="{{ abs($diffOut) < 1 ? 'text-green-600' : 'text-amber-600' }}">({{ $diffOut >= 0 ? '+' : '' }}{{ number_format($diffOut, 2, ',', '.') }})</span></p>
+                            <p class="text-xs text-gray-400 mt-1">Janela {{ \Illuminate\Support\Carbon::parse($recon['winFrom'])->format('d/m/Y') }}–{{ \Illuminate\Support\Carbon::parse($recon['winTo'])->format('d/m/Y') }}. Perto de zero = fórmula boa. A diferença de saída é a taxa das retiradas manuais, que o ledger não tem.</p>
+                        </div>
+                        @if($recon['manual']->count() > 0)
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700 mb-2">Retiradas manuais (só no extrato)</p>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full text-sm">
+                                        <tbody class="divide-y divide-gray-100">
+                                            @foreach($recon['manual'] as $m)
+                                                <tr>
+                                                    <td class="py-2 pr-4 text-gray-900 whitespace-nowrap">{{ $m->occurred_at->format('d/m/Y H:i') }}</td>
+                                                    <td class="py-2 pr-4 text-gray-500">{{ $m->beneficiario ?: '—' }}</td>
+                                                    <td class="py-2 text-right font-medium text-rose-600 whitespace-nowrap">R$ {{ number_format(abs($m->valor), 2, ',', '.') }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </details>
+            @endif
         </div>
 
         <!-- Filtro de período + export -->

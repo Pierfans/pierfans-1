@@ -75,11 +75,16 @@ class SuitpayStatementEntry extends Model
     {
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content); // tira BOM
         $lines = preg_split('/\r\n|\r|\n/', $content);
+        array_shift($lines); // remove o cabeçalho
+        // O CSV vem do mais-recente pro mais-antigo. Inserimos do mais-antigo pro mais-recente
+        // pra o `id` ficar cronológico — necessário porque occurred_at só tem precisão de minuto,
+        // e linhas do mesmo minuto (ex: crédito + taxa) precisam do id pra desempatar a mais nova.
+        $lines = array_reverse($lines);
         $novas = 0;
 
-        foreach ($lines as $i => $line) {
-            if ($i === 0 || trim($line) === '') {
-                continue; // cabeçalho / linha vazia
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue; // linha vazia
             }
             $c = str_getcsv($line, ';', '"', '\\');
             $descricao = trim($c[0] ?? '');
