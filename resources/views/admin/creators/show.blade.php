@@ -110,7 +110,55 @@
                 </div>
             </div>
 
-            <!-- Documentos -->
+            <!-- Verificação de identidade (Didit) -->
+            @if($creator->didit_decision)
+                @php $d = $creator->didit_decision; @endphp
+                <div class="pt-6 border-t border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Verificação de identidade (Didit)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Resultado</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $d['status'] ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Verificado em</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $creator->didit_verified_at ? $creator->didit_verified_at->format('d/m/Y H:i') : 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nome no documento</label>
+                            <p class="mt-1 text-sm text-gray-900">{{ $d['full_name'] ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Idade / Nascimento</label>
+                            <p class="mt-1 text-sm text-gray-900">
+                                {{ $d['age'] ?? '?' }} anos
+                                @if(!empty($d['date_of_birth'])) ({{ \Carbon\Carbon::parse($d['date_of_birth'])->format('d/m/Y') }}) @endif
+                                @if(isset($d['age']) && $d['age'] < 18) <span class="text-red-600 font-semibold">— MENOR DE 18</span> @endif
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">CPF no documento</label>
+                            <p class="mt-1 text-sm text-gray-900">
+                                {{ $d['extracted_cpf'] ?? 'N/A' }}
+                                @if(array_key_exists('cpf_matches', $d))
+                                    @if($d['cpf_matches'])
+                                        <span class="text-green-600 font-semibold">— confere</span>
+                                    @else
+                                        <span class="text-red-600 font-semibold">— NÃO confere com o digitado</span>
+                                    @endif
+                                @endif
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Prova de vida / Rosto</label>
+                            <p class="mt-1 text-sm text-gray-900">Liveness: {{ $d['liveness'] ?? 'N/A' }} · Face match: {{ $d['face_match'] ?? 'N/A' }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Documentos (upload manual antigo; criador via Didit nao tem) -->
+            @if($creator->creator_document_front_url || $creator->creator_document_back_url || $creator->creator_selfie_url)
             <div>
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Documentos</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -140,6 +188,7 @@
                     @endif
                 </div>
             </div>
+            @endif
 
             <!-- Status da Conta -->
             <div class="pt-6 border-t border-gray-200">
