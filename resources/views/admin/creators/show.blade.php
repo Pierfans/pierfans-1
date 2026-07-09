@@ -139,12 +139,16 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">CPF no documento</label>
                             <p class="mt-1 text-sm text-gray-900">
-                                {{ $d['extracted_cpf'] ?? 'N/A' }}
-                                @if(array_key_exists('cpf_matches', $d))
-                                    @if($d['cpf_matches'])
-                                        <span class="text-green-600 font-semibold">— confere</span>
-                                    @else
-                                        <span class="text-red-600 font-semibold">— NÃO confere com o digitado</span>
+                                @if(empty($d['extracted_cpf']))
+                                    <span class="text-yellow-600 font-semibold">documento não trouxe CPF — confira manualmente</span>
+                                @else
+                                    {{ $d['extracted_cpf'] }}
+                                    @if(array_key_exists('cpf_matches', $d))
+                                        @if($d['cpf_matches'])
+                                            <span class="text-green-600 font-semibold">— confere</span>
+                                        @else
+                                            <span class="text-red-600 font-semibold">— NÃO confere com o digitado</span>
+                                        @endif
                                     @endif
                                 @endif
                             </p>
