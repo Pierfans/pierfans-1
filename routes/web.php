@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('creator')->name('creator.')->middleware('creator.onboarding')->group(function () {
         Route::get('/', [\App\Http\Controllers\CreatorController::class, 'index'])->name('index');
         Route::post('/save-step/{step}', [\App\Http\Controllers\CreatorController::class, 'saveStep'])->name('save-step');
+        Route::post('/verificar', [\App\Http\Controllers\CreatorController::class, 'startVerification'])->name('verificar');
         Route::get('/get-data', [\App\Http\Controllers\CreatorController::class, 'getData'])->name('get-data');
     });
 
