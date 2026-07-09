@@ -46,7 +46,8 @@ class DiditWebhookController extends Controller
 
     private function applyDecision(User $user, ?string $status, array $decision): void
     {
-        $idv = $decision['id_verification'] ?? [];
+        // Webhook v3 manda arrays no plural (id_verifications); o endpoint /decision v2 manda singular.
+        $idv = $decision['id_verifications'][0] ?? $decision['id_verification'] ?? [];
         $age = $idv['age'] ?? $this->ageFromDob($idv['date_of_birth'] ?? null);
 
         $extractedCpf = preg_replace('/\D/', '', (string) ($idv['extra_fields']['tax_number'] ?? $idv['personal_number'] ?? ''));
@@ -61,8 +62,8 @@ class DiditWebhookController extends Controller
             'extracted_cpf' => $extractedCpf ?: null,
             'cpf_matches' => $cpfMatches,
             'id_verification' => $idv['status'] ?? null,
-            'liveness' => $decision['liveness']['status'] ?? null,
-            'face_match' => $decision['face_match']['status'] ?? null,
+            'liveness' => $decision['liveness_checks'][0]['status'] ?? $decision['liveness']['status'] ?? null,
+            'face_match' => $decision['face_matches'][0]['status'] ?? $decision['face_match']['status'] ?? null,
         ];
 
         $update = [
