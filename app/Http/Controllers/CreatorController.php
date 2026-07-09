@@ -231,6 +231,60 @@ class CreatorController extends Controller
     }
 
     /**
+     * Inicia a verificacao de identidade na Didit (substitui o upload manual do step 4).
+     * Cria a sessao, marca o cadastro como pendente e devolve a URL pro front redirecionar.
+     */
+    public function startVerification(\App\Services\DiditService $didit)
+    {
+        $user = Auth::user();
+
+        // Ja aprovado ou aguardando resultado: nao inicia de novo.
+        if (in_array($user->creator_status, ['pending', 'approved'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Voce nao pode iniciar a verificacao neste momento.',
+            ], 403);
+        }
+
+        // Precisa dos dados dos passos anteriores pra cruzar com o documento depois.
+        if (! $user->creator_cpf || ! $user->creator_birth_date) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Preencha seus dados antes de verificar a identidade.',
+            ], 422);
+        }
+
+        try {
+            $session = $didit->createSession($user, route('creator.index'));
+        } catch (\Throwable $e) {
+            \Log::error('Didit: falha ao criar sessao', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Nao foi possivel iniciar a verificacao agora. Tente novamente em instantes.',
+            ], 502);
+        }
+
+        // Marca como pendente ja no inicio; o webhook da Didit decide aprovado/rejeitado.
+        // ponytail: se o usuario abandonar, so destrava quando a Didit mandar Abandoned/Expired
+        // (ate 7 dias). Casos raros: admin reseta pra 'none'.
+        $user->update([
+            'didit_session_id' => $session['session_id'],
+            'didit_status' => 'Not Started',
+            'creator_status' => 'pending',
+            'creator_submitted_at' => now(),
+            'creator_onboarding' => false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'url' => $session['url'],
+        ]);
+    }
+
+    /**
      * Salva um documento localmente na pasta public/_files_/documents/
      * 
      * @param \Illuminate\Http\UploadedFile $file

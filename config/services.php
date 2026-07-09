@@ -41,4 +41,11 @@ return [
         'image_endpoint' => env('MEDIA_API_IMAGE_ENDPOINT', '/image'),
     ],
 
+    'didit' => [
+        'api_key' => env('DIDIT_API_KEY'),
+        'workflow_id' => env('DIDIT_WORKFLOW_ID'),
+        'webhook_secret' => env('DIDIT_WEBHOOK_SECRET'),
+        'base_url' => env('DIDIT_BASE_URL', 'https://verification.didit.me'),
+    ],
+
 ];

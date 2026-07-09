@@ -257,37 +257,29 @@
                             </div>
                         </div>
 
-                        <!-- Step 4: Documentos -->
+                        <!-- Step 4: Verificação de identidade (Didit) -->
                         <div id="step4" class="step-content hidden">
-                            <h3 class="text-xl font-bold text-gray-900 mb-6">Documentos</h3>
-                            
+                            <h3 class="text-xl font-bold text-gray-900 mb-6">Verificação de identidade</h3>
+
                             <div class="space-y-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">RG/CNH - Frente *</label>
-                                    <input type="file" name="creator_document_front" id="creator_document_front" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" required>
-                                    <p class="text-xs text-gray-500 mt-1">Formatos aceitos: JPG, PNG, HEIC. Tamanho máximo: 300MB</p>
-                                    <div id="preview_front" class="mt-2"></div>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
+                                <div class="rounded-lg border border-gray-200 bg-gray-50 p-5">
+                                    <p class="text-gray-700 mb-3">
+                                        Pra concluir seu cadastro, você vai fazer uma verificação rápida de identidade:
+                                    </p>
+                                    <ul class="text-sm text-gray-600 space-y-2 mb-4">
+                                        <li class="flex items-start gap-2"><span class="text-pink-500">1.</span> Fotografar seu documento (RG ou CNH)</li>
+                                        <li class="flex items-start gap-2"><span class="text-pink-500">2.</span> Tirar uma selfie ao vivo</li>
+                                    </ul>
+                                    <p class="text-xs text-gray-500">
+                                        Leva cerca de 2 minutos, direto pelo celular. Isso confirma que você tem 18 anos ou mais
+                                        e que o documento é seu. Seus dados são tratados pela nossa parceira de verificação e
+                                        usados só pra confirmar sua identidade.
+                                    </p>
                                 </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">RG/CNH - Verso *</label>
-                                    <input type="file" name="creator_document_back" id="creator_document_back" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" required>
-                                    <p class="text-xs text-gray-500 mt-1">Formatos aceitos: JPG, PNG, HEIC. Tamanho máximo: 300MB</p>
-                                    <div id="preview_back" class="mt-2"></div>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Selfie com Documento *</label>
-                                    <input type="file" name="creator_selfie" id="creator_selfie" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" required>
-                                    <p class="text-xs text-gray-500 mt-1">Formatos aceitos: JPG, PNG, HEIC. Tamanho máximo: 300MB</p>
-                                    <div id="preview_selfie" class="mt-2"></div>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
-                                </div>
+                                <p class="text-sm text-gray-500">
+                                    Ao clicar em <strong>Verificar identidade</strong> você será levado à tela de verificação e,
+                                    ao terminar, volta pra cá automaticamente.
+                                </p>
                             </div>
                         </div>
 
@@ -300,7 +292,7 @@
                                 Próximo
                             </button>
                             <button type="submit" id="submitBtn" class="ml-auto px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors hidden">
-                                Enviar Documentos
+                                Verificar identidade
                             </button>
                         </div>
                     </form>

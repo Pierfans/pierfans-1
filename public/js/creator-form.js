@@ -235,14 +235,32 @@
         });
     }
 
-    // Submit do formulário (Step 4)
+    // Submit do formulário (Step 4): inicia a verificação de identidade na Didit
     $('#creatorForm').on('submit', function(e) {
         e.preventDefault();
-        
-        if (validateStep(4)) {
-            saveStep(4).then(function() {
-                // Redirecionamento será feito no saveStep
-            });
-        }
+        startVerification();
     });
+
+    function startVerification() {
+        const $btn = $('#submitBtn');
+        $btn.prop('disabled', true).text('Abrindo verificação...');
+
+        $.ajax({
+            url: '/creator/verificar',
+            type: 'POST',
+            data: { _token: $('meta[name="csrf-token"]').attr('content') },
+            success: function(response) {
+                if (response.success && response.url) {
+                    window.location.href = response.url;
+                } else {
+                    alert(response.message || 'Erro ao iniciar a verificação');
+                    $btn.prop('disabled', false).text('Verificar identidade');
+                }
+            },
+            error: function(xhr) {
+                alert(xhr.responseJSON?.message || 'Erro ao iniciar a verificação');
+                $btn.prop('disabled', false).text('Verificar identidade');
+            }
+        });
+    }
 })();
