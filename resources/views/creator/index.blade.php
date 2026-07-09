@@ -61,7 +61,7 @@
                 <div class="bg-white rounded-lg shadow-sm overflow-hidden">
                     <!-- Progress Bar -->
                     <div class="bg-gray-100 h-2">
-                        <div id="progressBar" class="bg-pink-500 h-full transition-all duration-300" style="width: 25%"></div>
+                        <div id="progressBar" class="bg-pink-500 h-full transition-all duration-300" style="width: 33%"></div>
                     </div>
 
                     <!-- Steps Indicator -->
@@ -79,12 +79,7 @@
                             <div class="flex-1 h-0.5 bg-gray-300 mx-4"></div>
                             <div class="flex items-center space-x-2 step-indicator" data-step="3">
                                 <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold">3</div>
-                                <span class="text-sm font-medium text-gray-500">Dados Bancários</span>
-                            </div>
-                            <div class="flex-1 h-0.5 bg-gray-300 mx-4"></div>
-                            <div class="flex items-center space-x-2 step-indicator" data-step="4">
-                                <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold">4</div>
-                                <span class="text-sm font-medium text-gray-500">Documentos</span>
+                                <span class="text-sm font-medium text-gray-500">Verificação</span>
                             </div>
                         </div>
                     </div>
@@ -206,59 +201,8 @@
                             </div>
                         </div>
 
-                        <!-- Step 3: Dados Bancários -->
+                        <!-- Step 3: Verificação de identidade (Didit) -->
                         <div id="step3" class="step-content hidden">
-                            <h3 class="text-xl font-bold text-gray-900 mb-6">Dados Bancários</h3>
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome do Banco *</label>
-                                    <input type="text" name="creator_bank_name" id="creator_bank_name"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                           value="{{ $user->creator_bank_name ?? '' }}" required>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
-                                </div>
-
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Agência *</label>
-                                        <input type="text" name="creator_bank_agency" id="creator_bank_agency"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                               value="{{ $user->creator_bank_agency ?? '' }}" required>
-                                        <div class="error-message text-red-500 text-sm mt-1"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Conta *</label>
-                                        <input type="text" name="creator_bank_account" id="creator_bank_account"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                               value="{{ $user->creator_bank_account ?? '' }}" required>
-                                        <div class="error-message text-red-500 text-sm mt-1"></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Conta *</label>
-                                    <select name="creator_bank_account_type" id="creator_bank_account_type"
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent" required>
-                                        <option value="">Selecione...</option>
-                                        <option value="checking" {{ $user->creator_bank_account_type === 'checking' ? 'selected' : '' }}>Conta Corrente</option>
-                                        <option value="savings" {{ $user->creator_bank_account_type === 'savings' ? 'selected' : '' }}>Conta Poupança</option>
-                                    </select>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Chave PIX *</label>
-                                    <input type="text" name="creator_pix_key" id="creator_pix_key"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                           value="{{ $user->creator_pix_key ?? '' }}" required>
-                                    <div class="error-message text-red-500 text-sm mt-1"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Step 4: Verificação de identidade (Didit) -->
-                        <div id="step4" class="step-content hidden">
                             <h3 class="text-xl font-bold text-gray-900 mb-6">Verificação de identidade</h3>
 
                             <div class="space-y-6">

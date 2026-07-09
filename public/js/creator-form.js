@@ -1,7 +1,7 @@
 // Creator Form Multi-Step Handler
 (function() {
     let currentStep = 1;
-    const totalSteps = 4;
+    const totalSteps = 3;
 
     // Inicialização
     $(document).ready(function() {
@@ -47,6 +47,26 @@
 
         $('#creator_zipcode').on('input', function() {
             this.value = this.value.replace(/\D/g, '');
+        });
+
+        // Autofill de endereço via ViaCEP (grátis, sem chave). Ao completar 8 dígitos.
+        $('#creator_zipcode').on('blur', function() {
+            const cep = this.value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+            $.ajax({
+                url: `https://viacep.com.br/ws/${cep}/json/`,
+                type: 'GET',
+                timeout: 6000,
+                success: function(data) {
+                    // CEP inexistente ({erro:true}): deixa o usuário preencher na mão.
+                    if (!data || data.erro) return;
+                    if (data.logradouro) $('#creator_address').val(data.logradouro);
+                    if (data.bairro) $('#creator_neighborhood').val(data.bairro);
+                    if (data.localidade) $('#creator_city').val(data.localidade);
+                    if (data.uf) $('#creator_state').val(data.uf.toUpperCase());
+                }
+                // timeout/correios fora do ar: silencioso, não trava o passo (preenche manual)
+            });
         });
 
         $('#creator_state').on('input', function() {
@@ -130,7 +150,32 @@
             }
         });
         
+        // Passo 1: CPF precisa ter dígito verificador válido (pega erro de digitação antes do Didit).
+        if (parseInt(step) === 1) {
+            const cpf = $('#creator_cpf').val();
+            if (cpf && !isValidCpf(cpf)) {
+                showError('creator_cpf', 'CPF inválido — confira os números');
+                isValid = false;
+            }
+        }
+
         return isValid;
+    }
+
+    // Valida os dois dígitos verificadores do CPF. Rejeita repetidos (111.111.111-11).
+    function isValidCpf(cpf) {
+        cpf = cpf.replace(/\D/g, '');
+        if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+        let sum = 0;
+        for (let i = 0; i < 9; i++) sum += parseInt(cpf[i]) * (10 - i);
+        let d1 = (sum * 10) % 11;
+        if (d1 === 10) d1 = 0;
+        if (d1 !== parseInt(cpf[9])) return false;
+        sum = 0;
+        for (let i = 0; i < 10; i++) sum += parseInt(cpf[i]) * (11 - i);
+        let d2 = (sum * 10) % 11;
+        if (d2 === 10) d2 = 0;
+        return d2 === parseInt(cpf[10]);
     }
 
     function showError(fieldId, message) {

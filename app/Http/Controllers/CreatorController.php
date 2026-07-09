@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\Rule;
 
 class CreatorController extends Controller
 {
@@ -67,7 +66,11 @@ class CreatorController extends Controller
                 $validated = $request->validate([
                     'name' => 'required|string|max:255',
                     'creator_full_name' => 'required|string|max:255',
-                    'creator_cpf' => 'required|string|size:11|regex:/^[0-9]{11}$/',
+                    'creator_cpf' => ['required', 'string', 'size:11', 'regex:/^[0-9]{11}$/', function ($attr, $value, $fail) {
+                        if (! $this->isValidCpf($value)) {
+                            $fail('CPF inválido.');
+                        }
+                    }],
                     'creator_birth_date' => 'required|date|before:today',
                     'creator_phone' => 'required|string|max:20',
                 ]);
@@ -82,16 +85,6 @@ class CreatorController extends Controller
                     'creator_neighborhood' => 'required|string|max:255',
                     'creator_city' => 'required|string|max:255',
                     'creator_state' => 'required|string|size:2',
-                ]);
-                break;
-
-            case 3: // Dados bancários
-                $validated = $request->validate([
-                    'creator_bank_name' => 'required|string|max:255',
-                    'creator_bank_agency' => 'required|string|max:20',
-                    'creator_bank_account' => 'required|string|max:20',
-                    'creator_bank_account_type' => ['required', Rule::in(['checking', 'savings'])],
-                    'creator_pix_key' => 'required|string|max:255',
                 ]);
                 break;
 
@@ -282,6 +275,28 @@ class CreatorController extends Controller
             'success' => true,
             'url' => $session['url'],
         ]);
+    }
+
+    /**
+     * Valida os dois digitos verificadores do CPF (mesmo algoritmo do front, backstop server-side).
+     */
+    private function isValidCpf(string $cpf): bool
+    {
+        $cpf = preg_replace('/\D/', '', $cpf);
+        if (strlen($cpf) !== 11 || preg_match('/^(\d)\1{10}$/', $cpf)) {
+            return false;
+        }
+        for ($t = 9; $t < 11; $t++) {
+            $sum = 0;
+            for ($i = 0; $i < $t; $i++) {
+                $sum += (int) $cpf[$i] * (($t + 1) - $i);
+            }
+            $d = ((10 * $sum) % 11) % 10;
+            if ((int) $cpf[$t] !== $d) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
