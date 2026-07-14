@@ -177,7 +177,10 @@
                                         </span>
                                         @if($e->entry_type === 'cashout')
                                             {{-- por que a plataforma fica negativa aqui: a franquia do 1º saque do dia sai do nosso bolso --}}
-                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $e->withdraw_fee > 0 ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-600' }}">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold cursor-help {{ $e->withdraw_fee > 0 ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-600' }}"
+                                                  title="{{ $e->withdraw_fee > 0
+                                                        ? 'Saque extra: não foi o primeiro do dia, então a taxa de 3,5% da SuitPay foi cobrada de quem sacou.'
+                                                        : 'Saque grátis porque foi o primeiro do dia: a taxa de 3,5% da SuitPay ficou por nossa conta.' }}">
                                                 {{ $e->withdraw_fee > 0 ? 'extra' : 'grátis' }}
                                             </span>
                                         @endif
