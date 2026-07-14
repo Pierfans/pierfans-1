@@ -231,7 +231,12 @@ class PlatformSetting extends Model
      */
     public static function suitpayFeeOut(float $amount): float
     {
-        $pct = (float) self::getValue('suitpay_fee_pix_out_percent', 3.5);
-        return round($amount * $pct / 100, 2);
+        return round($amount * self::suitpayFeeOutPercent() / 100, 2);
+    }
+
+    /** Percentual da taxa de saída (para calcular o teto de um saque: valor + taxa <= saldo). */
+    public static function suitpayFeeOutPercent(): float
+    {
+        return (float) self::getValue('suitpay_fee_pix_out_percent', 3.5);
     }
 }

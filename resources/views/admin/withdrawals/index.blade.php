@@ -49,7 +49,15 @@
                             @foreach($withdrawals as $withdrawal)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $withdrawal->user->name }}</div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ $withdrawal->user->name }}
+                                            @if($withdrawal->type === 'platform')
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
+                                                      title="Saque do caixa da plataforma, pedido no Fluxo de Caixa. Não é dinheiro de criador.">plataforma</span>
+                                            @elseif($withdrawal->type === 'affiliate')
+                                                <span class="ml-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">afiliado</span>
+                                            @endif
+                                        </div>
                                         <div class="text-sm text-gray-500">{{ $withdrawal->user->email }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">

@@ -269,6 +269,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('fluxo-caixa')->name('fluxo-caixa.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'index'])->name('index');
             Route::post('/importar-extrato', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'importExtrato'])->name('importar-extrato');
+            Route::post('/sacar', [\App\Http\Controllers\Admin\AdminLedgerController::class, 'sacar'])->name('sacar');
         });
 
         // Vendas por Criador (desempenho dos influenciadores)

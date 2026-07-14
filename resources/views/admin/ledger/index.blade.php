@@ -56,6 +56,14 @@
                         <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos o que é dos criadores e afiliados.</p>
                         @if($platformCash < 0)
                             <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que os criadores podem sacar. Confira se falta importar extrato ou se houve retirada manual demais.</p>
+                        @elseif($platformAccounts->isEmpty())
+                            <p class="text-xs text-gray-500 mt-3">Pra sacar pelo site, cadastre a chave PIX da plataforma na conta <span class="font-medium">@pierfans</span> (tela de saque, logado nela).</p>
+                        @elseif($platformMax > 0)
+                            <button type="button" onclick="document.getElementById('modalSaque').classList.remove('hidden')"
+                                    class="mt-3 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
+                                Sacar
+                            </button>
+                            <p class="text-xs text-gray-400 mt-2">Máximo R$ {{ number_format($platformMax, 2, ',', '.') }} — o resto é a taxa de {{ number_format($feeOutPct, 1, ',', '.') }}% que a SuitPay cobra pra fazer o PIX.</p>
                         @endif
                     @else
                         <p class="text-sm text-gray-500 mt-2">Precisa do saldo real pra calcular. Importe o extrato do SuitPay.</p>
@@ -64,6 +72,41 @@
             </div>
 
         </div>
+
+        {{-- Saque do caixa da plataforma: cai na fila normal de saques (aprovar dispara o PIX). --}}
+        @if($platformCash !== null && $platformAccounts->isNotEmpty() && $platformMax > 0)
+            <div id="modalSaque" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                    <h3 class="text-lg font-bold text-gray-900">Sacar caixa da plataforma</h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        Sai da conta @pierfans, entra na fila de saques e vira PIX quando você aprovar.
+                    </p>
+
+                    <form method="POST" action="{{ route('admin.fluxo-caixa.sacar') }}" class="mt-4 space-y-4">
+                        @csrf
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Valor (máximo R$ {{ number_format($platformMax, 2, ',', '.') }})</label>
+                            <input type="number" name="amount" step="0.01" min="1" max="{{ $platformMax }}" value="{{ $platformMax }}" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <p class="text-xs text-gray-400 mt-1">O caixa é R$ {{ number_format($platformCash, 2, ',', '.') }}; a SuitPay ainda cobra {{ number_format($feeOutPct, 1, ',', '.') }}% em cima do valor pra fazer o PIX.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Conta que recebe</label>
+                            <select name="bank_account_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                @foreach($platformAccounts as $acc)
+                                    <option value="{{ $acc->id }}">{{ $acc->bank_name }} — {{ ucfirst($acc->pix_key_type) }}: {{ $acc->pix_key }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button type="button" onclick="document.getElementById('modalSaque').classList.add('hidden')"
+                                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm">Cancelar</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">Criar saque</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
 
         <!-- Filtro de período + export -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -91,6 +134,7 @@
                         <option value="todos" @selected($dono === 'todos')>Todos</option>
                         <option value="creator" @selected($dono === 'creator')>Criador</option>
                         <option value="affiliate" @selected($dono === 'affiliate')>Afiliado</option>
+                        <option value="platform" @selected($dono === 'platform')>Plataforma</option>
                     </select>
                 </div>
                 <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 text-sm font-medium">
@@ -188,7 +232,7 @@
                                             <div class="text-xs text-gray-500 mt-1">
                                                 {{ $e->withdrawal->user->name }}
                                                 <span class="text-gray-400">{{ '@' . $e->withdrawal->user->username }}</span>
-                                                · {{ $e->withdrawal->type === 'affiliate' ? 'afiliado' : 'criador' }}
+                                                · {{ ['affiliate' => 'afiliado', 'platform' => 'plataforma'][$e->withdrawal->type] ?? 'criador' }}
                                             </div>
                                         @endif
                                     </td>
