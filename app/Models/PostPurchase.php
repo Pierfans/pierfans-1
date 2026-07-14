@@ -46,4 +46,29 @@ class PostPurchase extends Model
     {
         return $this->belongsTo(PaymentTransaction::class, 'payment_transaction_id');
     }
+
+    /**
+     * Quanto de venda PPV o criador tem liberado (ou ainda bloqueado) pra saque.
+     * Mesma regra das assinaturas: o prazo depende do método de pagamento, que no PPV
+     * mora na transação (payment_transactions.type), não na compra.
+     */
+    public static function creatorAmount(int $creatorId, bool $released): float
+    {
+        $limits = [
+            'pix'  => PlatformSetting::getPixReleaseDays(),
+            'card' => PlatformSetting::getCardReleaseDays(),
+        ];
+        $op = $released ? '<=' : '>';
+
+        $q = self::where('creator_id', $creatorId)->where(function ($outer) use ($limits, $op) {
+            foreach ($limits as $method => $days) {
+                $date = $days == 0 ? now() : now()->subDays($days)->endOfDay();
+                $outer->orWhere(fn ($q) => $q
+                    ->where('purchased_at', $op, $date)
+                    ->whereHas('transaction', fn ($t) => $t->where('type', $method)));
+            }
+        });
+
+        return (float) $q->sum('creator_amount');
+    }
 }

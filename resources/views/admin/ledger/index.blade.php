@@ -22,7 +22,8 @@
                 <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Caixa</h2>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div class="space-y-4">
                 @if($recon)
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-teal-500">
                         <p class="text-sm text-gray-500">Saldo real (SuitPay)</p>
@@ -40,10 +41,25 @@
                         Sem base do extrato ainda. Importe um CSV do painel pelo terminal pra ancorar no saldo real; daí as vendas e saques do app somam sozinhos em cima.
                     </div>
                 @endif
-                <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
+
+                    <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
+                        <p class="text-sm text-gray-500">Devido a criadores e afiliados</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToCreators, 2, ',', '.') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas eles podem sacar a qualquer momento (inclui o que ainda está no prazo de liberação).</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-blue-700">
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
-                    <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
-                    <p class="text-xs text-gray-400 mt-1">O que é de fato seu — receita líquida acumulada, já descontado criadores, afiliados e taxas.</p>
+                    @if($platformCash !== null)
+                        <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos o que é dos criadores e afiliados.</p>
+                        @if($platformCash < 0)
+                            <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que os criadores podem sacar. Confira se falta importar extrato ou se houve retirada manual demais.</p>
+                        @endif
+                    @else
+                        <p class="text-sm text-gray-500 mt-2">Precisa do saldo real pra calcular. Importe o extrato do SuitPay.</p>
+                    @endif
                 </div>
             </div>
 
@@ -100,7 +116,7 @@
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($feeIn + $feeOut, 2, ',', '.') }}</p>
                 <p class="text-xs text-gray-400 mt-1">Entrada R$ {{ number_format($feeIn, 2, ',', '.') }} · Saída R$ {{ number_format($feeOut, 2, ',', '.') }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-blue-500">
+            <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
                 <p class="text-sm text-gray-500">Comissão dos criadores</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($creatorPaid, 2, ',', '.') }}</p>
                 <p class="text-xs text-gray-400 mt-1">Creditada nas vendas do período (não é o que foi sacado)</p>
@@ -114,7 +130,7 @@
                 <p class="text-sm text-gray-500">Total sacado (saídas)</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($cashoutTotal, 2, ',', '.') }}</p>
             </div>
-            <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-orange-500">
+            <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-blue-700">
                 <p class="text-sm text-gray-500">Receita líquida da plataforma</p>
                 <p class="text-2xl font-bold {{ $platformNet >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformNet, 2, ',', '.') }}</p>
                 <p class="text-xs text-gray-400 mt-1">Plataforma menos taxas SuitPay (entrada + saída)</p>

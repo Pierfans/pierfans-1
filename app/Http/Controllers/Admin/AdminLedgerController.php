@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\LedgerEntry;
 use App\Models\SuitpayStatementEntry;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AdminLedgerController extends Controller
@@ -36,25 +37,23 @@ class AdminLedgerController extends Controller
         // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
         $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
 
-        // Caixa "agora" = all-time, NÃO sofre filtro de período nem de tipo (é o estado atual do caixa).
-        // Saldo em conta = o que de fato entra/sai da conta SuitPay: venda cai (bruto - taxa entrada),
-        // saque sai (bruto + taxa saída). Espelha o saldo real do painel (a menos do erro da taxa estimada de PIX).
-        $allSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale']);
-        $allCash  = LedgerEntry::where('entry_type', 'cashout');
-        $accountBalance = ((float) (clone $allSales)->sum('gross_amount') - (float) (clone $allSales)->sum('suitpay_fee'))
-                        - ((float) (clone $allCash)->sum('gross_amount') + (float) (clone $allCash)->sum('suitpay_fee'));
-        // Caixa da plataforma = receita líquida acumulada (mesma fórmula do card, sem filtro).
-        $platformCash = (float) (clone $allSales)->sum('gross_amount')
-                      - (float) (clone $allSales)->sum('creator_amount')
-                      - (float) (clone $allSales)->sum('affiliate_amount')
-                      - (float) (clone $allSales)->sum('suitpay_fee')
-                      - (float) (clone $allCash)->sum('suitpay_fee')
-                      + (float) (clone $allCash)->sum('withdraw_fee');
-        // Ponte: a diferença é o que ainda é dos criadores/afiliados (ganharam mas não sacaram).
-        $owedToCreators = $accountBalance - $platformCash;
-        // Desde quando o fluxo é registrado (o "saldo" abaixo é fluxo desde essa data, NÃO o saldo real do SuitPay:
-        // ignora a abertura da conta e retiradas manuais que não passam pelo gateway).
+        // Desde quando o fluxo é registrado (o ledger nasceu em jun/26; o site vende desde março,
+        // então ele NÃO serve pra medir saldo nem passivo — só o movimento do período).
         $ledgerStart = LedgerEntry::min('occurred_at');
+
+        // Reconciliação contra o extrato real do SuitPay (traz o saldo real da conta).
+        $recon = $this->reconciliation($ledgerStart);
+
+        // Passivo = o que criadores e afiliados podem sacar. Vem da MESMA conta que eles veem na tela
+        // de saque (não do ledger, que só enxerga de junho pra cá e ignora crédito manual).
+        // Inclui o que ainda está no prazo de liberação: vai sair da conta de qualquer jeito.
+        $owedToCreators = $this->owedToUsers();
+
+        // Caixa da plataforma = o que sobra na conta depois de pagar todo mundo.
+        // Derivado do saldo REAL, não da soma de comissões: assim retirada manual no painel e saque
+        // pelo app já vêm descontados sozinhos — não tem como sacar o mesmo dinheiro duas vezes.
+        // null quando não há extrato importado (sem saldo real, a conta não existe).
+        $platformCash = $recon ? round($recon['liveBalance'] - $owedToCreators, 2) : null;
 
         // Cards = visão geral do período; os filtros de tipo/dono afetam só a lista de movimentos.
         $listing = (clone $base);
@@ -91,15 +90,28 @@ class AdminLedgerController extends Controller
 
         $entries = $listing->with('withdrawal.user')->latest('occurred_at')->paginate(50)->appends($request->query());
 
-        // Reconciliação contra o extrato real do SuitPay (se algum foi importado).
-        $recon = $this->reconciliation($ledgerStart);
-
         return view('admin.ledger.index', compact(
             'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'accountBalance', 'platformCash', 'owedToCreators', 'ledgerStart', 'recon', 'filtered'
+            'platformCash', 'owedToCreators', 'ledgerStart', 'recon', 'filtered'
         ));
+    }
+
+    /**
+     * Passivo da plataforma: tudo que criadores e afiliados podem sacar (liberado + no prazo).
+     * Reusa os mesmos métodos da tela de saque de propósito — se divergir, o card mente.
+     * ponytail: ~40 usuários, algumas queries cada. Cachear (60s) se a tela pesar.
+     */
+    private function owedToUsers(): float
+    {
+        $creators = User::where('creator_status', 'approved')->get()
+            ->sum(fn ($u) => $u->getAvailableBalance() + $u->getPendingBalance());
+
+        $affiliates = User::whereHas('referrals')->get()
+            ->sum(fn ($u) => $u->getAffiliateAvailableBalance() + $u->getAffiliatePendingBalance());
+
+        return round($creators + $affiliates, 2);
     }
 
     /**
