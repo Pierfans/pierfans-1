@@ -53,13 +53,22 @@ class SuitpayStatementEntry extends Model
         return $neg ? -((float) $s) : (float) $s;
     }
 
-    /** "06/07/2026 - 08:18" → Carbon. Null se não parsear. */
+    /** Fuso em que o painel do SuitPay exporta o extrato (o app grava em UTC). */
+    public const TZ_PAINEL = 'America/Sao_Paulo';
+
+    /**
+     * "06/07/2026 - 08:18" → Carbon no fuso do app.
+     * O painel exporta em horário de Brasília; sem converter, cada lançamento fica 3h
+     * atrás do mesmo lançamento no ledger e a reconciliação conta a venda duas vezes.
+     * Null se não parsear.
+     */
     public static function parseDataHora(string $s): ?Carbon
     {
         $s = trim(str_replace(' - ', ' ', trim($s)));
         foreach (['d/m/Y H:i:s', 'd/m/Y H:i'] as $fmt) {
             try {
-                return Carbon::createFromFormat($fmt, $s);
+                return Carbon::createFromFormat($fmt, $s, self::TZ_PAINEL)
+                    ->setTimezone(config('app.timezone'));
             } catch (\Throwable $e) {
                 // tenta o próximo formato
             }

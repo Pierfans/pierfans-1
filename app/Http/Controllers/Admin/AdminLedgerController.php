@@ -155,7 +155,11 @@ class AdminLedgerController extends Controller
         // Saldo real ao vivo = base do extrato + o que o app registrou DEPOIS da última linha dele.
         // O extrato ancora (pega abertura da conta + retiradas manuais que o app não vê); vendas/saques
         // novos somam em cima, sem precisar reimportar. Venda cai (bruto - taxa), saque sai (bruto + taxa).
-        $after = $latest?->occurred_at;
+        // Corta no FIM do minuto: o extrato só tem precisão de minuto (15:26:00) e o ledger tem segundos
+        // (15:26:29) — sem isso, o último lançamento do extrato seria somado de novo.
+        // ponytail: uma venda no mesmo minuto do corte que ainda não esteja no extrato fica de fora até
+        // o próximo import. Erra pra menos (nunca oferece dinheiro a mais pra sacar), que é o lado seguro.
+        $after = $latest?->occurred_at?->copy()->endOfMinute();
         $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])->where('occurred_at', '>', $after);
         $newCash  = LedgerEntry::where('entry_type', 'cashout')->where('occurred_at', '>', $after);
         $appDelta = $after ? round(
