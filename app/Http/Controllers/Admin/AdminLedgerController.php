@@ -54,17 +54,16 @@ class AdminLedgerController extends Controller
         // Passivo = o que criadores e afiliados podem sacar. Vem da MESMA conta que eles veem na tela
         // de saque (não do ledger, que só enxerga de junho pra cá e ignora crédito manual).
         // Inclui o que ainda está no prazo de liberação: vai sair da conta de qualquer jeito.
-        // Soma os saques PENDENTES deles: o saldo do usuário já os desconta, mas o dinheiro ainda
-        // está na conta — sem isso, saque pendente de criador viraria "caixa livre" da plataforma.
-        $owedToCreators = round($this->owedToUsers() + $this->reservedByPending(['creator', 'affiliate']), 2);
+        // Soma os saques PENDENTES deles (o saldo do usuário já desconta, mas o dinheiro ainda está lá).
+        $owedToCreators = round($this->owedToUsers() + $this->pendingOwed(['creator', 'affiliate']), 2);
 
-        // Caixa da plataforma = o que sobra na conta depois de pagar todo mundo, menos o que a própria
-        // plataforma já pediu pra sacar e ainda não saiu.
+        // Caixa da plataforma = saldo real, menos os saldos dos usuários, menos tudo que já está
+        // prometido a sair da conta em saques pendentes (valor + taxa da SuitPay, de qualquer dono).
         // Derivado do saldo REAL, não da soma de comissões: assim retirada manual no painel e saque
         // pelo app já vêm descontados sozinhos — não tem como sacar o mesmo dinheiro duas vezes.
         // null quando não há extrato importado (sem saldo real, a conta não existe).
         $platformCash = $recon
-            ? round($recon['liveBalance'] - $owedToCreators - $this->reservedByPending(['platform']), 2)
+            ? round($recon['liveBalance'] - $this->owedToUsers() - $this->pendingOut(['creator', 'affiliate', 'platform']), 2)
             : null;
 
         // Teto do saque da plataforma: a SuitPay debita valor + 3,5% da conta, então o valor pedido
@@ -133,12 +132,26 @@ class AdminLedgerController extends Controller
         return round($creators + $affiliates, 2);
     }
 
-    /** Dinheiro já prometido num saque pendente: ainda está na conta, mas não é caixa livre. */
-    private function reservedByPending(array $types): float
+    /**
+     * Dinheiro de saque pendente que é do usuário: o saldo dele já desconta, mas ainda está na conta.
+     * Sem reservar, saque pendente de criador viraria "caixa livre" da plataforma.
+     */
+    private function pendingOwed(array $types): float
     {
         return (float) Withdrawal::whereIn('type', $types)
             ->where('status', 'pending')
             ->sum(DB::raw('amount + COALESCE(fee, 0)'));
+    }
+
+    /**
+     * Tudo que vai SAIR da conta quando os saques pendentes forem aprovados: valor + a taxa de saída
+     * da SuitPay. A taxa sai da conta mesmo quando o saque é grátis pro usuário (aí quem paga é a
+     * plataforma), então ela também precisa estar reservada — senão o caixa promete o que não tem.
+     */
+    private function pendingOut(array $types): float
+    {
+        return Withdrawal::whereIn('type', $types)->where('status', 'pending')->get()
+            ->sum(fn ($w) => (float) $w->amount + PlatformSetting::suitpayFeeOut((float) $w->amount));
     }
 
     /**
@@ -183,12 +196,11 @@ class AdminLedgerController extends Controller
                 return back()->withErrors(['amount' => 'Sem extrato do SuitPay importado — não dá pra saber o saldo real.']);
             }
 
-            $reserved = Withdrawal::whereIn('type', ['creator', 'affiliate', 'platform'])
-                ->where('status', 'pending')
-                ->lockForUpdate()
-                ->sum(DB::raw('amount + COALESCE(fee, 0)'));
+            // Trava os saques pendentes: dois cliques ao mesmo tempo não podem sacar o mesmo caixa.
+            Withdrawal::where('status', 'pending')->lockForUpdate()->get();
 
-            $cash = round($recon['liveBalance'] - $this->owedToUsers() - (float) $reserved, 2);
+            $cash = round($recon['liveBalance'] - $this->owedToUsers()
+                - $this->pendingOut(['creator', 'affiliate', 'platform']), 2);
             // A SuitPay debita valor + taxa da conta: o saque precisa caber com a taxa dentro do caixa.
             $custo = $amount + PlatformSetting::suitpayFeeOut($amount);
 
