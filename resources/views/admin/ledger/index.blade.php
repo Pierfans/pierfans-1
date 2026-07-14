@@ -187,7 +187,7 @@
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-red-600">R$ {{ number_format($e->suitpay_fee, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($e->creator_amount, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-purple-600">R$ {{ number_format($e->affiliate_amount, 2, ',', '.') }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm {{ $platform >= 0 ? 'text-orange-600' : 'text-red-600' }} font-medium">R$ {{ number_format(round($platform, 2), 2, ',', '.') }}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm {{ $platform >= 0 ? 'text-blue-700' : 'text-red-600' }} font-medium">R$ {{ number_format(round($platform, 2), 2, ',', '.') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -199,7 +199,7 @@
                                 <td class="px-4 py-3 text-sm text-red-600">R$ {{ number_format($filtered['fee'], 2, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-sm text-blue-600">R$ {{ number_format($filtered['creator'], 2, ',', '.') }}</td>
                                 <td class="px-4 py-3 text-sm text-purple-600">R$ {{ number_format($filtered['affiliate'], 2, ',', '.') }}</td>
-                                <td class="px-4 py-3 text-sm {{ $filtered['platform'] >= 0 ? 'text-orange-600' : 'text-red-600' }}">R$ {{ number_format(round($filtered['platform'], 2), 2, ',', '.') }}</td>
+                                <td class="px-4 py-3 text-sm {{ $filtered['platform'] >= 0 ? 'text-blue-700' : 'text-red-600' }}">R$ {{ number_format(round($filtered['platform'], 2), 2, ',', '.') }}</td>
                             </tr>
                         </tfoot>
                     </table>
