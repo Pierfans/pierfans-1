@@ -187,7 +187,16 @@
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-red-600">R$ {{ number_format($e->suitpay_fee, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($e->creator_amount, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-purple-600">R$ {{ number_format($e->affiliate_amount, 2, ',', '.') }}</td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm {{ $platform >= 0 ? 'text-blue-700' : 'text-red-600' }} font-medium">R$ {{ number_format(round($platform, 2), 2, ',', '.') }}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm {{ $platform >= 0 ? 'text-blue-700' : 'text-red-600' }} font-medium">
+                                        R$ {{ number_format(round($platform, 2), 2, ',', '.') }}
+                                        @if($e->entry_type === 'cashout')
+                                            <div class="text-xs text-gray-400 font-normal mt-0.5">
+                                                {{ $e->withdraw_fee > 0
+                                                    ? 'saque extra: a taxa foi cobrada de quem sacou'
+                                                    : 'saque grátis do dia: a taxa da SuitPay ficou por nossa conta' }}
+                                            </div>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
