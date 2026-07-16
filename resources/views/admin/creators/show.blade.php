@@ -158,6 +158,18 @@
                             <p class="mt-1 text-sm text-gray-900">Liveness: {{ $d['liveness'] ?? 'N/A' }} · Face match: {{ $d['face_match'] ?? 'N/A' }}</p>
                         </div>
                     </div>
+
+                    {{-- Fotos buscadas na Didit na hora do clique: nao ficam gravadas aqui (LGPD). --}}
+                    @if($creator->didit_session_id)
+                        <div class="mt-4">
+                            <button id="docsBtn" onclick="loadDocuments({{ $creator->id }})"
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                Ver documentos
+                            </button>
+                            <p id="docsMsg" class="mt-2 text-sm text-gray-600 hidden"></p>
+                            <div id="docsGrid" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 hidden"></div>
+                        </div>
+                    @endif
                 </div>
             @endif
 
@@ -230,6 +242,40 @@
     </div>
 
     <script>
+        function loadDocuments(id) {
+            const btn = document.getElementById('docsBtn');
+            const msg = document.getElementById('docsMsg');
+            const grid = document.getElementById('docsGrid');
+
+            btn.disabled = true;
+            btn.textContent = 'Buscando na Didit...';
+
+            $.get(`/admin/creators/${id}/documentos`)
+                .done(function(response) {
+                    if (response.message) {
+                        msg.textContent = response.message;
+                        msg.classList.remove('hidden');
+                    }
+
+                    grid.innerHTML = response.images.map(img => `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">${img.label}</label>
+                            <a href="${img.url}" target="_blank" class="block">
+                                <img src="${img.url}" alt="${img.label}" class="w-full rounded-lg border border-gray-300">
+                            </a>
+                        </div>
+                    `).join('');
+                    grid.classList.remove('hidden');
+                    btn.remove();
+                })
+                .fail(function(xhr) {
+                    msg.textContent = xhr.responseJSON?.message || 'Erro ao buscar os documentos.';
+                    msg.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = 'Ver documentos';
+                });
+        }
+
         function approveCreator(id) {
             if (!confirm('Tem certeza que deseja aprovar este criador?')) {
                 return;
@@ -292,7 +338,15 @@
         }
 
         function rejectCreator(id) {
-            if (!confirm('Tem certeza que deseja reprovar este criador? Ele poderá reenviar os documentos.')) {
+            // ponytail: prompt nativo. Vira modal se precisar de mais que uma linha de motivo.
+            const reason = prompt('Por que este cadastro está sendo reprovado?\n\nO texto abaixo vai no email pra criadora, explicando o que ela precisa corrigir.');
+
+            if (reason === null) {
+                return;
+            }
+
+            if (reason.trim().length < 5) {
+                alert('Escreva o motivo (pelo menos 5 caracteres). Ele vai no email pra criadora.');
                 return;
             }
 
@@ -302,9 +356,10 @@
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
+                data: { reason: reason.trim() },
                 success: function(response) {
                     if (response.success) {
-                        alert('Criador reprovado. O usuário poderá reenviar os documentos.');
+                        alert(response.message);
                         window.location.href = '/admin/creators';
                     }
                 },

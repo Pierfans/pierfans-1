@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\CreatorStatusMail;
 use App\Models\User;
+use App\Services\DiditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -56,6 +57,52 @@ class AdminCreatorController extends Controller
         return view('admin.creators.show', compact('creator'));
     }
 
+
+    /**
+     * Fotos do documento da verificação Didit, buscadas na hora (as URLs vencem em 4h).
+     * Nada é gravado no nosso servidor: a foto continua na Didit, o admin só olha.
+     */
+    public function documents($id, DiditService $didit)
+    {
+        $creator = User::withoutGlobalScope('active')->findOrFail($id);
+
+        if (! $creator->didit_session_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Este criador não tem verificação Didit.',
+            ], 404);
+        }
+
+        try {
+            $decision = $didit->getDecision($creator->didit_session_id);
+        } catch (\Exception $e) {
+            Log::error('Falha ao buscar documentos na Didit', [
+                'user_id' => $creator->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível buscar os documentos na Didit agora. Tente de novo.',
+            ], 502);
+        }
+
+        $idv = $decision['id_verifications'][0] ?? [];
+        $live = $decision['liveness_checks'][0] ?? [];
+
+        $images = array_values(array_filter([
+            ['label' => 'Documento - frente', 'url' => $idv['front_image'] ?? null],
+            ['label' => 'Documento - verso', 'url' => $idv['back_image'] ?? null],
+            ['label' => 'Foto do documento', 'url' => $idv['portrait_image'] ?? null],
+            ['label' => 'Selfie (prova de vida)', 'url' => $live['reference_image'] ?? null],
+        ], fn ($i) => ! empty($i['url'])));
+
+        return response()->json([
+            'success' => true,
+            'images'  => $images,
+            'message' => $images ? null : 'A Didit não tem imagem desta sessão (a verificação não chegou a enviar o documento).',
+        ]);
+    }
 
     /**
      * Gera um username aleatório único
@@ -118,9 +165,9 @@ class AdminCreatorController extends Controller
     }
 
     /**
-     * Reprova um criador
+     * Reprova um criador. O motivo vai no email pra criadora saber o que corrigir.
      */
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
         $creator = User::withoutGlobalScope('active')->findOrFail($id);
 
@@ -131,13 +178,20 @@ class AdminCreatorController extends Controller
             ], 400);
         }
 
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5|max:500',
+        ]);
+
         $creator->update([
             'creator_status' => 'rejected',
+            'creator_rejection_reason' => $validated['reason'],
         ]);
+
+        $this->notifyCreator($creator, 'rejected');
 
         return response()->json([
             'success' => true,
-            'message' => 'Criador reprovado. O usuário poderá reenviar os documentos.',
+            'message' => 'Criador reprovado e avisado por email. Ele poderá reenviar os documentos.',
         ]);
     }
 

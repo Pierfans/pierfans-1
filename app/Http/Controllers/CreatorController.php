@@ -28,11 +28,13 @@ class CreatorController extends Controller
             ]);
         }
         
-        // Se rejeitado, mostra mensagem e permite reenvio
+        // Se rejeitado, mostra o motivo (o mesmo que foi no email) e permite reenvio
         if ($user->creator_status === 'rejected') {
             return view('creator.index', [
                 'status' => 'rejected',
-                'message' => 'Seu cadastro foi recusado, envie novamente.',
+                'message' => $user->creator_rejection_reason
+                    ? 'Seu cadastro foi recusado: ' . $user->creator_rejection_reason
+                    : 'Seu cadastro foi recusado, envie novamente.',
                 'user' => $user,
             ]);
         }

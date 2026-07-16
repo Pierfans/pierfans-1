@@ -28,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo',
         'social_media',
         'creator_status',
+        'creator_rejection_reason',
         'creator_full_name',
         'creator_cpf',
         'creator_birth_date',

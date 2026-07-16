@@ -204,6 +204,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('creators')->name('creators.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'index'])->name('index');
             Route::get('/{id}', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'show'])->name('show');
+            Route::get('/{id}/documentos', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'documents'])->name('documents');
             Route::post('/{id}/approve', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'approve'])->name('approve');
             Route::post('/{id}/reject', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'reject'])->name('reject');
             Route::post('/{id}/toggle-active', [\App\Http\Controllers\Admin\AdminCreatorController::class, 'toggleActive'])->name('toggle-active');

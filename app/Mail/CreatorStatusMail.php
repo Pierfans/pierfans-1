@@ -15,7 +15,7 @@ class CreatorStatusMail extends Mailable
     public string $type;
 
     /**
-     * @param string $type approved | activated | deactivated
+     * @param string $type approved | rejected | activated | deactivated
      */
     public function __construct(User $user, string $type)
     {
@@ -35,6 +35,19 @@ class CreatorStatusMail extends Mailable
                     'Você já pode publicar seus conteúdos e começar a receber assinantes.',
                 ],
                 'cta'     => ['url' => url('/dashboard'), 'label' => 'Acessar minha conta'],
+            ],
+            'rejected' => [
+                'subject' => 'Seu cadastro de criadora não foi aprovado',
+                'emoji'   => '⚠️',
+                'heading' => 'Cadastro não aprovado',
+                'lines'   => array_values(array_filter([
+                    'Revisamos seu cadastro de criadora na Pierfans e ele não foi aprovado.',
+                    $this->user->creator_rejection_reason
+                        ? 'Motivo: ' . $this->user->creator_rejection_reason
+                        : null,
+                    'Você pode corrigir o que for necessário e enviar seu cadastro de novo.',
+                ])),
+                'cta'     => ['url' => url('/creator'), 'label' => 'Enviar novamente'],
             ],
             'activated' => [
                 'subject' => 'Seu perfil de criadora foi reativado',

@@ -40,6 +40,22 @@ class DiditService
     }
 
     /**
+     * Busca a decisao completa da sessao, com as imagens do documento.
+     *
+     * As URLs sao do S3 e vencem em 4h, entao nao adianta guardar: le na hora que o admin abre.
+     * Guardar a imagem no nosso servidor tambem recriaria o problema de LGPD que o cadastro
+     * via Didit resolveu (a foto do documento fica com a Didit, a gente so olha).
+     */
+    public function getDecision(string $sessionId): array
+    {
+        return Http::withHeaders(['x-api-key' => $this->apiKey])
+            ->acceptJson()
+            ->get("{$this->baseUrl}/v2/session/{$sessionId}/decision/")
+            ->throw()
+            ->json() ?? [];
+    }
+
+    /**
      * Valida a assinatura HMAC do webhook (header X-Signature = HMAC-SHA256 do corpo cru).
      * Rejeita tambem entregas com mais de 5 min (anti-replay).
      */
