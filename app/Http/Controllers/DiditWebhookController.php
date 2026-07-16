@@ -72,15 +72,28 @@ class DiditWebhookController extends Controller
             'didit_verified_at' => now(),
         ];
 
+        // Esta sessao ja tem decisao final (admin reprovou/aprovou, ou a Didit ja decidiu):
+        // o webhook so atualiza o informativo, nunca mexe no creator_status. Sem isso, concluir
+        // ou deixar expirar uma sessao ja reprovada reabre o cadastro sozinho.
+        // Retry legitimo nao passa por aqui: startVerification abre sessao NOVA e volta pra 'pending'.
+        $decided = in_array($user->creator_status, ['approved', 'rejected'], true);
+
         // Deixou a verificacao pela metade: volta pra 'none' pra poder tentar de novo.
         if (in_array($status, ['Abandoned', 'Expired', 'Kyc Expired'], true)) {
-            $update['creator_status'] = 'none';
-            $update['didit_verified_at'] = null;
+            if (! $decided) {
+                $update['creator_status'] = 'none';
+                $update['didit_verified_at'] = null;
+            }
             $user->update($update);
             return;
         }
 
         $approved = false;
+
+        if ($decided) {
+            $user->update($update);
+            return;
+        }
 
         if ($status === 'Approved') {
             if ($age !== null && $age < 18) {
