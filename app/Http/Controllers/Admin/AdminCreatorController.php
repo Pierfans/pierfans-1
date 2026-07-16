@@ -87,8 +87,10 @@ class AdminCreatorController extends Controller
             ], 502);
         }
 
-        $idv = $decision['id_verifications'][0] ?? [];
-        $live = $decision['liveness_checks'][0] ?? [];
+        // O endpoint /decision v2 manda singular; o webhook v3 manda array no plural (mesmo
+        // par de nomes que o DiditWebhookController ja trata). Aceita os dois.
+        $idv = $decision['id_verification'] ?? $decision['id_verifications'][0] ?? [];
+        $live = $decision['liveness'] ?? $decision['liveness_checks'][0] ?? [];
 
         $images = array_values(array_filter([
             ['label' => 'Documento - frente', 'url' => $idv['front_image'] ?? null],
