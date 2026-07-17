@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e  # sem isto o script imprime "Pronto!" mesmo se o git falhar (ja fez o time achar que codigo estava em prod sem estar)
 #
 # Deploy pierfans — com gate de validacao ANTES de empurrar para producao.
 # O gate roda local (a maquina tem PHP, mas nao tem vendor), entao validamos
