@@ -64,16 +64,14 @@
                                 R$ {{ number_format($wallet->balance, 2, ',', '.') }}
                             </div>
                         </div>
-                        {{-- Depósito desativado até existir forma de gastar o saldo (assinatura/PPV). --}}
                         <button
-                            disabled
-                            title="Depósitos temporariamente desativados"
-                            class="px-6 py-3 bg-gray-200 text-gray-400 rounded-lg font-semibold cursor-not-allowed"
+                            onclick="openDepositModal()"
+                            class="px-6 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-semibold"
                         >
                             Depositar
                         </button>
                     </div>
-                    <p class="text-sm text-gray-500">Depósitos estão temporariamente desativados. Se você já tem saldo, ele continua guardado.</p>
+                    <p class="text-sm text-gray-500">Use este saldo para assinar criadores e desbloquear conteúdos, sem precisar de PIX ou cartão a cada compra</p>
                 </div>
 
                 <!-- Extrato de Movimentações -->
@@ -133,9 +131,10 @@
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Sobre a Carteira</h3>
                     <ul class="space-y-2 text-sm text-gray-600">
+                        <li>• Use o saldo para assinar criadores</li>
+                        <li>• Desbloqueie conteúdos exclusivos</li>
+                        <li>• Deposite via PIX de forma rápida</li>
                         <li>• Consulte seu extrato completo</li>
-                        <li>• Novos depósitos estão desativados no momento</li>
-                        <li>• Saldo já existente continua guardado</li>
                     </ul>
                 </div>
             </div>
