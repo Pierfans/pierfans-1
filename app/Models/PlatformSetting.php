@@ -227,11 +227,15 @@ class PlatformSetting extends Model
     }
 
     /**
-     * Taxa do SuitPay numa saída PIX (saque/cashout): 3,5% do valor.
+     * Taxa do SuitPay numa saída PIX (saque/cashout): 3,5% do valor, com piso.
+     * O piso é real e foi conferido no extrato: saque de R$8,00 e de R$1,00 pagaram R$0,99
+     * cada (3,5% dariam R$0,28 e R$0,04). Sem ele, saque pequeno registra taxa menor que a
+     * cobrada e o caixa da plataforma parece maior do que é.
      */
     public static function suitpayFeeOut(float $amount): float
     {
-        return round($amount * self::suitpayFeeOutPercent() / 100, 2);
+        $min = (float) self::getValue('suitpay_fee_pix_out_min', 0.99);
+        return round(max($amount * self::suitpayFeeOutPercent() / 100, $min), 2);
     }
 
     /** Percentual da taxa de saída (para calcular o teto de um saque: valor + taxa <= saldo). */
