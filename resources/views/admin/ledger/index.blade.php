@@ -50,7 +50,7 @@
                         @if($owedRows->isNotEmpty())
                             <button type="button" onclick="document.getElementById('modalDevido').classList.remove('hidden')"
                                     class="mt-3 text-sm font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2">
-                                Ver quem tem a receber ({{ $owedRows->count() }})
+                                Ver de quem é esse dinheiro ({{ $owedRows->count() }})
                             </button>
                         @endif
                     </div>
@@ -123,9 +123,15 @@
                 <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
                     <div class="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
                         <div>
-                            <h3 class="text-lg font-bold text-gray-900">Quem tem a receber</h3>
+                            <h3 class="text-lg font-bold text-gray-900">De quem é o dinheiro em conta</h3>
                             <p class="text-sm text-gray-500 mt-1">
                                 Soma exatamente o card: <span class="font-semibold">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</span>
+                            </p>
+                            {{-- Duas naturezas diferentes na mesma conta: uma é dívida, a outra é serviço a entregar. --}}
+                            <p class="text-xs text-gray-400 mt-2 max-w-xl">
+                                Criador, afiliado e saque pedido esperam <span class="font-medium">pagamento</span>.
+                                Carteira é <span class="font-medium">crédito pra gastar no site</span> — não dá pra sacar, mas quando o assinante usar,
+                                a maior parte vira comissão do criador. Por isso também não é caixa livre.
                             </p>
                         </div>
                         <button type="button" onclick="document.getElementById('modalDevido').classList.add('hidden')"
@@ -133,7 +139,9 @@
                     </div>
 
                     <div class="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
-                        @foreach(['todos' => 'Todos', 'criador' => 'Criadores', 'afiliado' => 'Afiliados', 'carteira' => 'Carteiras', 'saque pendente' => 'Saques pedidos'] as $valor => $rotulo)
+                        {{-- "A pagar" = tudo que espera pagamento, ou seja, todos menos carteira. É a lista
+                             que o Bento pediu, em um clique, sem precisar somar duas abas na cabeça. --}}
+                        @foreach(['todos' => 'Todos', 'a-pagar' => 'A pagar', 'criador' => 'Criadores', 'afiliado' => 'Afiliados', 'carteira' => 'Carteiras', 'saque pendente' => 'Saques pedidos'] as $valor => $rotulo)
                             <button type="button" data-filtro="{{ $valor }}"
                                     class="filtro-devido px-3 py-1.5 rounded-full text-xs font-medium border {{ $valor === 'todos' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' }}">
                                 {{ $rotulo }}
@@ -206,7 +214,9 @@
                         const termo = busca.value.trim().toLowerCase();
                         let visiveis = 0, soma = 0;
                         linhas.forEach(tr => {
-                            const casaTipo = filtroAtual === 'todos' || tr.dataset.tipo === filtroAtual;
+                            const casaTipo = filtroAtual === 'todos'
+                                || (filtroAtual === 'a-pagar' && tr.dataset.tipo !== 'carteira')
+                                || tr.dataset.tipo === filtroAtual;
                             const casaNome = termo === '' || tr.dataset.nome.includes(termo);
                             const mostrar = casaTipo && casaNome;
                             tr.classList.toggle('hidden', !mostrar);
