@@ -18,6 +18,7 @@ class LedgerEntry extends Model
 {
     protected $fillable = [
         'entry_type',
+        'paid_with',
         'payment_transaction_id',
         'withdrawal_id',
         'gross_amount',
@@ -91,12 +92,26 @@ class LedgerEntry extends Model
     }
 
     /**
+     * Origem do dinheiro da venda. 'wallet' = pago com saldo de carteira: É receita, mas NÃO é
+     * entrada nova no banco (entrou lá atrás, no depósito). A reconciliação contra o extrato e o
+     * saldo real filtram por isso — sem essa marca, venda com saldo inflaria os dois.
+     */
+    public static function paidWith(PaymentTransaction $tx): string
+    {
+        return $tx->type === 'wallet' ? 'wallet' : 'suitpay';
+    }
+
+    /**
      * Taxa do SuitPay numa venda (entrada).
+     * Carteira: zero — o SuitPay não vê essa venda; a taxa dele já foi paga no depósito.
      * Cartão: o webhook traz netAmount → usa a taxa REAL (value - netAmount).
-     * PIX: webhook não traz taxa → fórmula (max 1%, R$0,50) via PlatformSetting.
+     * PIX: webhook não traz taxa → fórmula max(3,5%, R$0,99) via PlatformSetting.
      */
     public static function saleFee(PaymentTransaction $tx): float
     {
+        if ($tx->type === 'wallet') {
+            return 0.0;
+        }
         $net = $tx->webhook_data['netAmount'] ?? null;
         if ($net !== null) {
             return round((float) $tx->amount - (float) $net, 2);

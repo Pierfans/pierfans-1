@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SaldoInsuficiente;
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Models\Wallet;
+use App\Services\SubscriptionActivation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -87,6 +91,8 @@ class CheckoutController extends Controller
             'creator' => $creator,
             'method' => $method,
             'transaction' => $transaction,
+            // Só oferece pagar com saldo se ele cobre o plano inteiro (é tudo ou nada).
+            'walletBalance' => round((float) ($user->wallet->balance ?? 0), 2),
         ]);
     }
 
@@ -121,8 +127,8 @@ class CheckoutController extends Controller
             ], 400);
         }
         
-        // Valida o método de pagamento
-        if (!in_array($method, ['card', 'pix'])) {
+        // Valida o método de pagamento ('wallet' = pagar com saldo da carteira, sem gateway)
+        if (!in_array($method, ['card', 'pix', 'wallet'])) {
             return response()->json([
                 'success' => false,
                 'message' => 'Método de pagamento inválido.',
@@ -145,6 +151,11 @@ class CheckoutController extends Controller
         // Se for CARTÃO, processa via SuitPay
         if ($method === 'card') {
             return $this->processCardPayment($user, $plan, $creator, $request);
+        }
+
+        // Saldo da carteira: não passa pelo gateway, o dinheiro já está na conta desde o depósito
+        if ($method === 'wallet') {
+            return $this->processWalletPayment($user, $plan, $creator);
         }
         
         // Obtém porcentagem da plataforma
@@ -819,115 +830,69 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Cria assinatura a partir de uma transação (método reutilizável)
+     * Delega pro serviço compartilhado. Antes esta classe tinha uma CÓPIA do split que, além de
+     * duplicar a regra, esquecia de gravar no ledger — venda por cartão nunca entrava na
+     * conciliação (não mordeu porque nenhum cartão foi pago até hoje, mas mordia na primeira).
      */
     private function createSubscriptionFromTransaction(PaymentTransaction $transaction)
     {
-        $user = $transaction->user;
-        $plan = $transaction->plan;
-        $creator = $transaction->creator;
+        return SubscriptionActivation::fromTransaction($transaction);
+    }
 
-        // Verifica se já existe assinatura ativa (proteção)
-        if ($user->hasActiveSubscription($creator->id)) {
-            $activeSubscription = $user->getActiveSubscription($creator->id);
-            return $activeSubscription;
-        }
+    /**
+     * Assinatura paga com saldo da carteira. Tudo ou nada: se o saldo não cobre o plano
+     * inteiro, não deixa pagar (misturar saldo + PIX numa venda só dobraria a complexidade).
+     *
+     * Débito e ativação vivem na MESMA transação: se a assinatura falhar, o saldo volta.
+     * O `lockForUpdate` na carteira serializa cliques simultâneos — sem ele, dois POSTs ao
+     * mesmo tempo leem o mesmo saldo e gastam duas vezes.
+     */
+    private function processWalletPayment(User $user, SubscriptionPlan $plan, User $creator)
+    {
+        $price = round((float) $plan->price, 2);
 
-        // Obtém porcentagem da plataforma
-        $platformPercentage = PlatformSetting::getPlatformPercentage();
+        try {
+            $subscription = DB::transaction(function () use ($user, $plan, $creator, $price) {
+                $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
 
-        // Calcula valores base
-        $totalAmount = $transaction->amount;
-        $platformAmount = ($totalAmount * $platformPercentage) / 100;
-        $creatorAmount = $totalAmount - $platformAmount;
-
-        // Verifica se há indicação válida para este usuário
-        $referral = \App\Models\Referral::where('referred_user_id', $user->id)->first();
-        $referrerAmount = 0;
-
-        // Se há indicação válida, verifica limite e calcula comissão do indicador
-        if ($referral) {
-            $affiliateCommissionLimit = PlatformSetting::getAffiliateCommissionLimit();
-
-            $canReceiveCommission = true;
-            if ($affiliateCommissionLimit > 0) {
-                $existingCommissionsCount = Subscription::where('user_id', $user->id)
-                    ->where('referrer_amount', '>', 0)
-                    ->count();
-
-                if ($existingCommissionsCount >= $affiliateCommissionLimit) {
-                    $canReceiveCommission = false;
+                if (!$wallet || round((float) $wallet->balance, 2) < $price) {
+                    throw new SaldoInsuficiente(round((float) ($wallet->balance ?? 0), 2), $price);
                 }
-            }
 
-            if ($canReceiveCommission) {
-                $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                $referrerAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                $platformAmount = $platformAmount - $referrerAmount;
-            }
+                $wallet->subtractBalance($price, 'Assinatura de @' . $creator->username);
+
+                $transaction = PaymentTransaction::create([
+                    'user_id'              => $user->id,
+                    'subscription_plan_id' => $plan->id,
+                    'creator_id'           => $creator->id,
+                    'request_number'       => (string) Str::uuid(),
+                    'type'                 => 'wallet',
+                    'status'               => 'paid_out',
+                    'amount'               => $price,
+                    'note'                 => 'Pago com saldo da carteira',
+                ]);
+
+                return SubscriptionActivation::fromTransaction($transaction);
+            });
+        } catch (SaldoInsuficiente $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            Log::error('CHECKOUT CARTEIRA - FALHA (saldo devolvido pelo rollback)', [
+                'userId'  => $user->id,
+                'planId'  => $plan->id,
+                'error'   => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível concluir a assinatura. Seu saldo não foi debitado.',
+            ], 500);
         }
 
-        // Verifica se o criador foi indicado por um afiliado e calcula comissão sobre a venda
-        $creatorAffiliateAmount = 0;
-        $creatorAffiliateUserId = null;
-        
-        $creatorReferral = \App\Models\Referral::where('referred_user_id', $creator->id)->first();
-        if ($creatorReferral) {
-            // Verifica se o afiliado ainda existe e está ativo
-            $affiliate = \App\Models\User::find($creatorReferral->referrer_user_id);
-            if ($affiliate) {
-                // Calcula comissão do afiliado sobre a venda do criador
-                $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                $creatorAffiliateAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                $creatorAffiliateUserId = $affiliate->id;
-                
-                // Ajusta o valor da plataforma (desconta a comissão do afiliado sobre a venda do criador)
-                $platformAmount = $platformAmount - $creatorAffiliateAmount;
-            }
-        }
-
-        // Calcula datas
-        $startDate = now()->toDateString();
-        $endDate = now()->addDays($plan->duration_days)->toDateString();
-
-        // Desativa qualquer assinatura anterior expirada (limpeza)
-        Subscription::where('user_id', $user->id)
-            ->where('creator_id', $creator->id)
-            ->where('is_active', true)
-            ->where('end_date', '<', now()->toDateString())
-            ->update(['is_active' => false]);
-
-        // Cria a assinatura
-        $subscription = Subscription::create([
-            'user_id' => $user->id,
-            'creator_id' => $creator->id,
-            'subscription_plan_id' => $plan->id,
-            'total_amount' => $totalAmount,
-            'platform_percentage' => $platformPercentage,
-            'platform_amount' => $platformAmount,
-            'referrer_amount' => $referrerAmount,
-            'creator_affiliate_amount' => $creatorAffiliateAmount,
-            'creator_affiliate_user_id' => $creatorAffiliateUserId,
-            'creator_amount' => $creatorAmount,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'is_active' => true,
-            'payment_method' => $transaction->type, // 'pix' ou 'card'
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Assinatura ativada com seu saldo!',
+            'redirect' => route('checkout.success', $subscription->id),
         ]);
-
-        // Atualiza a transação com o ID da assinatura
-        $transaction->update([
-            'subscription_id' => $subscription->id,
-        ]);
-
-        \Log::info('ASSINATURA CRIADA', [
-            'transactionId' => $transaction->id,
-            'subscriptionId' => $subscription->id,
-            'userId' => $user->id,
-            'creatorId' => $creator->id,
-        ]);
-
-        return $subscription;
     }
 
     /**

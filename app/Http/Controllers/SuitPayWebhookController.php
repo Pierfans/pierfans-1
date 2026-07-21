@@ -8,6 +8,7 @@ use App\Models\PlatformSetting;
 use App\Models\PostPurchase;
 use App\Models\Subscription;
 use App\Models\Withdrawal;
+use App\Services\SubscriptionActivation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -350,127 +351,27 @@ class SuitPayWebhookController extends Controller
     private function createSubscriptionFromTransaction(PaymentTransaction $transaction)
     {
         try {
-            $user = $transaction->user;
-            $plan = $transaction->plan;
-            $creator = $transaction->creator;
+            $subscription = SubscriptionActivation::fromTransaction($transaction);
 
-            // Verifica se já existe assinatura ativa (proteção)
-            if ($user->hasActiveSubscription($creator->id)) {
-                Log::warning('ASSINATURA JÁ EXISTE PARA ESTA TRANSAÇÃO', [
+            if (!$subscription->wasRecentlyCreated) {
+                Log::warning('ASSINATURA JA EXISTE PARA ESTA TRANSACAO', [
                     'transactionId' => $transaction->id,
-                    'userId' => $user->id,
-                    'creatorId' => $creator->id,
+                    'userId'        => $transaction->user_id,
+                    'creatorId'     => $transaction->creator_id,
                 ]);
                 return;
             }
 
-            // Obtém porcentagem da plataforma
-            $platformPercentage = PlatformSetting::getPlatformPercentage();
-
-            // Calcula valores base
-            $totalAmount = $transaction->amount;
-            $platformAmount = ($totalAmount * $platformPercentage) / 100;
-            $creatorAmount = $totalAmount - $platformAmount;
-
-            // Verifica se há indicação válida para este usuário
-            $referral = \App\Models\Referral::where('referred_user_id', $user->id)->first();
-            $referrerAmount = 0;
-
-            // Se há indicação válida, verifica limite e calcula comissão do indicador
-            if ($referral) {
-                $affiliateCommissionLimit = PlatformSetting::getAffiliateCommissionLimit();
-
-                $canReceiveCommission = true;
-                if ($affiliateCommissionLimit > 0) {
-                    $existingCommissionsCount = Subscription::where('user_id', $user->id)
-                        ->where('referrer_amount', '>', 0)
-                        ->count();
-
-                    if ($existingCommissionsCount >= $affiliateCommissionLimit) {
-                        $canReceiveCommission = false;
-                    }
-                }
-
-                if ($canReceiveCommission) {
-                    $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                    $referrerAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                    $platformAmount = $platformAmount - $referrerAmount;
-                }
-            }
-
-            // Verifica se o criador foi indicado por um afiliado e calcula comissão sobre a venda
-            $creatorAffiliateAmount = 0;
-            $creatorAffiliateUserId = null;
-            
-            $creatorReferral = \App\Models\Referral::where('referred_user_id', $creator->id)->first();
-            if ($creatorReferral) {
-                // Verifica se o afiliado ainda existe e está ativo
-                $affiliate = \App\Models\User::find($creatorReferral->referrer_user_id);
-                if ($affiliate) {
-                    // Calcula comissão do afiliado sobre a venda do criador
-                    $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                    $creatorAffiliateAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                    $creatorAffiliateUserId = $affiliate->id;
-                    
-                    // Ajusta o valor da plataforma (desconta a comissão do afiliado sobre a venda do criador)
-                    $platformAmount = $platformAmount - $creatorAffiliateAmount;
-                }
-            }
-
-            // Calcula datas
-            $startDate = now()->toDateString();
-            $endDate = now()->addDays($plan->duration_days)->toDateString();
-
-            // Desativa qualquer assinatura anterior expirada (limpeza)
-            Subscription::where('user_id', $user->id)
-                ->where('creator_id', $creator->id)
-                ->where('is_active', true)
-                ->where('end_date', '<', now()->toDateString())
-                ->update(['is_active' => false]);
-
-            // Cria a assinatura
-            $subscription = Subscription::create([
-                'user_id' => $user->id,
-                'creator_id' => $creator->id,
-                'subscription_plan_id' => $plan->id,
-                'total_amount' => $totalAmount,
-                'platform_percentage' => $platformPercentage,
-                'platform_amount' => $platformAmount,
-                'referrer_amount' => $referrerAmount,
-                'creator_affiliate_amount' => $creatorAffiliateAmount,
-                'creator_affiliate_user_id' => $creatorAffiliateUserId,
-                'creator_amount' => $creatorAmount,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'is_active' => true,
-                'payment_method' => $transaction->type, // 'pix' ou 'card'
-            ]);
-
-            // Atualiza a transação com o ID da assinatura
-            $transaction->update([
-                'subscription_id' => $subscription->id,
-            ]);
-
-            Log::info('ASSINATURA CRIADA VIA WEBHOOK PIX', [
-                'transactionId' => $transaction->id,
+            Log::info('ASSINATURA CRIADA VIA WEBHOOK', [
+                'transactionId'  => $transaction->id,
                 'subscriptionId' => $subscription->id,
-                'userId' => $user->id,
-                'creatorId' => $creator->id,
+                'userId'         => $transaction->user_id,
+                'creatorId'      => $transaction->creator_id,
             ]);
-
-            // Ledger de conciliação (não quebra a venda se falhar — record() é resiliente)
-            LedgerEntry::record([
-                'entry_type'             => 'subscription_sale',
-                'payment_transaction_id' => $transaction->id,
-                'gross_amount'           => $totalAmount,
-                'suitpay_fee'            => LedgerEntry::saleFee($transaction),
-                'creator_amount'         => $creatorAmount,
-                'affiliate_amount'       => round($referrerAmount + $creatorAffiliateAmount, 2),
-                'occurred_at'            => now(),
-            ]);
-
         } catch (\Exception $e) {
-            Log::error('ERRO AO CRIAR ASSINATURA VIA WEBHOOK PIX', [
+            // Webhook engole e loga de proposito: o SuitPay reenvia, e estourar aqui viraria
+            // retry infinito. Quem paga com saldo NAO passa por este caminho.
+            Log::error('ERRO AO CRIAR ASSINATURA VIA WEBHOOK', [
                 'transactionId' => $transaction->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

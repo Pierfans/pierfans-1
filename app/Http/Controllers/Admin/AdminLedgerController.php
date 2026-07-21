@@ -280,8 +280,13 @@ class AdminLedgerController extends Controller
         // (15:26:29) — sem isso, o último lançamento do extrato seria somado de novo.
         // ponytail: uma venda no mesmo minuto do corte que ainda não esteja no extrato fica de fora até
         // o próximo import. Erra pra menos (nunca oferece dinheiro a mais pra sacar), que é o lado seguro.
+        // Só venda paga pelo SuitPay move o saldo do banco. Venda paga com saldo de carteira é
+        // receita, mas o dinheiro já estava na conta desde o depósito — somar aqui inventaria
+        // caixa que não existe e liberaria saque em cima dele.
         $after = $latest?->occurred_at?->copy()->endOfMinute();
-        $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])->where('occurred_at', '>', $after);
+        $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])
+            ->where('paid_with', 'suitpay')
+            ->where('occurred_at', '>', $after);
         $newCash  = LedgerEntry::where('entry_type', 'cashout')->where('occurred_at', '>', $after);
         $appDelta = $after ? round(
             ((float) (clone $newSales)->sum('gross_amount') - (float) (clone $newSales)->sum('suitpay_fee'))
@@ -300,7 +305,8 @@ class AdminLedgerController extends Controller
 
         $realFeeIn  = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_in'))->sum('valor');
         $realFeeOut = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_out'))->sum('valor');
-        $ledgerFeeIn  = (float) $win(LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale']))->sum('suitpay_fee');
+        $ledgerFeeIn  = (float) $win(LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])
+            ->where('paid_with', 'suitpay'))->sum('suitpay_fee');
         $ledgerFeeOut = (float) $win(LedgerEntry::where('entry_type', 'cashout'))->sum('suitpay_fee');
 
         return [

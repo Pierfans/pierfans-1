@@ -105,6 +105,20 @@
                     </form>
                 @endif
 
+                {{-- Pagar com saldo: só se o saldo cobre o conteúdo inteiro (tudo ou nada). --}}
+                @if($walletBalance >= $post->price)
+                    <div class="mt-6 p-4 rounded-lg border border-emerald-200 bg-emerald-50">
+                        <div class="font-semibold text-emerald-800">Você tem R$ {{ number_format($walletBalance, 2, ',', '.') }} de saldo</div>
+                        <div class="text-sm text-emerald-700 mt-1 mb-3">Dá para liberar este conteúdo agora, sem PIX nem cartão.</div>
+                        <button type="button" id="btnPagarSaldo"
+                                data-url="{{ route('ppv.process', [$post->id, 'wallet']) }}"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-lg transition-colors">
+                            Pagar R$ {{ number_format($post->price, 2, ',', '.') }} com meu saldo
+                        </button>
+                        <div id="erroSaldo" class="hidden mt-2 text-sm text-red-600"></div>
+                    </div>
+                @endif
+
                 <!-- Trocar método -->
                 <div class="mt-6 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
                     @if($method === 'pix')
@@ -120,6 +134,37 @@
     </div>
 
     <script>
+        // Pagar com saldo da carteira (o servidor trava com lock; aqui é só pra não piscar 2 pedidos)
+        document.getElementById('btnPagarSaldo')?.addEventListener('click', async function () {
+            const btn = this, erro = document.getElementById('erroSaldo');
+            btn.disabled = true;
+            btn.classList.add('opacity-60');
+            btn.textContent = 'Processando...';
+            erro.classList.add('hidden');
+            try {
+                const r = await fetch(btn.dataset.url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                    },
+                });
+                const data = await r.json();
+                if (data.success && data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+                erro.textContent = data.message || 'Não foi possível concluir.';
+                erro.classList.remove('hidden');
+            } catch (e) {
+                erro.textContent = 'Falha de conexão. Tente novamente.';
+                erro.classList.remove('hidden');
+            }
+            btn.disabled = false;
+            btn.classList.remove('opacity-60');
+            btn.textContent = 'Pagar com meu saldo';
+        });
+
         function copyPix() {
             const input = document.getElementById('pix-code');
             input.select();

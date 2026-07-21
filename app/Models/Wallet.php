@@ -53,7 +53,11 @@ class Wallet extends Model
     }
 
     /**
-     * Debita saldo da carteira
+     * Debita saldo da carteira.
+     *
+     * ATENÇÃO: chame SEMPRE dentro de uma transação, com a linha da carteira já travada
+     * (`Wallet::where('user_id', $id)->lockForUpdate()->first()`). A checagem de saldo aqui é
+     * lê-e-grava: sem o lock, dois cliques simultâneos leem o mesmo saldo e gastam duas vezes.
      */
     public function subtractBalance(float $amount, ?string $description = null): WalletTransaction
     {

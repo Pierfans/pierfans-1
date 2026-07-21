@@ -276,6 +276,24 @@
                     @endif
                 </div>
 
+                {{-- Pagar com saldo: só aparece se o saldo cobre o plano INTEIRO (tudo ou nada). --}}
+                @if($walletBalance >= $plan->price)
+                    <div style="border:1px solid #d1fae5;background:#ecfdf5;border-radius:10px;padding:16px;margin-bottom:20px">
+                        <div style="font-weight:600;color:#065f46;margin-bottom:4px">
+                            Você tem R$ {{ number_format($walletBalance, 2, ',', '.') }} de saldo
+                        </div>
+                        <div style="font-size:13px;color:#047857;margin-bottom:12px">
+                            Dá para assinar agora usando o saldo, sem PIX nem cartão.
+                        </div>
+                        <button type="button" id="btnPagarSaldo"
+                                data-url="{{ route('checkout.process', ['planId' => $plan->id, 'method' => 'wallet']) }}"
+                                style="width:100%;padding:12px;background:#059669;color:#fff;border:0;border-radius:8px;font-weight:600;cursor:pointer">
+                            Pagar R$ {{ number_format($plan->price, 2, ',', '.') }} com meu saldo
+                        </button>
+                        <div id="erroSaldo" style="display:none;margin-top:10px;font-size:13px;color:#b91c1c"></div>
+                    </div>
+                @endif
+
                 @if($method === 'card')
                     <!-- Formulário de Cartão -->
                     <form id="cardPaymentForm" method="POST" action="{{ route('checkout.process', ['planId' => $plan->id, 'method' => 'card']) }}">
@@ -377,6 +395,36 @@
 
     <script>
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Pagar com saldo da carteira: desabilita no primeiro clique (o servidor também trava
+        // com lock, isto aqui é só pra não piscar dois pedidos).
+        document.getElementById('btnPagarSaldo')?.addEventListener('click', async function () {
+            const btn = this;
+            const erro = document.getElementById('erroSaldo');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.textContent = 'Processando...';
+            erro.style.display = 'none';
+            try {
+                const r = await fetch(btn.dataset.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                });
+                const data = await r.json();
+                if (data.success && data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+                erro.textContent = data.message || 'Não foi possível concluir.';
+                erro.style.display = 'block';
+            } catch (e) {
+                erro.textContent = 'Falha de conexão. Tente novamente.';
+                erro.style.display = 'block';
+            }
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.textContent = 'Pagar com meu saldo';
+        });
 
         // Máscara para número do cartão
         document.querySelector('input[name="card_number"]')?.addEventListener('input', function(e) {

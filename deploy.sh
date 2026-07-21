@@ -51,4 +51,15 @@ git push
 echo "==> Fazendo deploy no servidor..."
 ssh root@209.126.103.238 "deploy-pierfans"
 
+# -------------------------------------------------------------------
+# 3. Compila TODAS as views no servidor.
+#    O gate local nao consegue: compilar Blade exige o framework, e a maquina
+#    nao tem vendor/. Sem isto, erro de sintaxe em .blade.php so aparece quando
+#    um usuario abre a tela — foi o que derrubou /admin/fluxo-caixa em 21/07/2026
+#    ('@endif' colado numa palavra nao compila, e o '@if' ficou sem fechar).
+#    Com 'set -e', se a compilacao falhar o script para e grita aqui.
+# -------------------------------------------------------------------
+echo "==> Compilando views no servidor..."
+ssh root@209.126.103.238 "cd /home/pierfans/web/pierfans.com/public_html && php artisan view:cache"
+
 echo "==> Pronto!"

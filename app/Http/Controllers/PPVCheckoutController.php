@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\SaldoInsuficiente;
 use App\Mail\NewPPVSaleMail;
 use App\Models\LedgerEntry;
 use App\Models\PaymentTransaction;
 use App\Models\PlatformSetting;
 use App\Models\Post;
 use App\Models\PostPurchase;
+use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -55,7 +59,10 @@ class PPVCheckoutController extends Controller
             }
         }
 
-        return view('ppv.show', compact('post', 'creator', 'method', 'transaction'));
+        // Só oferece pagar com saldo se ele cobre o conteúdo inteiro (é tudo ou nada).
+        $walletBalance = round((float) ($user->wallet->balance ?? 0), 2);
+
+        return view('ppv.show', compact('post', 'creator', 'method', 'transaction', 'walletBalance'));
     }
 
     /**
@@ -65,7 +72,7 @@ class PPVCheckoutController extends Controller
     {
         $this->applyGuards($post);
 
-        if (!in_array($method, ['pix', 'card'])) {
+        if (!in_array($method, ['pix', 'card', 'wallet'])) {
             return response()->json(['success' => false, 'message' => 'Método inválido.'], 400);
         }
 
@@ -76,7 +83,63 @@ class PPVCheckoutController extends Controller
             return $this->processPixPayment($user, $post, $creator);
         }
 
+        if ($method === 'wallet') {
+            return $this->processWalletPayment($user, $post, $creator);
+        }
+
         return $this->processCardPayment($user, $post, $creator, $request);
+    }
+
+    /**
+     * PPV pago com saldo da carteira. Mesmas regras do checkout de assinatura: tudo ou nada,
+     * débito e criação da compra na mesma transação, carteira travada contra duplo clique.
+     */
+    private function processWalletPayment(User $user, Post $post, User $creator)
+    {
+        $price = round((float) $post->price, 2);
+
+        try {
+            $purchase = DB::transaction(function () use ($user, $post, $creator, $price) {
+                $wallet = Wallet::where('user_id', $user->id)->lockForUpdate()->first();
+
+                if (!$wallet || round((float) $wallet->balance, 2) < $price) {
+                    throw new SaldoInsuficiente(round((float) ($wallet->balance ?? 0), 2), $price);
+                }
+
+                $wallet->subtractBalance($price, 'Conteúdo de @' . $creator->username);
+
+                $transaction = PaymentTransaction::create([
+                    'user_id'        => $user->id,
+                    'post_id'        => $post->id,
+                    'creator_id'     => $creator->id,
+                    'request_number' => (string) Str::uuid(),
+                    'type'           => 'wallet',
+                    'status'         => 'paid_out',
+                    'amount'         => $price,
+                    'note'           => 'Pago com saldo da carteira',
+                ]);
+
+                return $this->createPostPurchaseFromTransaction($transaction);
+            });
+        } catch (SaldoInsuficiente $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            Log::error('PPV CARTEIRA - FALHA (saldo devolvido pelo rollback)', [
+                'userId' => $user->id,
+                'postId' => $post->id,
+                'error'  => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível concluir a compra. Seu saldo não foi debitado.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success'  => true,
+            'message'  => 'Conteúdo liberado com seu saldo!',
+            'redirect' => route('ppv.success', $purchase),
+        ]);
     }
 
     /**
@@ -395,6 +458,7 @@ class PPVCheckoutController extends Controller
         // Ledger de conciliação (PPV não tem afiliado)
         LedgerEntry::record([
             'entry_type'             => 'ppv_sale',
+            'paid_with'              => LedgerEntry::paidWith($transaction),
             'payment_transaction_id' => $transaction->id,
             'gross_amount'           => $transaction->amount,
             'suitpay_fee'            => LedgerEntry::saleFee($transaction),
