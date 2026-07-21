@@ -67,6 +67,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/get-data', [\App\Http\Controllers\CreatorController::class, 'getData'])->name('get-data');
     });
 
+    // Documento de identidade do criador: fora do prefixo 'creator' de proposito, porque o admin
+    // (que nao passa pelo onboarding) tambem precisa abrir. A autorizacao esta no controller:
+    // so o dono do documento ou um admin. Antes esses arquivos eram publicos em /_files_/documents.
+    Route::get('/documento-criador/{userId}/{tipo}', [\App\Http\Controllers\CreatorDocumentController::class, 'show'])
+        ->whereNumber('userId')->name('creator.documento');
+
     // Rotas de Planos de Assinatura
     Route::prefix('subscription-plans')->name('subscription-plans.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SubscriptionPlanController::class, 'index'])->name('index');

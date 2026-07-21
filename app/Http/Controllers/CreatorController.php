@@ -302,8 +302,13 @@ class CreatorController extends Controller
     }
 
     /**
-     * Salva um documento localmente na pasta public/_files_/documents/
-     * 
+     * Salva um documento de identidade em pasta PRIVADA (storage/app/creator-documents).
+     *
+     * Já morou em public/_files_/documents/, o que deixava RG e selfie baixáveis por qualquer
+     * um com a URL — e o nome, feito de uniqid()+time(), era adivinhável por quem soubesse a
+     * hora do upload. Quem exibe agora é o CreatorDocumentController, com dono ou admin logado.
+     * O nome do arquivo virou aleatório de verdade pelo mesmo motivo.
+     *
      * @param \Illuminate\Http\UploadedFile $file
      * @return string|null Retorna o nome do arquivo salvo ou null em caso de erro
      */
@@ -311,9 +316,9 @@ class CreatorController extends Controller
     {
         try {
             $extension = $file->getClientOriginalExtension();
-            $fileName = uniqid() . '_' . time() . '.' . $extension;
-            $destinationPath = public_path('_files_/documents');
-            
+            $fileName = bin2hex(random_bytes(16)) . '.' . $extension;
+            $destinationPath = storage_path('app/' . \App\Http\Controllers\CreatorDocumentController::DIR);
+
             $file->move($destinationPath, $fileName);
             
             \Log::info('Documento salvo localmente', [

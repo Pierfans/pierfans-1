@@ -629,7 +629,8 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         // Retorna URL local
-        return asset('_files_/documents/' . $this->creator_document_front);
+        // Rota autenticada (dono ou admin) — nao e mais link publico. Ver CreatorDocumentController.
+        return route('creator.documento', ['userId' => $this->id, 'tipo' => 'frente']);
     }
 
     /**
@@ -642,7 +643,8 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         // Retorna URL local
-        return asset('_files_/documents/' . $this->creator_document_back);
+        // Rota autenticada (dono ou admin) — nao e mais link publico. Ver CreatorDocumentController.
+        return route('creator.documento', ['userId' => $this->id, 'tipo' => 'verso']);
     }
 
     /**
@@ -655,7 +657,8 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         
         // Retorna URL local
-        return asset('_files_/documents/' . $this->creator_selfie);
+        // Rota autenticada (dono ou admin) — nao e mais link publico. Ver CreatorDocumentController.
+        return route('creator.documento', ['userId' => $this->id, 'tipo' => 'selfie']);
     }
 
     /**
