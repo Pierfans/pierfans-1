@@ -337,9 +337,12 @@ class AdminLedgerController extends Controller
                 $solicitante = $e->entry_type === 'cashout' && $e->withdrawal?->user
                     ? $e->withdrawal->user->name . ' (@' . $e->withdrawal->user->username . ')'
                     : '';
+                // Saque sem withdrawal = retirada direto no painel do SuitPay. Sem rotular, a linha sai
+                // como "Saque" sem solicitante e parece saque de criador com dado faltando.
+                $manual = $e->entry_type === 'cashout' && !$e->withdrawal;
                 fputcsv($out, [
                     $e->occurred_at->format('d/m/Y H:i'),
-                    $e->typeLabel(),
+                    $manual ? 'Retirada manual' : $e->typeLabel(),
                     $solicitante,
                     $e->suitpayControlId() ?? '',
                     number_format($e->gross_amount, 2, ',', '.'),

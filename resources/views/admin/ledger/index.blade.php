@@ -208,6 +208,9 @@
                             @foreach($entries as $e)
                                 @php
                                     $label = ['subscription_sale' => 'Assinatura', 'ppv_sale' => 'PPV', 'cashout' => 'Saque'][$e->entry_type] ?? $e->entry_type;
+                                    // Saque sem withdrawal = retirada feita direto no painel do SuitPay (não passou pelo app),
+                                    // então não tem dono nem franquia do dia — as etiquetas grátis/extra mentiriam aqui.
+                                    $manual = $e->entry_type === 'cashout' && !$e->withdrawal;
                                     $platform = $e->entry_type === 'cashout'
                                         ? $e->withdraw_fee - $e->suitpay_fee
                                         : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
@@ -219,7 +222,12 @@
                                             {{ $e->entry_type === 'cashout' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700' }}">
                                             {{ $label }}
                                         </span>
-                                        @if($e->entry_type === 'cashout')
+                                        @if($manual)
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 cursor-help"
+                                                  title="Retirada feita direto no painel do SuitPay, fora do app. A taxa é a real cobrada no extrato.">
+                                                retirada manual
+                                            </span>
+                                        @elseif($e->entry_type === 'cashout')
                                             {{-- por que a plataforma fica negativa aqui: a franquia do 1º saque do dia sai do nosso bolso --}}
                                             <span class="px-2 py-1 rounded-full text-xs font-semibold cursor-help {{ $e->withdraw_fee > 0 ? 'bg-gray-100 text-gray-500' : 'bg-red-50 text-red-600' }}"
                                                   title="{{ $e->withdraw_fee > 0
@@ -241,7 +249,8 @@
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-blue-600">R$ {{ number_format($e->creator_amount, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-purple-600">R$ {{ number_format($e->affiliate_amount, 2, ',', '.') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm {{ $platform >= 0 ? 'text-blue-700' : 'text-red-600' }} font-medium"
-                                        @if($e->entry_type === 'cashout') title="{{ $e->withdraw_fee > 0 ? 'Saque extra: a taxa de 3,5% foi cobrada de quem sacou, então a plataforma fica zero a zero.' : 'Saque grátis do dia: a taxa de 3,5% da SuitPay ficou por nossa conta.' }}" @endif>
+                                        @if($manual) title="Retirada manual: o valor é seu (só mudou de conta), então só a taxa do SuitPay entra como custo."
+                                        @elseif($e->entry_type === 'cashout') title="{{ $e->withdraw_fee > 0 ? 'Saque extra: a taxa de 3,5% foi cobrada de quem sacou, então a plataforma fica zero a zero.' : 'Saque grátis do dia: a taxa de 3,5% da SuitPay ficou por nossa conta.' }}" @endif>
                                         R$ {{ number_format(round($platform, 2), 2, ',', '.') }}
                                     </td>
                                 </tr>
