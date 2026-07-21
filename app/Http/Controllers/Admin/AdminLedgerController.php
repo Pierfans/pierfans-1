@@ -8,6 +8,7 @@ use App\Models\LedgerEntry;
 use App\Models\PlatformSetting;
 use App\Models\SuitpayStatementEntry;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,8 @@ class AdminLedgerController extends Controller
         // de saque (não do ledger, que só enxerga de junho pra cá e ignora crédito manual).
         // Inclui o que ainda está no prazo de liberação: vai sair da conta de qualquer jeito.
         // Soma os saques PENDENTES deles (o saldo do usuário já desconta, mas o dinheiro ainda está lá).
-        $owedToCreators = round($this->owedToUsers() + $this->pendingOwed(['creator', 'affiliate']), 2);
+        $owedToUsers   = round($this->owedToUsers() + $this->pendingOwed(['creator', 'affiliate']), 2);
+        $owedToWallets = $this->owedToWallets();
 
         // Caixa da plataforma = saldo real, menos os saldos dos usuários, menos tudo que já está
         // prometido a sair da conta em saques pendentes (valor + taxa da SuitPay, de qualquer dono).
@@ -112,12 +114,16 @@ class AdminLedgerController extends Controller
             'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToCreators', 'ledgerStart', 'recon', 'filtered'
+            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'ledgerStart', 'recon', 'filtered'
         ));
     }
 
     /**
-     * Passivo da plataforma: tudo que criadores e afiliados podem sacar (liberado + no prazo).
+     * Passivo da plataforma: tudo que é dos usuários e está na conta — o que criadores e
+     * afiliados podem sacar (liberado + no prazo) MAIS o saldo de carteira que os assinantes
+     * depositaram e ainda não gastaram. Carteira é dinheiro deles: entra no caixa do SuitPay,
+     * mas vira receita só quando é gasto. Sem contar aqui, o caixa da plataforma promete o
+     * que não é seu.
      * Reusa os mesmos métodos da tela de saque de propósito — se divergir, o card mente.
      * ponytail: ~40 usuários, algumas queries cada. Cachear (60s) se a tela pesar.
      */
@@ -129,7 +135,13 @@ class AdminLedgerController extends Controller
         $affiliates = User::whereHas('referrals')->get()
             ->sum(fn ($u) => $u->getAffiliateAvailableBalance() + $u->getAffiliatePendingBalance());
 
-        return round($creators + $affiliates, 2);
+        return round($creators + $affiliates + $this->owedToWallets(), 2);
+    }
+
+    /** Saldo que os assinantes têm em carteira (depositado e ainda não gasto). */
+    private function owedToWallets(): float
+    {
+        return round((float) Wallet::sum('balance'), 2);
     }
 
     /**
@@ -341,7 +353,7 @@ class AdminLedgerController extends Controller
                 // como "Saque" sem solicitante e parece saque de criador com dado faltando.
                 $manual = $e->entry_type === 'cashout' && !$e->withdrawal;
                 fputcsv($out, [
-                    $e->occurred_at->format('d/m/Y H:i'),
+                    $e->occurred_at->emBrasilia()->format('d/m/Y H:i'),
                     $manual ? 'Retirada manual' : $e->typeLabel(),
                     $solicitante,
                     $e->suitpayControlId() ?? '',

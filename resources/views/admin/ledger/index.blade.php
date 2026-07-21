@@ -29,7 +29,7 @@
                         <p class="text-sm text-gray-500">Saldo real (SuitPay)</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($recon['liveBalance'], 2, ',', '.') }}</p>
                         <p class="text-xs text-gray-400 mt-1">
-                            Base do extrato R$ {{ number_format($recon['realBalance'], 2, ',', '.') }} ({{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->format('d/m/Y H:i') }})
+                            Base do extrato R$ {{ number_format($recon['realBalance'], 2, ',', '.') }} ({{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->emBrasilia()->format('d/m/Y H:i') }})
                             @if($recon['appDelta'] != 0)
                                 {{ $recon['appDelta'] > 0 ? '+' : '−' }} R$ {{ number_format(abs($recon['appDelta']), 2, ',', '.') }} de vendas/saques registrados depois
                             @endif
@@ -43,9 +43,9 @@
                 @endif
 
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
-                        <p class="text-sm text-gray-500">Devido a criadores e afiliados</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToCreators, 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas eles podem sacar a qualquer momento (inclui o que ainda está no prazo de liberação).</p>
+                        <p class="text-sm text-gray-500">Devido a usuários</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas é deles: o que criadores e afiliados podem sacar (inclui o que ainda está no prazo de liberação)@if($owedToWallets > 0), mais R$ {{ number_format($owedToWallets, 2, ',', '.') }} de saldo em carteira que assinantes depositaram e ainda não gastaram@endif.</p>
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
                         <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
                         <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos o que é dos criadores e afiliados.</p>
                         @if($platformCash < 0)
-                            <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que os criadores podem sacar. Confira se falta importar extrato ou se houve retirada manual demais.</p>
+                            <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que é dos usuários. Ou saiu dinheiro demais (retirada manual/saque da plataforma), ou falta importar extrato novo, ou os depósitos em carteira ainda não foram gastos. Enquanto estiver negativo não dá pra sacar — o que está lá é deles.</p>
                         @elseif($platformAccounts->isEmpty())
                             <p class="text-xs text-gray-500 mt-3">Pra sacar pelo site, cadastre a chave PIX da plataforma na conta <span class="font-medium">@pierfans</span> (tela de saque, logado nela).</p>
                         @elseif($platformMax > 0)
@@ -216,7 +216,7 @@
                                         : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
                                 @endphp
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $e->occurred_at->format('d/m/Y H:i') }}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $e->occurred_at->emBrasilia()->format('d/m/Y H:i') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <span class="px-2 py-1 rounded-full text-xs font-semibold
                                             {{ $e->entry_type === 'cashout' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700' }}">
