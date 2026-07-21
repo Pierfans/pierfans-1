@@ -126,8 +126,17 @@ class WalletController extends Controller
      */
     public function processAddBalance(Request $request, $method)
     {
+        // Depósito FECHADO: não existe (ainda) nenhuma forma de gastar o saldo — não dá pra
+        // assinar nem comprar PPV com ele, e não dá pra sacar. Seis pessoas depositaram
+        // R$240,90 que estão travados desde março. Enquanto a saída não existir, receber mais
+        // dinheiro aqui é vender o que não se entrega. Reabrir junto com o pagamento por saldo.
+        return response()->json([
+            'success' => false,
+            'message' => 'Os depósitos estão temporariamente desativados. Se você já tem saldo, ele continua guardado e em breve poderá ser usado para assinar e comprar conteúdo.',
+        ], 403);
+
         $user = Auth::user();
-        
+
         // Verifica dados de identificação
         $redirect = $this->checkUserIdentification();
         if ($redirect) {
