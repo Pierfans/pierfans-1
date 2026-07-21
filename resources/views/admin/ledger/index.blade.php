@@ -31,7 +31,7 @@
                         <p class="text-xs text-gray-400 mt-1">
                             Base do extrato R$ {{ number_format($recon['realBalance'], 2, ',', '.') }} ({{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->emBrasilia()->format('d/m/Y H:i') }})
                             @if($recon['appDelta'] != 0)
-                                {{ $recon['appDelta'] > 0 ? '+' : '−' }} R$ {{ number_format(abs($recon['appDelta']), 2, ',', '.') }} de vendas/saques registrados depois
+                                {{ $recon['appDelta'] > 0 ? '+' : '−' }} R$ {{ number_format(abs($recon['appDelta']), 2, ',', '.') }} de vendas, recargas e saques registrados depois
                             @endif
                         </p>
                     </div>
@@ -60,7 +60,7 @@
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
                     @if($platformCash !== null)
                         <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos o que é dos criadores e afiliados.</p>
+                        <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos tudo que é dos usuários (criadores, afiliados, carteiras e saques já pedidos).</p>
                         @if($platformCash < 0)
                             <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que é dos usuários. Ou saiu dinheiro demais (retirada manual/saque da plataforma), ou falta importar extrato novo, ou os depósitos em carteira ainda não foram gastos. Enquanto estiver negativo não dá pra sacar — o que está lá é deles.</p>
                         @elseif($platformAccounts->isEmpty())
