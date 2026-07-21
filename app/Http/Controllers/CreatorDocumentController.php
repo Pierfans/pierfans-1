@@ -43,9 +43,13 @@ class CreatorDocumentController extends Controller
         abort_unless(is_file($caminho), 404);
 
         // inline pra abrir no navegador (o admin exibe em <img>); noindex por garantia.
-        return response()->file($caminho, [
-            'Cache-Control' => 'private, no-store',
-            'X-Robots-Tag'  => 'noindex, nofollow',
-        ]);
+        $resposta = response()->file($caminho, ['X-Robots-Tag' => 'noindex, nofollow']);
+
+        // Sobrescreve DEPOIS: o response()->file() marca a resposta como 'public' sozinho, e um
+        // CDN na frente (temos Cloudflare) guardaria documento de identidade no cache de borda —
+        // onde continua servindo mesmo depois do arquivo sair do servidor. Já aconteceu aqui.
+        $resposta->headers->set('Cache-Control', 'private, no-store, max-age=0');
+
+        return $resposta;
     }
 }
