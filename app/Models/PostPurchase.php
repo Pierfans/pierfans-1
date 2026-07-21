@@ -54,9 +54,12 @@ class PostPurchase extends Model
      */
     public static function creatorAmount(int $creatorId, bool $released): float
     {
+        // Carteira segue o prazo do PIX: o dinheiro dela já compensou lá atrás, no depósito.
+        // Sem a linha 'wallet' aqui, compra paga com saldo some do cálculo e o criador não recebe.
         $limits = [
-            'pix'  => PlatformSetting::getPixReleaseDays(),
-            'card' => PlatformSetting::getCardReleaseDays(),
+            'pix'    => PlatformSetting::getPixReleaseDays(),
+            'card'   => PlatformSetting::getCardReleaseDays(),
+            'wallet' => PlatformSetting::getPixReleaseDays(),
         ];
         $op = $released ? '<=' : '>';
 

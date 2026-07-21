@@ -302,9 +302,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // Soma o valor do criador de assinaturas já liberadas
         $releasedAmount = $this->creatorSubscriptions()
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
-                // PIX: liberado se created_at + dias <= hoje
+                // PIX e CARTEIRA: liberado se created_at + dias <= hoje. Carteira segue a regra do PIX
+                // porque o dinheiro dela ja compensou no deposito — nao ha risco de estorno pendente.
                 $query->where(function ($q) use ($pixReleaseDate) {
-                    $q->where('payment_method', 'pix')
+                    $q->whereIn('payment_method', ['pix', 'wallet'])
                       ->where('created_at', '<=', $pixReleaseDate);
                 })
                 // Cartão: liberado se created_at + dias <= hoje
@@ -363,7 +364,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
                 // PIX: não liberado se created_at + dias > hoje
                 $query->where(function ($q) use ($pixReleaseDate) {
-                    $q->where('payment_method', 'pix')
+                    $q->whereIn('payment_method', ['pix', 'wallet'])
                       ->where('created_at', '>', $pixReleaseDate);
                 })
                 // Cartão: não liberado se created_at + dias > hoje
@@ -483,9 +484,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // Inclui tanto referrer_amount (quando indicado assina) quanto creator_affiliate_amount (quando criador indicado vende)
         $releasedCommissions = $this->affiliateCommissions()
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
-                // PIX: liberado se created_at + dias <= hoje
+                // PIX e CARTEIRA: liberado se created_at + dias <= hoje. Carteira segue a regra do PIX
+                // porque o dinheiro dela ja compensou no deposito — nao ha risco de estorno pendente.
                 $query->where(function ($q) use ($pixReleaseDate) {
-                    $q->where('payment_method', 'pix')
+                    $q->whereIn('payment_method', ['pix', 'wallet'])
                       ->where('created_at', '<=', $pixReleaseDate);
                 })
                 // Cartão: liberado se created_at + dias <= hoje
@@ -542,7 +544,7 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
                 // PIX: não liberado se created_at + dias > hoje
                 $query->where(function ($q) use ($pixReleaseDate) {
-                    $q->where('payment_method', 'pix')
+                    $q->whereIn('payment_method', ['pix', 'wallet'])
                       ->where('created_at', '>', $pixReleaseDate);
                 })
                 // Cartão: não liberado se created_at + dias > hoje
