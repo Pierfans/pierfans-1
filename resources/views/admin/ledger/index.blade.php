@@ -47,6 +47,12 @@
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</p>
                         {{-- expressão única em vez de @if inline: diretiva colada em palavra (gastaram@endif) o Blade ignora, e o if fica sem fechar --}}
                         <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas é deles: o que criadores e afiliados podem sacar (inclui o que ainda está no prazo de liberação){{ $owedToWallets > 0 ? ', mais R$ ' . number_format($owedToWallets, 2, ',', '.') . ' de saldo em carteira que assinantes depositaram e ainda não gastaram' : '' }}.</p>
+                        @if($owedRows->isNotEmpty())
+                            <button type="button" onclick="document.getElementById('modalDevido').classList.remove('hidden')"
+                                    class="mt-3 text-sm font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2">
+                                Ver quem tem a receber ({{ $owedRows->count() }})
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -107,6 +113,126 @@
                     </form>
                 </div>
             </div>
+        @endif
+
+        {{-- Quem tem a receber. Sobrepõe a tela em vez de expandir dentro do card: é conteúdo
+             extra, não muda a estrutura de quem só quer olhar o caixa. Filtro no cliente — a
+             lista inteira já veio, ida ao servidor a cada clique só deixaria mais lento. --}}
+        @if($owedRows->isNotEmpty())
+            <div id="modalDevido" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col">
+                    <div class="flex items-start justify-between p-6 pb-4 border-b border-gray-100">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900">Quem tem a receber</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Soma exatamente o card: <span class="font-semibold">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</span>
+                            </p>
+                        </div>
+                        <button type="button" onclick="document.getElementById('modalDevido').classList.add('hidden')"
+                                class="text-gray-400 hover:text-gray-700 text-2xl leading-none px-2">&times;</button>
+                    </div>
+
+                    <div class="px-6 py-3 border-b border-gray-100 flex flex-wrap items-center gap-2">
+                        @foreach(['todos' => 'Todos', 'criador' => 'Criadores', 'afiliado' => 'Afiliados', 'carteira' => 'Carteiras', 'saque pendente' => 'Saques pedidos'] as $valor => $rotulo)
+                            <button type="button" data-filtro="{{ $valor }}"
+                                    class="filtro-devido px-3 py-1.5 rounded-full text-xs font-medium border {{ $valor === 'todos' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' }}">
+                                {{ $rotulo }}
+                            </button>
+                        @endforeach
+                        <input type="text" id="buscaDevido" placeholder="Buscar por nome..."
+                               class="ml-auto px-3 py-1.5 border border-gray-300 rounded-lg text-sm w-48">
+                    </div>
+
+                    <div class="overflow-y-auto flex-1">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Pessoa</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                                    <th class="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @foreach($owedRows as $linha)
+                                    @php
+                                        $cor = [
+                                            'criador'        => 'bg-blue-100 text-blue-700',
+                                            'afiliado'       => 'bg-purple-100 text-purple-700',
+                                            'carteira'       => 'bg-emerald-100 text-emerald-700',
+                                            'saque pendente' => 'bg-orange-100 text-orange-700',
+                                        ][$linha['tipo']];
+                                    @endphp
+                                    <tr class="linha-devido hover:bg-gray-50"
+                                        data-tipo="{{ $linha['tipo'] }}"
+                                        data-nome="{{ Str::lower($linha['user']->name . ' ' . $linha['user']->username) }}">
+                                        <td class="px-6 py-3 text-sm text-gray-900">
+                                            {{ $linha['user']->name }}
+                                            <span class="text-gray-400">{{ '@' . $linha['user']->username }}</span>
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $cor }}">{{ $linha['tipo'] }}</span>
+                                        </td>
+                                        <td class="px-6 py-3 text-sm font-semibold text-gray-900 text-right">R$ {{ number_format($linha['valor'], 2, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr id="semResultado" class="hidden">
+                                    <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-400">Ninguém encontrado com esse filtro.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between text-sm font-semibold text-gray-900">
+                        <span id="totalDevidoRotulo">Total ({{ $owedRows->count() }})</span>
+                        <span id="totalDevidoValor">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    const linhas = Array.from(document.querySelectorAll('.linha-devido'));
+                    const busca = document.getElementById('buscaDevido');
+                    const botoes = Array.from(document.querySelectorAll('.filtro-devido'));
+                    const vazio = document.getElementById('semResultado');
+                    let filtroAtual = 'todos';
+
+                    // Os valores vêm do próprio DOM: o total do rodapé é sempre a soma do que está visível.
+                    const valorDe = (tr) => parseFloat(
+                        tr.lastElementChild.textContent.replace(/[^\d,]/g, '').replace(',', '.')
+                    ) || 0;
+
+                    function aplicar() {
+                        const termo = busca.value.trim().toLowerCase();
+                        let visiveis = 0, soma = 0;
+                        linhas.forEach(tr => {
+                            const casaTipo = filtroAtual === 'todos' || tr.dataset.tipo === filtroAtual;
+                            const casaNome = termo === '' || tr.dataset.nome.includes(termo);
+                            const mostrar = casaTipo && casaNome;
+                            tr.classList.toggle('hidden', !mostrar);
+                            if (mostrar) { visiveis++; soma += valorDe(tr); }
+                        });
+                        vazio.classList.toggle('hidden', visiveis > 0);
+                        document.getElementById('totalDevidoRotulo').textContent = 'Total (' + visiveis + ')';
+                        document.getElementById('totalDevidoValor').textContent =
+                            'R$ ' + soma.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+
+                    botoes.forEach(b => b.addEventListener('click', function () {
+                        filtroAtual = this.dataset.filtro;
+                        botoes.forEach(o => o.className = o.className
+                            .replace('bg-gray-900 text-white border-gray-900', 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'));
+                        this.className = this.className
+                            .replace('bg-white text-gray-600 border-gray-300 hover:bg-gray-50', 'bg-gray-900 text-white border-gray-900');
+                        aplicar();
+                    }));
+                    busca.addEventListener('input', aplicar);
+
+                    document.getElementById('modalDevido').addEventListener('click', function (e) {
+                        if (e.target === this) this.classList.add('hidden');
+                    });
+                })();
+            </script>
         @endif
 
         <!-- Filtro de período + export -->

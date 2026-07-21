@@ -56,8 +56,13 @@ class AdminLedgerController extends Controller
         // de saque (não do ledger, que só enxerga de junho pra cá e ignora crédito manual).
         // Inclui o que ainda está no prazo de liberação: vai sair da conta de qualquer jeito.
         // Soma os saques PENDENTES deles (o saldo do usuário já desconta, mas o dinheiro ainda está lá).
-        $owedToUsers   = round($this->owedToUsers() + $this->pendingOwed(['creator', 'affiliate']), 2);
-        $owedToWallets = $this->owedToWallets();
+        // Uma passada só: o card, a abertura e o passivo do caixa saem todos daqui.
+        $owedRows      = $this->owedBreakdown();
+        $owedToUsers   = round($owedRows->sum('valor'), 2);
+        $owedToWallets = round($owedRows->where('tipo', 'carteira')->sum('valor'), 2);
+        // O caixa não desconta saque pendente aqui: quem faz isso é o pendingOut(), que soma
+        // valor + taxa da SuitPay. Descontar nos dois lugares tiraria o mesmo dinheiro duas vezes.
+        $owedForCash   = round($owedRows->where('tipo', '!=', self::TIPO_SAQUE)->sum('valor'), 2);
 
         // Caixa da plataforma = saldo real, menos os saldos dos usuários, menos tudo que já está
         // prometido a sair da conta em saques pendentes (valor + taxa da SuitPay, de qualquer dono).
@@ -65,7 +70,7 @@ class AdminLedgerController extends Controller
         // pelo app já vêm descontados sozinhos — não tem como sacar o mesmo dinheiro duas vezes.
         // null quando não há extrato importado (sem saldo real, a conta não existe).
         $platformCash = $recon
-            ? round($recon['liveBalance'] - $this->owedToUsers() - $this->pendingOut(['creator', 'affiliate', 'platform']), 2)
+            ? round($recon['liveBalance'] - $owedForCash - $this->pendingOut(['creator', 'affiliate', 'platform']), 2)
             : null;
 
         // Teto do saque da plataforma: a SuitPay debita valor + 3,5% da conta, então o valor pedido
@@ -114,7 +119,7 @@ class AdminLedgerController extends Controller
             'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
-            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'ledgerStart', 'recon', 'filtered'
+            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'owedRows', 'ledgerStart', 'recon', 'filtered'
         ));
     }
 
@@ -129,19 +134,59 @@ class AdminLedgerController extends Controller
      */
     private function owedToUsers(): float
     {
-        $creators = User::where('creator_status', 'approved')->get()
-            ->sum(fn ($u) => $u->getAvailableBalance() + $u->getPendingBalance());
-
-        $affiliates = User::whereHas('referrals')->get()
-            ->sum(fn ($u) => $u->getAffiliateAvailableBalance() + $u->getAffiliatePendingBalance());
-
-        return round($creators + $affiliates + $this->owedToWallets(), 2);
+        return round($this->owedBreakdown()->where('tipo', '!=', self::TIPO_SAQUE)->sum('valor'), 2);
     }
 
-    /** Saldo que os assinantes têm em carteira (depositado e ainda não gasto). */
-    private function owedToWallets(): float
+    /** Rótulo do saque pendente — usado pra separar o que entra no caixa do que não entra. */
+    private const TIPO_SAQUE = 'saque pendente';
+
+    /**
+     * Quem, nominalmente, tem dinheiro nosso — a abertura do card "Devido a usuários".
+     *
+     * O card e a listagem saem DAQUI, da mesma passada: somar a lista tem que dar exatamente o
+     * card. Se fossem duas queries independentes, divergiriam na primeira mudança de regra e a
+     * tela passaria a mentir sem ninguém perceber.
+     *
+     * ponytail: ~40 usuários, algumas queries cada. Cachear (60s) se a tela pesar.
+     *
+     * @return \Illuminate\Support\Collection<int, array{user:User, tipo:string, valor:float}>
+     */
+    private function owedBreakdown(): \Illuminate\Support\Collection
     {
-        return round((float) Wallet::sum('balance'), 2);
+        $rows = collect();
+
+        foreach (User::where('creator_status', 'approved')->get() as $u) {
+            $valor = round($u->getAvailableBalance() + $u->getPendingBalance(), 2);
+            if ($valor > 0) {
+                $rows->push(['user' => $u, 'tipo' => 'criador', 'valor' => $valor]);
+            }
+        }
+
+        foreach (User::whereHas('referrals')->get() as $u) {
+            $valor = round($u->getAffiliateAvailableBalance() + $u->getAffiliatePendingBalance(), 2);
+            if ($valor > 0) {
+                $rows->push(['user' => $u, 'tipo' => 'afiliado', 'valor' => $valor]);
+            }
+        }
+
+        foreach (Wallet::with('user')->where('balance', '>', 0)->get() as $w) {
+            if ($w->user) {
+                $rows->push(['user' => $w->user, 'tipo' => 'carteira', 'valor' => round((float) $w->balance, 2)]);
+            }
+        }
+
+        // Saque já pedido: o saldo do usuário já descontou, mas o dinheiro ainda está na conta.
+        foreach (Withdrawal::with('user')->whereIn('type', ['creator', 'affiliate'])->where('status', 'pending')->get() as $wd) {
+            if ($wd->user) {
+                $rows->push([
+                    'user'  => $wd->user,
+                    'tipo'  => self::TIPO_SAQUE,
+                    'valor' => round((float) $wd->amount + (float) ($wd->fee ?? 0), 2),
+                ]);
+            }
+        }
+
+        return $rows->sortByDesc('valor')->values();
     }
 
     /**
