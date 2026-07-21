@@ -64,7 +64,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-500 mb-1">Data de Cadastro</label>
-                            <p class="text-sm text-gray-900">{{ $user->created_at->format('d/m/Y H:i') }}</p>
+                            <p class="text-sm text-gray-900">{{ $user->created_at->emBrasilia()->format('d/m/Y H:i') }}</p>
                         </div>
                     </div>
                 </div>
@@ -142,7 +142,7 @@
                                             <div class="text-sm text-gray-500">{{ $referredUser->email }}</div>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <div class="text-sm text-gray-500">{{ $referredUser->created_at->format('d/m/Y') }}</div>
+                                            <div class="text-sm text-gray-500">{{ $referredUser->created_at->emBrasilia()->format('d/m/Y') }}</div>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('admin.users.show', $referredUser->id) }}"
@@ -326,7 +326,7 @@
                         @foreach($manualCredits as $credit)
                             <tr>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $credit->created_at->format('d/m/Y H:i') }}</div>
+                                    <div class="text-sm text-gray-900">{{ $credit->created_at->emBrasilia()->format('d/m/Y H:i') }}</div>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     @if($credit->type === 'creator')

@@ -70,7 +70,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-500">
-                                            {{ $user->created_at->format('d/m/Y H:i') }}
+                                            {{ $user->created_at->emBrasilia()->format('d/m/Y H:i') }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -314,7 +314,7 @@ class AdminSalesController extends Controller
             foreach ($sales as $s) {
                 $b = $buyers->get($s['buyer_id']);
                 fputcsv($out, [
-                    $s['date']->format('d/m/Y H:i'),
+                    $s['date']->emBrasilia()->format('d/m/Y H:i'),
                     $b->name ?? '—',
                     $b->username ?? '',
                     $s['tipo'],

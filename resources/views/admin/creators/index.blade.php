@@ -81,7 +81,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-500">
-                                            {{ $creator->creator_submitted_at ? $creator->creator_submitted_at->format('d/m/Y H:i') : 'N/A' }}
+                                            {{ $creator->creator_submitted_at ? $creator->creator_submitted_at->emBrasilia()->format('d/m/Y H:i') : 'N/A' }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">

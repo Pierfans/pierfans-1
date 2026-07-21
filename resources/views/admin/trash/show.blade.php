@@ -21,7 +21,7 @@
                     <div>
                         <p class="font-semibold text-orange-800">Postagem na Lixeira</p>
                         <p class="text-sm text-orange-700 mt-1">
-                            Deletada pelo usuário em {{ $post->deleted_by_user_at->format('d/m/Y \à\s H:i') }}
+                            Deletada pelo usuário em {{ $post->deleted_by_user_at->emBrasilia()->format('d/m/Y \à\s H:i') }}
                         </p>
                     </div>
                 </div>
@@ -51,7 +51,7 @@
             <!-- Data de Criação -->
             <div>
                 <h2 class="text-lg font-semibold text-gray-900 mb-2">Data de Criação</h2>
-                <p class="text-gray-700">{{ $post->created_at->format('d/m/Y H:i') }}</p>
+                <p class="text-gray-700">{{ $post->created_at->emBrasilia()->format('d/m/Y H:i') }}</p>
             </div>
 
             <!-- Mídias -->

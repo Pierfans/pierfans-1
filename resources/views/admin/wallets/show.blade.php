@@ -53,7 +53,7 @@
                                                 <p class="text-xs text-gray-500 mb-1"><strong>Nota do Admin:</strong> {{ $transaction->admin_notes }}</p>
                                             @endif
                                             <div class="flex items-center gap-4 text-xs text-gray-500">
-                                                <span>{{ $transaction->created_at->format('d/m/Y H:i') }}</span>
+                                                <span>{{ $transaction->created_at->emBrasilia()->format('d/m/Y H:i') }}</span>
                                                 @if($transaction->adminUser)
                                                     <span>Adicionado por: {{ $transaction->adminUser->name }}</span>
                                                 @endif

@@ -36,7 +36,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Data da Denúncia</label>
-                        <p class="mt-1 text-sm text-gray-900">{{ $report->created_at->format('d/m/Y H:i') }}</p>
+                        <p class="mt-1 text-sm text-gray-900">{{ $report->created_at->emBrasilia()->format('d/m/Y H:i') }}</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Denunciado por</label>
@@ -47,7 +47,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Revisado por</label>
                             <p class="mt-1 text-sm text-gray-900">{{ $report->reviewer->name }}</p>
-                            <p class="text-sm text-gray-500">{{ $report->reviewed_at->format('d/m/Y H:i') }}</p>
+                            <p class="text-sm text-gray-500">{{ $report->reviewed_at->emBrasilia()->format('d/m/Y H:i') }}</p>
                         </div>
                     @endif
                 </div>
@@ -81,7 +81,7 @@
                         </div>
                         <div>
                             <div class="font-semibold text-gray-900">{{ $report->post->user->name }}</div>
-                            <div class="text-sm text-gray-500">{{ $report->post->created_at->format('d/m/Y H:i') }}</div>
+                            <div class="text-sm text-gray-500">{{ $report->post->created_at->emBrasilia()->format('d/m/Y H:i') }}</div>
                         </div>
                     </div>
                     

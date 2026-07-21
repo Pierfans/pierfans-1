@@ -46,7 +46,7 @@
                                 @if($subscription->activatedByAdmin)
                                     <div class="text-sm text-gray-600 mt-1">
                                         Por: {{ $subscription->activatedByAdmin->name }} em 
-                                        {{ $subscription->activated_at ? \Carbon\Carbon::parse($subscription->activated_at)->format('d/m/Y H:i') : 'N/A' }}
+                                        {{ $subscription->activated_at ? \Carbon\Carbon::parse($subscription->activated_at)->emBrasilia()->format('d/m/Y H:i') : 'N/A' }}
                                     </div>
                                 @endif
                             @else
@@ -168,7 +168,7 @@
                                         Ativado por: {{ $log->adminUser->name }}
                                     </div>
                                     <div class="text-sm text-gray-600">
-                                        {{ \Carbon\Carbon::parse($log->created_at)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($log->created_at)->emBrasilia()->format('d/m/Y H:i') }}
                                     </div>
                                     @if($log->reason)
                                         <div class="text-sm text-gray-700 mt-1">

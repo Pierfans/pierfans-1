@@ -63,7 +63,7 @@
                                         <div class="text-sm text-gray-500">{{ $report->user->email }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $report->created_at->format('d/m/Y H:i') }}
+                                        {{ $report->created_at->emBrasilia()->format('d/m/Y H:i') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if($report->status === 'pending')

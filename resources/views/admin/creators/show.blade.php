@@ -122,7 +122,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Verificado em</label>
-                            <p class="mt-1 text-sm text-gray-900">{{ $creator->didit_verified_at ? $creator->didit_verified_at->format('d/m/Y H:i') : 'N/A' }}</p>
+                            <p class="mt-1 text-sm text-gray-900">{{ $creator->didit_verified_at ? $creator->didit_verified_at->emBrasilia()->format('d/m/Y H:i') : 'N/A' }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Nome no documento</label>

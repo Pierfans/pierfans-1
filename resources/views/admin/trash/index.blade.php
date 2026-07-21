@@ -45,7 +45,7 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-500">
-                                            {{ $post->deleted_by_user_at->format('d/m/Y H:i') }}
+                                            {{ $post->deleted_by_user_at->emBrasilia()->format('d/m/Y H:i') }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
