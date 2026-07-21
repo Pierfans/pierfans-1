@@ -66,6 +66,7 @@ class LedgerEntry extends Model
             'subscription_sale' => 'Assinatura',
             'ppv_sale'          => 'Conteúdo Único',
             'cashout'           => 'Saque',
+            'wallet_deposit'    => 'Recarga de carteira',
         ][$this->entry_type] ?? $this->entry_type;
     }
 

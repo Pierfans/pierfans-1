@@ -41,7 +41,7 @@ class Wallet extends Model
         $this->balance += $amount;
         $this->save();
 
-        return WalletTransaction::create([
+        $movimento = WalletTransaction::create([
             'wallet_id' => $this->id,
             'admin_user_id' => $adminUserId,
             'payment_transaction_id' => $paymentTransactionId,
@@ -50,6 +50,27 @@ class Wallet extends Model
             'description' => $description,
             'admin_notes' => $adminNotes,
         ]);
+
+        // Recarga paga de verdade entra no ledger: é dinheiro que caiu na conta do SuitPay.
+        // Sem isso o passivo da carteira sobe na hora e o saldo real só descobre no próximo
+        // import de extrato — o caixa da plataforma fica menor do que é nesse intervalo.
+        // NÃO é receita: entry_type próprio, então os cards de venda ignoram sozinhos.
+        // Crédito manual do admin (sem transação) não entra: ali não entrou dinheiro nenhum.
+        // Fica aqui, e não nos controllers, porque há dois caminhos de crédito (app e webhook).
+        if ($paymentTransactionId && ($tx = PaymentTransaction::find($paymentTransactionId))) {
+            LedgerEntry::record([
+                'entry_type'             => 'wallet_deposit',
+                'paid_with'              => 'suitpay',
+                'payment_transaction_id' => $tx->id,
+                'gross_amount'           => $amount,
+                'suitpay_fee'            => LedgerEntry::saleFee($tx),
+                'creator_amount'         => 0,
+                'affiliate_amount'       => 0,
+                'occurred_at'            => now(),
+            ]);
+        }
+
+        return $movimento;
     }
 
     /**

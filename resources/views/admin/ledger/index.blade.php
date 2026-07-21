@@ -263,6 +263,7 @@
                         <option value="subscription_sale" @selected($tipo === 'subscription_sale')>Assinatura</option>
                         <option value="ppv_sale" @selected($tipo === 'ppv_sale')>Conteúdo Único</option>
                         <option value="cashout" @selected($tipo === 'cashout')>Saque</option>
+                        <option value="wallet_deposit" @selected($tipo === 'wallet_deposit')>Recarga de carteira</option>
                     </select>
                 </div>
                 <div>
@@ -344,21 +345,33 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($entries as $e)
                                 @php
-                                    $label = ['subscription_sale' => 'Assinatura', 'ppv_sale' => 'PPV', 'cashout' => 'Saque'][$e->entry_type] ?? $e->entry_type;
+                                    $label = ['subscription_sale' => 'Assinatura', 'ppv_sale' => 'PPV', 'cashout' => 'Saque', 'wallet_deposit' => 'Recarga'][$e->entry_type] ?? $e->entry_type;
+                                    // Recarga não é venda: o bruto é do usuário, a plataforma só paga a taxa pra receber.
+                                    $recarga = $e->entry_type === 'wallet_deposit';
                                     // Saque sem withdrawal = retirada feita direto no painel do SuitPay (não passou pelo app),
                                     // então não tem dono nem franquia do dia — as etiquetas grátis/extra mentiriam aqui.
                                     $manual = $e->entry_type === 'cashout' && !$e->withdrawal;
-                                    $platform = $e->entry_type === 'cashout'
-                                        ? $e->withdraw_fee - $e->suitpay_fee
-                                        : $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee;
+                                    $platform = match (true) {
+                                        $recarga => -$e->suitpay_fee, // dinheiro do usuário; sobra só o custo da taxa
+                                        $e->entry_type === 'cashout' => $e->withdraw_fee - $e->suitpay_fee,
+                                        default  => $e->gross_amount - $e->creator_amount - $e->affiliate_amount - $e->suitpay_fee,
+                                    };
                                 @endphp
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{{ $e->occurred_at->emBrasilia()->format('d/m/Y H:i') }}</td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                            {{ $e->entry_type === 'cashout' ? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700' }}">
+                                            @if($recarga) bg-emerald-100 text-emerald-700
+                                            @elseif($e->entry_type === 'cashout') bg-gray-100 text-gray-700
+                                            @else bg-green-100 text-green-700 @endif">
                                             {{ $label }}
                                         </span>
+                                        @if($recarga)
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 cursor-help"
+                                                  title="Depósito na carteira do usuário. Entra na conta mas não é receita: o valor é dele, e vira comissão de criador quando ele gastar. A plataforma só arca com a taxa de entrada.">
+                                                não é receita
+                                            </span>
+                                        @endif
                                         @if($manual)
                                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 cursor-help"
                                                   title="Retirada feita direto no painel do SuitPay, fora do app. A taxa é a real cobrada no extrato.">

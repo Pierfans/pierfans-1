@@ -21,7 +21,7 @@ class AdminLedgerController extends Controller
     public function index(Request $request)
     {
         [$from, $to] = $this->period($request);
-        $tipo = in_array($request->get('tipo'), ['subscription_sale', 'ppv_sale', 'cashout']) ? $request->get('tipo') : 'todos';
+        $tipo = in_array($request->get('tipo'), ['subscription_sale', 'ppv_sale', 'cashout', 'wallet_deposit']) ? $request->get('tipo') : 'todos';
         // Dono do saque (criador/afiliado/plataforma). Só faz sentido em cashout — filtra pelo withdrawal.type.
         $dono = in_array($request->get('dono'), ['creator', 'affiliate', 'platform']) ? $request->get('dono') : 'todos';
 
@@ -33,7 +33,9 @@ class AdminLedgerController extends Controller
         $grossSales    = (float) (clone $sales)->sum('gross_amount');
         $creatorPaid   = (float) (clone $sales)->sum('creator_amount');
         $affiliatePaid = (float) (clone $sales)->sum('affiliate_amount');
-        $feeIn         = (float) (clone $sales)->sum('suitpay_fee');
+        // Taxa de entrada inclui a da recarga: a plataforma paga os 3,5% pra receber o depósito
+        // e nunca vê esse dinheiro como receita. Fora daqui, viraria custo invisível.
+        $feeIn         = (float) (clone $base)->whereIn('entry_type', ['subscription_sale', 'ppv_sale', 'wallet_deposit'])->sum('suitpay_fee');
         $feeOut        = (float) (clone $cashouts)->sum('suitpay_fee');
         $withdrawFee   = (float) (clone $cashouts)->sum('withdraw_fee');
         $cashoutTotal  = (float) (clone $cashouts)->sum('gross_amount');
@@ -329,7 +331,8 @@ class AdminLedgerController extends Controller
         // receita, mas o dinheiro já estava na conta desde o depósito — somar aqui inventaria
         // caixa que não existe e liberaria saque em cima dele.
         $after = $latest?->occurred_at?->copy()->endOfMinute();
-        $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])
+        // Recarga entra aqui junto com as vendas: não é receita, mas é dinheiro que caiu na conta.
+        $newSales = LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale', 'wallet_deposit'])
             ->where('paid_with', 'suitpay')
             ->where('occurred_at', '>', $after);
         $newCash  = LedgerEntry::where('entry_type', 'cashout')->where('occurred_at', '>', $after);
@@ -350,7 +353,9 @@ class AdminLedgerController extends Controller
 
         $realFeeIn  = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_in'))->sum('valor');
         $realFeeOut = (float) $win(SuitpayStatementEntry::where('tipo', 'fee_out'))->sum('valor');
-        $ledgerFeeIn  = (float) $win(LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale'])
+        // Inclui recarga: o extrato cobra taxa de entrada nela igual, então sem isso a
+        // conferência de taxa acusaria diferença que não existe.
+        $ledgerFeeIn  = (float) $win(LedgerEntry::whereIn('entry_type', ['subscription_sale', 'ppv_sale', 'wallet_deposit'])
             ->where('paid_with', 'suitpay'))->sum('suitpay_fee');
         $ledgerFeeOut = (float) $win(LedgerEntry::where('entry_type', 'cashout'))->sum('suitpay_fee');
 
@@ -387,7 +392,11 @@ class AdminLedgerController extends Controller
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Data', 'Tipo', 'Solicitante', 'Id SuitPay', 'Bruto', 'Taxa SuitPay', 'Liquido SuitPay', 'Criador', 'Afiliado', 'Plataforma (liq)']);
             foreach ($rows as $e) {
-                if ($e->entry_type === 'cashout') {
+                if ($e->entry_type === 'wallet_deposit') {
+                    // Recarga: o bruto é do usuário. Pra plataforma sobra só o custo da taxa.
+                    $platform = -round($e->suitpay_fee, 2);
+                    $liquidoSuitpay = round($e->gross_amount - $e->suitpay_fee, 2);
+                } elseif ($e->entry_type === 'cashout') {
                     // Saque: plataforma embolsa a taxa cobrada do usuário e paga o custo do SuitPay
                     $platform = round($e->withdraw_fee - $e->suitpay_fee, 2);
                     // SuitPay debita o valor + a taxa da conta
