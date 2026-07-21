@@ -45,7 +45,8 @@
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
                         <p class="text-sm text-gray-500">Devido a usuários</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas é deles: o que criadores e afiliados podem sacar (inclui o que ainda está no prazo de liberação)@if($owedToWallets > 0), mais R$ {{ number_format($owedToWallets, 2, ',', '.') }} de saldo em carteira que assinantes depositaram e ainda não gastaram@endif.</p>
+                        {{-- expressão única em vez de @if inline: diretiva colada em palavra (gastaram@endif) o Blade ignora, e o if fica sem fechar --}}
+                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas é deles: o que criadores e afiliados podem sacar (inclui o que ainda está no prazo de liberação){{ $owedToWallets > 0 ? ', mais R$ ' . number_format($owedToWallets, 2, ',', '.') . ' de saldo em carteira que assinantes depositaram e ainda não gastaram' : '' }}.</p>
                     </div>
                 </div>
 
