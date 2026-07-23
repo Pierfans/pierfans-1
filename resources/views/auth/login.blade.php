@@ -162,13 +162,13 @@
         </div>
 
         <!-- Coluna Direita: Banner Destaque da Semana (colab Juju) - responsivo, aparece no mobile tambem -->
-        <div class="w-full lg:w-1/2 h-72 sm:h-80 lg:h-auto bg-[#01313B] relative overflow-hidden flex">
-            <!-- Foto em pe, altura cheia, ancorada no canto -->
+        <div class="w-full lg:w-1/2 h-[380px] sm:h-[420px] lg:h-auto bg-[#01313B] relative overflow-hidden flex">
+            <!-- Foto ocupando ~62% da largura (invade sob o texto, igual o mockup); object-top mantem os rostos -->
             <img src="/img/destaque-juju.jpg" alt="Destaque da semana"
-                class="absolute right-0 bottom-0 h-full w-auto object-contain object-bottom z-[1]">
-            <!-- Degrade: escuro na esquerda (onde fica o texto), transparente na direita (foto) -->
+                class="absolute right-0 top-0 h-full w-1/2 lg:w-[62%] object-cover object-top z-[1]">
+            <!-- Degrade: escuro na esquerda (onde fica o texto), some sobre a foto -->
             <div class="absolute inset-0 z-[2]"
-                style="background: linear-gradient(90deg, #01313B 0%, #01313B 30%, rgba(1,49,59,0.72) 50%, rgba(1,49,59,0) 72%);"></div>
+                style="background: linear-gradient(90deg, #01313B 0%, #01313B 24%, rgba(1,49,59,0.85) 44%, rgba(1,49,59,0.2) 64%, rgba(1,49,59,0) 80%);"></div>
             <!-- Logo -->
             <img src="/img/logo.png" alt="PierFans" class="absolute top-5 left-6 lg:top-6 lg:left-8 w-32 lg:w-40 z-[3]">
             <!-- Texto -->
