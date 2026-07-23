@@ -179,7 +179,7 @@
                 </span>
                 <p class="text-white font-black leading-none text-3xl sm:text-4xl lg:text-5xl m-0">EM<br>BREVE</p>
                 <p class="text-white/80 text-xs lg:text-sm m-0">colab <b class="text-[#14d1bc]">@juju</b> chegando</p>
-                <a href="{{ route('register') }}"
+                <a href="/jujuferrari"
                     class="self-start mt-1 bg-[#14d1bc] hover:bg-[#0e9486] text-[#01323a] hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
                     quero ver →
                 </a>
