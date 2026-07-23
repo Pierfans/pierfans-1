@@ -165,10 +165,10 @@
         <div class="w-full lg:w-1/2 h-[380px] sm:h-[420px] lg:h-auto bg-[#01313B] relative overflow-hidden flex">
             <!-- Foto ocupando ~62% da largura (invade sob o texto, igual o mockup); object-top mantem os rostos -->
             <img src="/img/destaque-juju.jpg" alt="Destaque da semana"
-                class="absolute right-0 top-0 h-full w-1/2 lg:w-[62%] object-cover object-top z-[1]">
+                class="absolute right-0 top-0 h-full w-1/2 lg:w-[70%] object-cover object-top z-[1]">
             <!-- Degrade: escuro na esquerda (onde fica o texto), some sobre a foto -->
             <div class="absolute inset-0 z-[2]"
-                style="background: linear-gradient(90deg, #01313B 0%, #01313B 24%, rgba(1,49,59,0.85) 44%, rgba(1,49,59,0.2) 64%, rgba(1,49,59,0) 80%);"></div>
+                style="background: linear-gradient(90deg, #01313B 0%, #01313B 20%, rgba(1,49,59,0.85) 40%, rgba(1,49,59,0.2) 58%, rgba(1,49,59,0) 74%);"></div>
             <!-- Logo -->
             <img src="/img/logo.png" alt="PierFans" class="absolute top-5 left-6 lg:top-6 lg:left-8 w-32 lg:w-40 z-[3]">
             <!-- Texto -->
