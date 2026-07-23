@@ -163,12 +163,13 @@
 
         <!-- Coluna Direita: Banner Destaque da Semana (colab Juju) - responsivo, aparece no mobile tambem -->
         <div class="w-full lg:w-1/2 h-[380px] sm:h-[420px] lg:h-auto bg-[#01313B] relative overflow-hidden flex">
-            <!-- Foto ocupando ~62% da largura (invade sob o texto, igual o mockup); object-top mantem os rostos -->
+            <!-- Foto ocupa ~70% da largura; a mascara dissolve a borda esquerda no verde (sem linha dura) -->
             <img src="/img/destaque-juju.jpg" alt="Destaque da semana"
-                class="absolute right-0 top-0 h-full w-1/2 lg:w-[70%] object-cover object-top z-[1]">
-            <!-- Degrade: escuro na esquerda (onde fica o texto), some sobre a foto -->
+                class="absolute right-0 top-0 h-full w-1/2 lg:w-[70%] object-cover object-top z-[1]"
+                style="-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%); mask-image: linear-gradient(to right, transparent 0%, #000 45%);">
+            <!-- Overlay leve so pra dar contraste ao texto na esquerda (a transicao quem faz e a mascara) -->
             <div class="absolute inset-0 z-[2]"
-                style="background: linear-gradient(90deg, #01313B 0%, #01313B 20%, rgba(1,49,59,0.85) 40%, rgba(1,49,59,0.2) 58%, rgba(1,49,59,0) 74%);"></div>
+                style="background: linear-gradient(90deg, rgba(1,49,59,0.55) 0%, rgba(1,49,59,0.15) 32%, rgba(1,49,59,0) 46%);"></div>
             <!-- Logo -->
             <img src="/img/logo.png" alt="PierFans" class="absolute top-5 left-6 lg:top-6 lg:left-8 w-32 lg:w-40 z-[3]">
             <!-- Texto -->
