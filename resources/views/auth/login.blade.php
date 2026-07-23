@@ -161,18 +161,27 @@
             </div>
         </div>
 
-        <!-- Coluna Direita: Banner -->
-        <div class="w-full lg:w-1/2 bg-[#01313B] relative overflow-hidden hidden lg:flex items-end">
-            <!-- Imagem de fundo -->
-            <div class="absolute inset-0 bg-no-repeat"
-                style="background-image: url('/img/bg1.jpg'); background-size: cover; background-position: 30% center; opacity: 0.6;">
-            </div>
-            <!-- Overlay gradiente -->
-            <div class="absolute inset-0" style="background: linear-gradient(to right, rgba(1,49,59,0.7) 0%, rgba(1,49,59,0.1) 100%);"></div>
-            <!-- Conteúdo -->
-            <div class="relative z-10 p-10">
-                <img src="/img/logo.png" alt="PierFans" class="w-48 mb-3">
-                <p class="text-white/70 text-base">Conteúdo exclusivo.<br>100% brasileiras.</p>
+        <!-- Coluna Direita: Banner Destaque da Semana (colab Juju) - responsivo, aparece no mobile tambem -->
+        <div class="w-full lg:w-1/2 h-72 sm:h-80 lg:h-auto bg-[#01313B] relative overflow-hidden flex">
+            <!-- Foto em pe, altura cheia, ancorada no canto -->
+            <img src="/img/destaque-juju.jpg" alt="Destaque da semana"
+                class="absolute right-0 bottom-0 h-full w-auto object-contain object-bottom z-[1]">
+            <!-- Degrade: escuro na esquerda (onde fica o texto), transparente na direita (foto) -->
+            <div class="absolute inset-0 z-[2]"
+                style="background: linear-gradient(90deg, #01313B 0%, #01313B 30%, rgba(1,49,59,0.72) 50%, rgba(1,49,59,0) 72%);"></div>
+            <!-- Logo -->
+            <img src="/img/logo.png" alt="PierFans" class="absolute top-5 left-6 lg:top-6 lg:left-8 w-32 lg:w-40 z-[3]">
+            <!-- Texto -->
+            <div class="absolute z-[3] left-6 lg:left-8 top-0 bottom-0 flex flex-col justify-center gap-2 lg:gap-3 max-w-[62%]">
+                <span class="self-start inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FC9E2B] text-white text-[10px] lg:text-xs font-extrabold rounded-full uppercase tracking-wide">
+                    🔥 Destaque da semana
+                </span>
+                <p class="text-white font-black leading-none text-3xl sm:text-4xl lg:text-5xl m-0">EM<br>BREVE</p>
+                <p class="text-white/80 text-xs lg:text-sm m-0">colab <b class="text-[#14d1bc]">@juju</b> chegando</p>
+                <a href="{{ route('register') }}"
+                    class="self-start mt-1 bg-[#14d1bc] hover:bg-[#0e9486] text-[#01323a] hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
+                    quero ver →
+                </a>
             </div>
         </div>
     </div>
