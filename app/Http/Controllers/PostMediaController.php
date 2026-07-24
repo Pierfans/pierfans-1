@@ -170,6 +170,13 @@ class PostMediaController extends Controller
     {
         $media = PostMedia::with('post')->findOrFail($id);
 
+        if (!$media->post || !$media->post->canBeViewedBy(Auth::user())) {
+            Log::warning('Acesso negado a midia', ['mediaId' => $id, 'userId' => Auth::id()]);
+            return request()->wantsJson()
+                ? response()->json(['success' => false, 'message' => 'Sem acesso a esta mídia.'], 403)
+                : abort(403, 'Sem acesso a esta mídia.');
+        }
+
         if (request()->wantsJson()) {
             try {
                 $url = $this->getPresignedViewUrl($media->file_path);

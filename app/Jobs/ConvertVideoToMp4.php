@@ -54,12 +54,17 @@ class ConvertVideoToMp4 implements ShouldQueue
         try {
             // Obtém o arquivo de origem
             if ($isR2) {
-                $contents = Storage::disk('r2')->get($originalPath);
-                if (!$contents) {
+                // stream, nao ->get(): um video de 300 MB viraria uma string de 300 MB
+                // na memoria do PHP e estouraria o memory_limit
+                $remoto = Storage::disk('r2')->readStream($originalPath);
+                if (!$remoto) {
                     Log::error('ConvertVideoToMp4: falha ao baixar do R2', ['path' => $originalPath]);
                     return;
                 }
-                file_put_contents($tmpInput, $contents);
+                $local = fopen($tmpInput, 'wb');
+                stream_copy_to_stream($remoto, $local);
+                fclose($local);
+                fclose($remoto);
             } else {
                 $localPath = public_path('_files_/' . $originalPath);
                 if (!file_exists($localPath)) {
@@ -95,7 +100,13 @@ class ConvertVideoToMp4 implements ShouldQueue
             }
 
             if ($isR2) {
-                Storage::disk('r2')->put($newPath, file_get_contents($tmpOutput), 'private');
+                // sem ContentType o R2 grava como octet-stream e o navegador nao toca o video
+                $saida = fopen($tmpOutput, 'rb');
+                Storage::disk('r2')->writeStream($newPath, $saida, [
+                    'visibility' => 'private',
+                    'ContentType' => 'video/mp4',
+                ]);
+                fclose($saida);
                 Storage::disk('r2')->delete($originalPath);
             } else {
                 $newLocalPath = public_path('_files_/' . $newPath);

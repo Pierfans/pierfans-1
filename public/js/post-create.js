@@ -74,6 +74,13 @@
                 return false;
             }
 
+            // O envio direto pro R2 aceita menos formatos que o envio pelo servidor.
+            // Barrar aqui evita o criador descobrir isso só depois de publicar.
+            if (window.USE_R2_UPLOAD && !window.postMediaIsAllowedFile(file.fileName)) {
+                alert('Formato não suportado: ' + file.fileName + '\nUse JPG, PNG, WEBP, MP4, MOV ou WEBM.');
+                return false;
+            }
+
             // Adiciona à lista temporária
             const fileInfo = {
                 uniqueIdentifier: file.uniqueIdentifier,
@@ -299,6 +306,13 @@
         // Desabilita o botão IMEDIATAMENTE
         $('#submitBtn').prop('disabled', true).text('Publicando...');
 
+        // Envio direto pro R2: o arquivo vai do navegador pro Cloudflare sem passar
+        // pelo servidor. Cria o post vazio primeiro porque a mídia precisa de post_id.
+        if (window.USE_R2_UPLOAD) {
+            criarPostEEnviarParaR2();
+            return;
+        }
+
         // Verifica se há arquivos que ainda não foram enviados
         const pendingUploads = uploadedFiles.filter(f => !f.uploaded && !f.uploading);
         
@@ -318,6 +332,92 @@
             // Todos os arquivos já foram enviados, cria o post
             createPost();
         }
+    }
+
+    function criarPostEEnviarParaR2() {
+        $.ajax({
+            url: '/posts',
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                description: $('#description').val(),
+                visibility: $('#visibility').val(),
+                price: $('#price').val() || null,
+                create_without_media: 1
+            },
+            success: function (response) {
+                if (!response.success || !response.post_id) {
+                    alert(response.message || 'Erro ao criar a postagem.');
+                    $('#submitBtn').prop('disabled', false).text('Publicar');
+                    return;
+                }
+                enviarArquivosParaR2(response.post_id, response.user_username);
+            },
+            error: function (xhr) {
+                $('#submitBtn').prop('disabled', false).text('Publicar');
+                const errors = xhr.responseJSON?.errors || {};
+                Object.keys(errors).forEach(function (field) {
+                    showError(field, errors[field][0]);
+                });
+                if (xhr.responseJSON?.message) {
+                    alert(xhr.responseJSON.message);
+                }
+            }
+        });
+    }
+
+    function enviarArquivosParaR2(postId, username) {
+        const total = uploadedFiles.length;
+        let indice = 0;
+        let enviados = 0;
+
+        function proximo() {
+            if (indice >= total) {
+                if (enviados === 0) {
+                    // post sem nenhuma mídia nao pode ficar publicado no feed
+                    descartarPost(postId);
+                    alert('Nenhum arquivo foi enviado. A postagem foi descartada.');
+                    $('#submitBtn').prop('disabled', false).text('Publicar');
+                    return;
+                }
+                showSuccessModal(username);
+                return;
+            }
+
+            const atual = indice;
+            const arquivo = uploadedFiles[atual].file.file;
+
+            window.postMediaUploadFile(arquivo, postId, atual, function (enviado, totalBytes) {
+                const pct = totalBytes ? Math.floor((enviado / totalBytes) * 100) : 0;
+                uploadedFiles[atual].progress = pct;
+                updateProgressBar(atual, pct);
+                $('#submitBtn').text('Enviando ' + (atual + 1) + '/' + total + ' (' + pct + '%)');
+            }).then(function (resultado) {
+                if (resultado.success) {
+                    enviados++;
+                    uploadedFiles[atual].uploaded = true;
+                    updateProgressBar(atual, 100);
+                } else {
+                    uploadedFiles[atual].error = true;
+                    showProgressError(atual, resultado.message || 'Erro no envio');
+                }
+                indice++;
+                proximo();
+            });
+        }
+
+        proximo();
+    }
+
+    function descartarPost(postId) {
+        $.ajax({
+            url: '/posts/' + postId,
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'DELETE'
+            }
+        });
     }
 
     function waitForUploadsToComplete() {

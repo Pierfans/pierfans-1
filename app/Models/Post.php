@@ -106,6 +106,31 @@ class Post extends Model
     }
 
     /**
+     * Quem pode acessar o ARQUIVO desta postagem. Usado pela rota que entrega a
+     * mídia do R2 (post-media.stream): sem isso qualquer usuário logado baixa
+     * conteúdo de assinante e de PPV só chutando o id da mídia.
+     *
+     * Não é a mesma regra do post-card: lá o admin não fura paywall no feed, mas
+     * aqui ele precisa passar, senão a tela /admin/posts/{id} não carrega a mídia.
+     */
+    public function canBeViewedBy(?User $user): bool
+    {
+        if ($this->visibility === 'free') {
+            return true;
+        }
+        if (!$user) {
+            return false;
+        }
+        if ($this->user_id === $user->id || $user->is_admin) {
+            return true;
+        }
+
+        return $this->visibility === 'paid'
+            ? $this->isPurchasedBy($user->id)
+            : $user->hasActiveSubscription($this->user_id);
+    }
+
+    /**
      * Conteúdo Único (paid) que já tem comprador não pode ser excluído/desabilitado:
      * o soft-delete tiraria o acesso de quem pagou e o hard-delete cascatearia o
      * registro em post_purchases. Único caminho é remoção manual no servidor (admin).
