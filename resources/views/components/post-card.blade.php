@@ -241,15 +241,15 @@
                                 @php
                                     // Detecta o tipo MIME baseado na extensão do arquivo
                                     $fileExtension = strtolower(pathinfo($media->file_path, PATHINFO_EXTENSION));
+                                    // mov/avi ficam no padrão mp4 de propósito: rotular de
+                                    // video/quicktime faz o Chrome descartar a source sem nem
+                                    // tentar, e o player fica preto. Com mp4 ele tenta o
+                                    // container (o que o admin sempre fez, e por isso funcionava lá).
                                     $mimeType = 'video/mp4'; // padrão
                                     if ($fileExtension === 'webm') {
                                         $mimeType = 'video/webm';
                                     } elseif ($fileExtension === 'ogg' || $fileExtension === 'ogv') {
                                         $mimeType = 'video/ogg';
-                                    } elseif ($fileExtension === 'mov') {
-                                        $mimeType = 'video/quicktime';
-                                    } elseif ($fileExtension === 'avi') {
-                                        $mimeType = 'video/x-msvideo';
                                     }
                                 @endphp
                                 <div class="video-wrapper video-wrapper-premium">

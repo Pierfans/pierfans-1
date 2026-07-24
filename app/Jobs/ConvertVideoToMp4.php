@@ -16,7 +16,7 @@ class ConvertVideoToMp4 implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 600;
+    public int $timeout = 3600;
     public int $tries = 2;
 
     public function __construct(public int $mediaId) {}
@@ -30,9 +30,18 @@ class ConvertVideoToMp4 implements ShouldQueue
         }
 
         $originalPath = $media->file_path;
-        $ext = strtolower(pathinfo($originalPath, PATHINFO_EXTENSION));
+        $ext = pathinfo($originalPath, PATHINFO_EXTENSION);
 
-        if (!in_array($ext, ['mov'])) {
+        if (strtolower($ext) !== 'mov') {
+            return;
+        }
+
+        // Extensao vem como veio do celular (.MOV do iPhone) - cortar pelo tamanho,
+        // nao por replace de string, senao o path novo sai igual ao antigo e no R2
+        // o put+delete apaga o arquivo que acabou de ser gravado.
+        $newPath = substr($originalPath, 0, -strlen($ext)) . 'mp4';
+        if ($newPath === $originalPath) {
+            Log::error('ConvertVideoToMp4: novo path igual ao original, abortando', ['path' => $originalPath]);
             return;
         }
 
@@ -60,16 +69,30 @@ class ConvertVideoToMp4 implements ShouldQueue
                 $tmpInput = $localPath;
             }
 
-            // Converte com FFmpeg
-            $cmd = "ffmpeg -i " . escapeshellarg($tmpInput) . " -c:v libx264 -c:a aac -movflags +faststart " . escapeshellarg($tmpOutput) . " -y 2>&1";
+            // .mov de iPhone costuma ser HEVC (nao toca em Chrome/Windows/Android) mas
+            // tambem existe .mov h264, que so precisa trocar de container. Recodificar
+            // esse a toa gasta minutos de CPU e perde qualidade.
+            exec("ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "
+                . escapeshellarg($tmpInput) . " 2>&1", $probe);
+            $codec = strtolower(trim($probe[0] ?? ''));
+
+            $videoArgs = $codec === 'h264'
+                ? '-c:v copy -c:a aac'
+                // 16.8 Mbps de iPhone nao serve pra streaming; veryfast pra caber no timeout
+                : '-c:v libx264 -preset veryfast -crf 26 -maxrate 6M -bufsize 12M -pix_fmt yuv420p -c:a aac -b:a 128k';
+
+            $cmd = "ffmpeg -i " . escapeshellarg($tmpInput) . " {$videoArgs} -movflags +faststart "
+                . escapeshellarg($tmpOutput) . " -y 2>&1";
             exec($cmd, $output, $returnCode);
 
             if ($returnCode !== 0) {
-                Log::error('ConvertVideoToMp4: ffmpeg falhou', ['returnCode' => $returnCode]);
+                Log::error('ConvertVideoToMp4: ffmpeg falhou', [
+                    'returnCode' => $returnCode,
+                    'codec' => $codec,
+                    'saida' => implode("\n", array_slice($output, -10)),
+                ]);
                 return;
             }
-
-            $newPath = Str::replaceLast('.' . $ext, '.mp4', $originalPath);
 
             if ($isR2) {
                 Storage::disk('r2')->put($newPath, file_get_contents($tmpOutput), 'private');
@@ -77,6 +100,8 @@ class ConvertVideoToMp4 implements ShouldQueue
             } else {
                 $newLocalPath = public_path('_files_/' . $newPath);
                 rename($tmpOutput, $newLocalPath);
+                // tempnam() cria 0600: sem isso o nginx nao le o arquivo e o video da 403
+                chmod($newLocalPath, 0644);
                 // Não deleta o original por segurança
             }
 
