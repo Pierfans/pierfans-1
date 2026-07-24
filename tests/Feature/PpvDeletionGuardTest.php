@@ -18,7 +18,7 @@ class PpvDeletionGuardTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function post(string $visibility): Post
+    private function criarPost(string $visibility): Post
     {
         $user = User::factory()->create();
 
@@ -50,18 +50,18 @@ class PpvDeletionGuardTest extends TestCase
 
     public function test_free_e_subscriber_nunca_travam(): void
     {
-        $this->assertFalse($this->post('free')->isPurchasedUnique());
-        $this->assertFalse($this->post('subscriber')->isPurchasedUnique());
+        $this->assertFalse($this->criarPost('free')->isPurchasedUnique());
+        $this->assertFalse($this->criarPost('subscriber')->isPurchasedUnique());
     }
 
     public function test_paid_sem_compra_nao_trava(): void
     {
-        $this->assertFalse($this->post('paid')->isPurchasedUnique());
+        $this->assertFalse($this->criarPost('paid')->isPurchasedUnique());
     }
 
     public function test_paid_com_compra_trava(): void
     {
-        $post = $this->post('paid');
+        $post = $this->criarPost('paid');
         $this->addPurchase($post);
         $this->assertTrue($post->fresh()->isPurchasedUnique());
     }
