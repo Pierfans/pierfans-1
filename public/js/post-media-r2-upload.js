@@ -75,6 +75,17 @@
         var contentType = contentTypeOf(file);
         var tipo = contentType.indexOf('video/') === 0 ? 'video' : 'image';
 
+        // o PUT vai direto pro Cloudflare, entao o servidor nao ve o que deu errado.
+        // sem isso, falha de upload some no console do criador.
+        function avisarFalha(etapa, mensagem) {
+            postJson('/post-media/report-failure', {
+                etapa: etapa,
+                arquivo: file.name,
+                bytes: file.size,
+                mensagem: String(mensagem || '').slice(0, 300)
+            });
+        }
+
         return postJson('/post-media/request-upload-url', {
             filename: file.name,
             content_type: contentType,
@@ -82,6 +93,7 @@
             size: file.size
         }).then(function (res) {
             if (!res.success || !res.upload_url) {
+                avisarFalha('url-assinada', res.message);
                 return { success: false, message: res.message || 'Não foi possível iniciar o envio.' };
             }
 
@@ -89,11 +101,15 @@
                 .then(function (envio) {
                     // uma segunda tentativa cobre queda de rede pontual
                     if (envio.success) return envio;
+                    avisarFalha('envio-r2-tentativa-1', envio.message);
                     if (onProgress) onProgress(0, file.size);
                     return putToR2(res.upload_url, file, contentType, onProgress);
                 })
                 .then(function (envio) {
-                    if (!envio.success) return envio;
+                    if (!envio.success) {
+                        avisarFalha('envio-r2', envio.message);
+                        return envio;
+                    }
 
                     return postJson('/post-media/confirm-upload', {
                         key: res.key,
@@ -103,12 +119,13 @@
                         type: tipo,
                         order: order
                     }).then(function (conf) {
-                        return conf.success
-                            ? { success: true, media: conf.media }
-                            : { success: false, message: conf.message || 'Erro ao registrar a mídia.' };
+                        if (conf.success) return { success: true, media: conf.media };
+                        avisarFalha('confirmacao', conf.message);
+                        return { success: false, message: conf.message || 'Erro ao registrar a mídia.' };
                     });
                 });
-        }).catch(function () {
+        }).catch(function (e) {
+            avisarFalha('rede', e && e.message);
             return { success: false, message: 'Erro de rede.' };
         });
     };

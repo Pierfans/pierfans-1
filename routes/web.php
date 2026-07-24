@@ -56,6 +56,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('post-media')->name('post-media.')->group(function () {
         Route::post('/request-upload-url', [\App\Http\Controllers\PostMediaController::class, 'requestUploadUrl'])->name('request-upload-url');
         Route::post('/confirm-upload', [\App\Http\Controllers\PostMediaController::class, 'confirmUpload'])->name('confirm-upload');
+        Route::post('/report-failure', [\App\Http\Controllers\PostMediaController::class, 'reportFailure'])->name('report-failure');
         Route::get('/{id}/stream', [\App\Http\Controllers\PostMediaController::class, 'stream'])->name('stream');
     });
 

@@ -212,7 +212,7 @@
         window.HAS_SUBSCRIPTION_PLANS = {{ $hasSubscriptionPlans ? 'true' : 'false' }};
     </script>
     <script src="/js/post-subscriber-visibility-guard.js?v=2"></script>
-    <script src="/js/post-media-r2-upload.js?v=1"></script>
+    <script src="/js/post-media-r2-upload.js?v=2"></script>
     <script src="/js/post-create.js?v=3"></script>
     <script>
         document.getElementById('visibility').addEventListener('change', function () {

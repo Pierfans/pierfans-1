@@ -84,6 +84,14 @@ class PostMediaController extends Controller
             $presignedRequest = $client->createPresignedRequest($command, $expires);
             $uploadUrl = (string) $presignedRequest->getUri();
 
+            // par com o "R2 upload confirmado": pedido sem confirmacao = upload que quebrou no meio
+            Log::info('R2 upload pedido', [
+                'userId' => $user->id,
+                'arquivo' => $validated['filename'],
+                'bytes' => $validated['size'] ?? null,
+                'key' => $key,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'upload_url' => $uploadUrl,
@@ -144,6 +152,13 @@ class PostMediaController extends Controller
             'size' => $validated['size'] ?? null,
         ]);
 
+        Log::info('R2 upload confirmado', [
+            'userId' => $user->id,
+            'mediaId' => $media->id,
+            'bytes' => $validated['size'] ?? null,
+            'key' => $key,
+        ]);
+
         // Dispara conversão automática se for .mov
         $ext = strtolower(pathinfo($media->file_path, PATHINFO_EXTENSION));
         if (in_array($ext, ['mov'])) {
@@ -161,6 +176,32 @@ class PostMediaController extends Controller
                 'order' => $media->order,
             ],
         ], 201);
+    }
+
+    /**
+     * O arquivo vai do navegador direto pro R2, entao quando o envio falha o erro
+     * morre no console do criador e nunca chega aqui. Esta rota existe só pra
+     * trazer esse erro pro log do servidor.
+     */
+    public function reportFailure(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'mensagem' => ['nullable', 'string', 'max:300'],
+            'arquivo' => ['nullable', 'string', 'max:255'],
+            'bytes' => ['nullable', 'integer', 'min:0'],
+            'etapa' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        Log::error('R2 upload falhou no navegador', [
+            'userId' => Auth::id(),
+            'etapa' => $validated['etapa'] ?? '?',
+            'arquivo' => $validated['arquivo'] ?? '?',
+            'bytes' => $validated['bytes'] ?? null,
+            'mensagem' => $validated['mensagem'] ?? '?',
+            'navegador' => substr((string) $request->userAgent(), 0, 200),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     /**
