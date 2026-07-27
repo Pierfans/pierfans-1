@@ -292,6 +292,13 @@
                 <p class="text-sm text-gray-500">Bruto recebido (vendas)</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($grossSales, 2, ',', '.') }}</p>
                 <p class="text-xs text-gray-400 mt-1">Assinatura R$ {{ number_format($subTotal, 2, ',', '.') }} · PPV R$ {{ number_format($ppvTotal, 2, ',', '.') }}</p>
+                {{-- Linha separada, não mais um "·": a de cima quebra por produto, esta é uma ressalva
+                     de conciliação. Junto, pareceria só mais uma fatia do total. --}}
+                @if($walletSales > 0)
+                    <p class="text-xs text-amber-700 mt-2">
+                        Inclui R$ {{ number_format($walletSales, 2, ',', '.') }} pagos com saldo em carteira — <span class="font-medium">não aparecem no extrato do SuitPay</span>, o dinheiro entrou na conta lá atrás, quando o usuário recarregou.
+                    </p>
+                @endif
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-red-500">
                 <p class="text-sm text-gray-500">Taxas SuitPay</p>
@@ -351,6 +358,9 @@
                                     // Saque sem withdrawal = retirada feita direto no painel do SuitPay (não passou pelo app),
                                     // então não tem dono nem franquia do dia — as etiquetas grátis/extra mentiriam aqui.
                                     $manual = $e->entry_type === 'cashout' && !$e->withdrawal;
+                                    // Sem esta marca, a venda paga com saldo fica idêntica a uma paga por PIX
+                                    // e não tem como saber qual das assinaturas não está no extrato.
+                                    $comSaldo = $e->paid_with === 'wallet';
                                     $platform = match (true) {
                                         $recarga => -$e->suitpay_fee, // dinheiro do usuário; sobra só o custo da taxa
                                         $e->entry_type === 'cashout' => $e->withdraw_fee - $e->suitpay_fee,
@@ -370,6 +380,12 @@
                                             <span class="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 cursor-help"
                                                   title="Depósito na carteira do usuário. Entra na conta mas não é receita: o valor é dele, e vira comissão de criador quando ele gastar. A plataforma só arca com a taxa de entrada.">
                                                 não é receita
+                                            </span>
+                                        @endif
+                                        @if($comSaldo)
+                                            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 cursor-help"
+                                                  title="Venda paga com saldo da carteira. É receita e o criador recebeu, mas não entrou dinheiro novo na conta: ele entrou quando o usuário recarregou. Por isso esta linha não existe no extrato do SuitPay.">
+                                                pago com saldo
                                             </span>
                                         @endif
                                         @if($manual)

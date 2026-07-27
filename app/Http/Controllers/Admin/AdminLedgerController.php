@@ -43,6 +43,12 @@ class AdminLedgerController extends Controller
         $subTotal = (float) (clone $base)->where('entry_type', 'subscription_sale')->sum('gross_amount');
         $ppvTotal = (float) (clone $base)->where('entry_type', 'ppv_sale')->sum('gross_amount');
 
+        // Venda paga com saldo de carteira É receita, mas NÃO é dinheiro novo na conta: ele entrou
+        // lá atrás, na recarga. Logo o extrato do SuitPay nunca vai ter essa linha. Sem destacar,
+        // quem concilia o card contra o extrato acha que o sistema inventou dinheiro (foi o que
+        // aconteceu com o Bento em 25/07: R$35 de diferença nas entradas de julho).
+        $walletSales = (float) (clone $sales)->where('paid_with', 'wallet')->sum('gross_amount');
+
         // Receita líquida da plataforma = parte da plataforma nas vendas, menos as taxas do
         // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
         $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
@@ -120,7 +126,7 @@ class AdminLedgerController extends Controller
         return view('admin.ledger.index', compact(
             'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
-            'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal',
+            'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal', 'walletSales',
             'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'owedRows', 'ledgerStart', 'recon', 'filtered'
         ));
     }
