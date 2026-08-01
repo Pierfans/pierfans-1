@@ -161,30 +161,15 @@
             </div>
         </div>
 
-        <!-- Coluna Direita: Banner Destaque da Semana (colab Juju) - responsivo, aparece no mobile tambem -->
-        <div class="w-full lg:w-1/2 h-[380px] sm:h-[420px] lg:h-auto bg-[#01313B] relative overflow-hidden flex">
-            <!-- Foto ocupa ~70% da largura; a mascara dissolve a borda esquerda no verde (sem linha dura) -->
-            <img src="/img/destaque-juju.jpg" alt="Destaque da semana"
-                class="absolute right-0 top-0 h-full w-1/2 lg:w-[70%] object-cover object-top z-[1]"
-                style="-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 45%); mask-image: linear-gradient(to right, transparent 0%, #000 45%);">
-            <!-- Overlay leve so pra dar contraste ao texto na esquerda (a transicao quem faz e a mascara) -->
-            <div class="absolute inset-0 z-[2]"
-                style="background: linear-gradient(90deg, rgba(1,49,59,0.55) 0%, rgba(1,49,59,0.15) 32%, rgba(1,49,59,0) 46%);"></div>
-            <!-- Logo -->
-            <img src="/img/logo.png" alt="PierFans" class="absolute top-5 left-6 lg:top-6 lg:left-8 w-32 lg:w-40 z-[3]">
-            <!-- Texto -->
-            <div class="absolute z-[3] left-6 lg:left-8 top-0 bottom-0 flex flex-col justify-center gap-2 lg:gap-3 max-w-[62%]">
-                <span class="self-start inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FC9E2B] text-white text-[10px] lg:text-xs font-extrabold rounded-full uppercase tracking-wide">
-                    🔥 Destaque da semana
-                </span>
-                <p class="text-white font-black leading-none text-3xl sm:text-4xl lg:text-5xl m-0">EM<br>BREVE</p>
-                <p class="text-white/80 text-xs lg:text-sm m-0">colab <b class="text-[#14d1bc]">@juju</b> chegando</p>
-                <a href="/jujuferrari"
-                    class="self-start mt-1 bg-[#14d1bc] hover:bg-[#0e9486] text-[#01323a] hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
-                    quero ver →
-                </a>
-            </div>
-        </div>
+        <!-- Coluna Direita: banner "Mansao da Juju" - peca pronta, com logo/selo/titulo ja chapados no JPG -->
+        <a href="/jujuferrari" class="block w-full lg:w-1/2 bg-[#01313B]">
+            {{-- ponytail: a arte e 3:2 (1537x1023) e a coluna e mais alta que isso, entao algo sempre sobra.
+                 Ate 1280 usa contain (coluna estreita: cover fatiaria o rosto no meio); de xl pra cima usa
+                 cover ancorado na esquerda, que preenche a coluna sem perder logo, selo nem titulo. --}}
+            <img src="/img/banner-mansao-juju.jpg"
+                alt="Vem ai a Mansao da Juju: 12 horas ao vivo com Juju Ferrari, JOBmodel e dez criadoras"
+                class="w-full h-full object-contain xl:object-cover xl:object-left">
+        </a>
     </div>
 
     <!-- ═══════════════════════════════════════════════
