@@ -297,9 +297,13 @@
     <div class="pt-0 md:pt-16 pb-16 md:pb-0">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            <a href="/affiliates" class="block w-full overflow-hidden rounded-xl">
-                <img src="/img/pr1.webp" alt="Programa de afiliados Pierfans"
-                    class="block h-[140px] w-full object-cover md:h-[160px] lg:h-[220px]" loading="lazy">
+            <a href="/jujuferrari" class="block w-full overflow-hidden rounded-xl">
+                {{-- ponytail: aspect-[12/5] e a proporcao exata da arte (720x300), entao nao corta em largura
+                     nenhuma. Com a altura fixa que o banner de afiliados usava, o cover comia 50px em cima e
+                     o logo da peca sumia. --}}
+                <img src="/img/banner-mansao-juju-dashboard.jpg"
+                    alt="Vem ai a Mansao da Juju: 12 horas ao vivo com Juju Ferrari, JOBmodel e dez criadoras"
+                    class="block w-full aspect-[12/5] object-cover" loading="lazy">
             </a>
 
             <!-- Top 5 Criadores -->
