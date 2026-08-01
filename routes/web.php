@@ -29,6 +29,20 @@ Route::middleware('guest')->group(function () {
     Route::get('/email/verify', [AuthController::class, 'showVerificationNotice'])->name('verification.notice');
     Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail'])->name('verification.resend');
 
+/*
+ | Entrega do arquivo de midia do post (R2). Fica FORA do 'auth' de proposito.
+ |
+ | A trava de acesso real e Post::canBeViewedBy(), no controller, que ja trata
+ | visitante: 'free' passa, assinante e PPV levam 403. O middleware 'auth' aqui
+ | nao somava seguranca nenhuma e criava dois bugs (vistos em 01/08/2026):
+ |
+ |  1. a tela de login mostra posts 'free' em destaque; a imagem batia no 'auth',
+ |     que gravava a URL DA IMAGEM como 'intended'. Ao logar, o redirect()->intended()
+ |     jogava o usuario no arquivo cru do R2 em vez do dashboard.
+ |  2. pelo mesmo 302, essas imagens ficavam quebradas pra quem nao estava logado.
+ */
+Route::get('/post-media/{id}/stream', [\App\Http\Controllers\PostMediaController::class, 'stream'])->name('post-media.stream');
+
 // Rota de logout (requer autenticação)
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -57,7 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/request-upload-url', [\App\Http\Controllers\PostMediaController::class, 'requestUploadUrl'])->name('request-upload-url');
         Route::post('/confirm-upload', [\App\Http\Controllers\PostMediaController::class, 'confirmUpload'])->name('confirm-upload');
         Route::post('/report-failure', [\App\Http\Controllers\PostMediaController::class, 'reportFailure'])->name('report-failure');
-        Route::get('/{id}/stream', [\App\Http\Controllers\PostMediaController::class, 'stream'])->name('stream');
+        // 'stream' NAO fica aqui — ver a rota publica logo apos o grupo 'guest'.
     });
 
     // Rotas de Criador
