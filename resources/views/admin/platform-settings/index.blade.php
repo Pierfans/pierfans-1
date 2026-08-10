@@ -222,6 +222,47 @@
                 </div>
             </div>
 
+            <!-- Card da Live -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Transmissão ao Vivo</h2>
+
+                <div class="mb-6">
+                    <label for="live_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Link da live
+                    </label>
+                    <input
+                        type="url"
+                        id="live_url"
+                        name="live_url"
+                        value="{{ $live_url }}"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        maxlength="500"
+                        class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <p class="mt-2 text-sm text-gray-500">
+                        Este link aparece como player na página <a href="/live" target="_blank" class="text-blue-600 hover:underline">pierfans.com/live</a>,
+                        que é o destino dos banners da tela de login e do dashboard.
+                        <strong>Deixe em branco quando a live acabar</strong> — assim a página volta a mostrar "em breve" em vez de um player morto.
+                    </p>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-blue-900">Antes de colar o link:</p>
+                            <ul class="text-sm text-blue-700 mt-2 ml-4 list-disc">
+                                <li><strong>YouTube funciona.</strong> Pode colar o link normal da barra do navegador, o sistema converte sozinho para o formato de player</li>
+                                <li><strong>Instagram e TikTok não abrem dentro do site</strong> — eles bloqueiam. O link continua valendo, mas a pessoa vai assistir pelo botão "abrir em nova aba" que aparece embaixo do player</li>
+                                <li>Se a live for de outra plataforma, confira na página antes de divulgar</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Card de Upload de Mídia -->
             <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Upload de Mídia (Posts)</h2>

@@ -22,8 +22,10 @@ class PlatformSettingController extends Controller
         $affiliateCommissionLimit = PlatformSetting::getAffiliateCommissionLimit();
         $emailVerificationRequired = PlatformSetting::isEmailVerificationRequired();
         $useR2Upload = PlatformSetting::isUseR2Upload();
-        
+        $liveUrl = PlatformSetting::getValue('live_url');
+
         return view('admin.platform-settings.index', [
+            'live_url' => $liveUrl,
             'platform_percentage' => $platformPercentage,
             'daily_withdraw_limit' => $dailyWithdrawLimit,
             'min_withdraw_amount' => $minWithdrawAmount,
@@ -51,6 +53,9 @@ class PlatformSettingController extends Controller
             'affiliate_commission_limit' => 'required|integer|min:0',
             'email_verification_required' => 'nullable|boolean',
             'use_r2_upload' => 'nullable|boolean',
+            // url:http,https e nao so 'url': o valor vai direto pro src de um iframe,
+            // e o validador padrao do PHP aceita 'javascript:'.
+            'live_url' => 'nullable|url:http,https|max:500',
         ]);
 
         PlatformSetting::setValue(
@@ -67,6 +72,12 @@ class PlatformSettingController extends Controller
         PlatformSetting::setAffiliateCommissionLimit($validated['affiliate_commission_limit']);
         PlatformSetting::setEmailVerificationRequired($validated['email_verification_required'] ?? false);
         PlatformSetting::setUseR2Upload($request->boolean('use_r2_upload'));
+
+        PlatformSetting::setValue(
+            'live_url',
+            (string) ($validated['live_url'] ?? ''),
+            'Link da transmissão ao vivo exibida em /live. Vazio = página mostra "em breve"'
+        );
 
         return redirect()->back()->with('success', 'Configurações atualizadas com sucesso!');
     }

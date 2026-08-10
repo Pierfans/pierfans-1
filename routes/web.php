@@ -314,6 +314,15 @@ Route::middleware('auth')->group(function () {
 // Busca de criadores (pública)
 Route::get('/search', [\App\Http\Controllers\CreatorSearchController::class, 'index'])->name('creator.search');
 
+/*
+ | Pagina da live (banner + player). Publica de proposito: o banner que leva
+ | pra ca fica na tela de login, ou seja, quem clica esta deslogado.
+ | Precisa vir ANTES do catch-all '/{username}' la embaixo, senao o ProfileController
+ | captura '/live' e devolve 404. Conferido na prod em 10/08/2026: nenhum criador
+ | usa 'live' como username ou slug.
+ */
+Route::get('/live', [\App\Http\Controllers\LiveController::class, 'show'])->name('live');
+
 // Rotas de tracking de afiliados (devem vir antes das rotas de perfil)
 Route::get('/a/{referrerSlug}/{creatorSlug}', [\App\Http\Controllers\AffiliateTrackingController::class, 'trackWithCreator'])->name('affiliate.track.creator');
 Route::get('/a/{slug}', [\App\Http\Controllers\AffiliateTrackingController::class, 'track'])->name('affiliate.track');

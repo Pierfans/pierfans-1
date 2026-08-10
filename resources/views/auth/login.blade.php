@@ -162,7 +162,7 @@
         </div>
 
         <!-- Coluna Direita: banner "Mansao da Juju" - peca pronta, com logo/selo/titulo ja chapados no JPG -->
-        <a href="/jujuferrari" class="group relative block w-full lg:w-1/2 bg-[#01313B]">
+        <a href="{{ route('live') }}" class="group relative block w-full lg:w-1/2 bg-[#01313B]">
             {{-- ponytail: a arte e 3:2 (1537x1023) e a coluna e mais alta que isso, entao algo sempre sobra.
                  Ate 1280 usa contain (coluna estreita: cover fatiaria o rosto no meio); de xl pra cima usa
                  cover ancorado na esquerda, que preenche a coluna sem perder logo, selo nem titulo. --}}
@@ -171,7 +171,7 @@
                 class="w-full h-full object-contain xl:object-cover xl:object-left">
             {{-- span, nao <a>: o link e o banner inteiro, isto aqui e so a pista visual de que clica --}}
             <span class="absolute left-6 bottom-5 xl:left-10 xl:bottom-10 inline-flex items-center gap-1.5 bg-[#14d1bc] group-hover:bg-[#0e9486] text-[#01323a] group-hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
-                quero ver →
+                acesse a live →
             </span>
         </a>
     </div>
