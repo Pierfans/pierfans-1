@@ -236,7 +236,10 @@
                         name="live_url"
                         value="{{ $live_url }}"
                         placeholder="https://www.youtube.com/watch?v=..."
-                        maxlength="500"
+                        {{-- sem maxlength de proposito: ele CORTA a colagem em silencio em vez de
+                             recusar. Foi o que derrubou a live de 13/08 - um .m3u8 de 1155 chars
+                             colado aqui virou um link de 500 no ar, sem erro nenhum na tela.
+                             O 'max' do controller recusa e o @if($errors->any()) la em cima mostra. --}}
                         class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                     <p class="mt-2 text-sm text-gray-500">
@@ -256,7 +259,7 @@
                         name="live_stream_url"
                         value="{{ $live_stream_url }}"
                         placeholder="https://....m3u8"
-                        maxlength="2000"
+                        {{-- idem: sem maxlength. Ver comentario do campo acima. --}}
                         class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                     <p class="mt-2 text-sm text-gray-500">
