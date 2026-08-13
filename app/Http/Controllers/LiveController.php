@@ -8,16 +8,29 @@ class LiveController extends Controller
 {
     /**
      * Pagina publica da live (banner + player).
-     * O link vem de admin > configuracoes da plataforma, campo 'live_url'.
-     * Vazio = estado "em breve", sem player.
+     * Os links vem de admin > configuracoes da plataforma. Sao dois, e a ordem
+     * de preferencia esta na view:
+     *
+     *   live_stream_url (.m3u8) - toca no player da CASA, via hls.js. Sem botao
+     *                             de terceiro puxando o visitante pra fora e com
+     *                             controle do som. E o caminho preferido.
+     *   live_url                - pagina da live do fornecedor. Vira iframe quando
+     *                             nao ha stream, e e o fallback de quem o token do
+     *                             .m3u8 vence no meio da transmissao. Tambem e o
+     *                             destino do "abrir em nova aba" - por isso NAO
+     *                             pode receber o .m3u8, que o navegador baixa
+     *                             como arquivo em vez de tocar.
+     *
+     * Os dois vazios = estado "em breve", sem player.
      */
     public function show()
     {
         $liveUrl = PlatformSetting::getValue('live_url');
 
         return view('live', [
-            'liveUrl'  => $liveUrl,
-            'embedUrl' => self::embedUrl($liveUrl),
+            'liveUrl'   => $liveUrl,
+            'embedUrl'  => self::embedUrl($liveUrl),
+            'streamUrl' => PlatformSetting::getValue('live_stream_url'),
         ]);
     }
 

@@ -26,6 +26,7 @@ class PlatformSettingController extends Controller
 
         return view('admin.platform-settings.index', [
             'live_url' => $liveUrl,
+            'live_stream_url' => PlatformSetting::getValue('live_stream_url'),
             'platform_percentage' => $platformPercentage,
             'daily_withdraw_limit' => $dailyWithdrawLimit,
             'min_withdraw_amount' => $minWithdrawAmount,
@@ -56,6 +57,9 @@ class PlatformSettingController extends Controller
             // url:http,https e nao so 'url': o valor vai direto pro src de um iframe,
             // e o validador padrao do PHP aceita 'javascript:'.
             'live_url' => 'nullable|url:http,https|max:500',
+            // 2000 e nao 500: o link do .m3u8 carrega o token da sessao de playback
+            // e passa de mil caracteres. A coluna e text(), entao o banco aguenta.
+            'live_stream_url' => 'nullable|url:http,https|max:2000',
         ]);
 
         PlatformSetting::setValue(
@@ -77,6 +81,12 @@ class PlatformSettingController extends Controller
             'live_url',
             (string) ($validated['live_url'] ?? ''),
             'Link da transmissão ao vivo exibida em /live. Vazio = página mostra "em breve"'
+        );
+
+        PlatformSetting::setValue(
+            'live_stream_url',
+            (string) ($validated['live_stream_url'] ?? ''),
+            'Link .m3u8 do stream, tocado no player da própria /live. Tem preferência sobre live_url'
         );
 
         return redirect()->back()->with('success', 'Configurações atualizadas com sucesso!');

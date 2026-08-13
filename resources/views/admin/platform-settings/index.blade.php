@@ -240,11 +240,36 @@
                         class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                     <p class="mt-2 text-sm text-gray-500">
-                        Este link aparece como player na página <a href="/live" target="_blank" class="text-blue-600 hover:underline">pierfans.com/live</a>,
-                        que é o destino dos banners da tela de login e do dashboard.
-                        <strong>Deixe em branco quando a live acabar</strong> — assim a página volta a mostrar "em breve" em vez de um player morto.
+                        A página da live no site de quem transmite. Usada no botão <em>"abrir em nova aba"</em> e como
+                        reserva, caso o player da casa falhe. Sozinha, ela vira o player (dentro de um quadro do site deles).
+                        <strong>Não cole o link .m3u8 aqui</strong> — ele tem campo próprio logo abaixo.
                     </p>
                 </div>
+
+                <div class="mb-6">
+                    <label for="live_stream_url" class="block text-sm font-medium text-gray-700 mb-2">
+                        Link do vídeo (.m3u8) <span class="text-gray-400 font-normal">— opcional, mas é o melhor</span>
+                    </label>
+                    <input
+                        type="url"
+                        id="live_stream_url"
+                        name="live_stream_url"
+                        value="{{ $live_stream_url }}"
+                        placeholder="https://....m3u8"
+                        maxlength="2000"
+                        class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <p class="mt-2 text-sm text-gray-500">
+                        Preenchido, o vídeo toca no <strong>nosso player</strong>: sem os botões do site de quem transmite
+                        puxando o visitante pra fora, e com um botão de som decente. Peça esse link a quem estiver transmitindo.
+                        <strong class="text-amber-700">Atenção:</strong> esse link costuma ter prazo de validade. Se vencer no meio da
+                        transmissão, a página cai sozinha para o link de cima — por isso vale preencher os dois.
+                    </p>
+                </div>
+
+                <p class="mb-6 text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <strong>Quando a live acabar, apague os dois campos.</strong> Senão fica um player morto na página.
+                </p>
 
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-start">
