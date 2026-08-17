@@ -297,13 +297,18 @@
     <div class="pt-0 md:pt-16 pb-16 md:pb-0">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            <a href="{{ route('live') }}" class="block w-full overflow-hidden rounded-xl">
-                {{-- ponytail: aspect-[12/5] e a proporcao exata da arte (720x300), entao nao corta em largura
-                     nenhuma. Com a altura fixa que o banner de afiliados usava, o cover comia 50px em cima e
-                     o logo da peca sumia. --}}
-                <img src="/img/banner-mansao-juju-dashboard.jpg"
-                    alt="Vem ai a Mansao da Juju: 12 horas ao vivo com Juju Ferrari, JOBmodel e dez criadoras"
-                    class="block w-full aspect-[12/5] object-cover" loading="lazy">
+            {{-- banner collab "Mansao da Juju" - a live passou; foto cortada da peca + texto em HTML
+                 (pedido do Bento 17/08: sem data/"vem ai", link pro perfil da Juju) --}}
+            <a href="{{ route('profile.show', 'jujuferrari') }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
+                <img src="/img/banner-mansao-juju-dash-foto.jpg"
+                    alt="Confira as imagens da collab da Mansao da Juju no perfil da Juju Ferrari"
+                    class="absolute inset-y-0 right-0 h-full w-[45%] object-cover object-top" loading="lazy">
+                <div class="absolute inset-y-0 right-[20%] w-1/4 bg-gradient-to-r from-[#01313B] to-transparent"></div>
+                <div class="relative h-full flex flex-col justify-center px-6 sm:px-8 w-[62%]">
+                    <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
+                    <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
+                    <p class="text-white/80 text-[11px] sm:text-sm mt-1.5">Confira as imagens da collab no perfil da Juju Ferrari <span class="text-[#14d1bc] font-semibold">→</span></p>
+                </div>
             </a>
 
             <!-- Top 5 Criadores -->
