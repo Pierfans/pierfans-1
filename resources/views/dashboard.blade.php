@@ -304,10 +304,12 @@
                     alt="Sexta-feira: o grande lançamento de todas as collab da Mansão da Juju"
                     class="absolute inset-y-0 right-0 h-full w-[45%] object-cover object-top" loading="lazy">
                 <div class="absolute inset-y-0 right-[20%] w-1/4 bg-gradient-to-r from-[#01313B] to-transparent"></div>
-                <div class="relative h-full flex flex-col justify-center px-6 sm:px-8 w-[62%]">
-                    <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">SEXTA-FEIRA</span>
+                {{-- w-[55%]: o texto termina onde a foto comeca, sem invadir (pedido do Pedro 19/08) --}}
+                <div class="relative h-full flex flex-col justify-center pl-6 pr-2 sm:pl-8 w-[55%]">
+                    <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
                     <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
-                    <p class="text-white/80 text-[11px] sm:text-sm mt-1.5">O grande lançamento de todas as collab da Mansão da Juju <span class="text-[#14d1bc] font-semibold">→</span></p>
+                    <p class="text-[#14d1bc] font-bold text-sm sm:text-lg mt-1">Sexta-feira</p>
+                    <p class="text-white/80 text-[11px] sm:text-sm mt-0.5">O grande lançamento de todas as collab da Mansão da Juju <span class="text-[#14d1bc] font-semibold">→</span></p>
                 </div>
             </a>
 

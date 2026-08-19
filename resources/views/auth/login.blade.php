@@ -168,14 +168,17 @@
             <img src="/img/banner-mansao-juju-lancamento.jpg"
                 alt="Sexta-feira: o grande lançamento de todas as collab da Mansão da Juju"
                 class="absolute inset-y-0 right-0 h-full w-3/5 object-cover object-top">
-            {{-- gradiente por cima da borda esquerda da foto, pro texto assentar no verde da peca --}}
-            <div class="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-[#01313B] via-[#01313B]/90 to-transparent"></div>
-            <div class="relative h-full flex flex-col justify-center px-6 lg:px-8 xl:px-12 w-3/5">
-                <span class="inline-flex self-start items-center border border-[#14d1bc]/60 text-[#14d1bc] text-[11px] font-semibold tracking-widest px-3 py-1 rounded-full mb-4">SEXTA-FEIRA</span>
+            {{-- gradiente solido ate 80% da propria largura: o texto assenta em verde puro e nao
+                 invade a foto (pedido do Pedro 19/08); a foto so aparece limpa da metade pra direita --}}
+            <div class="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-[#01313B] via-[#01313B] via-80% to-transparent"></div>
+            <div class="relative h-full flex flex-col justify-center pl-6 pr-3 lg:pl-8 xl:pl-12 lg:pr-4 w-[45%]">
+                <span class="inline-flex self-start items-center border border-[#14d1bc]/60 text-[#14d1bc] text-[11px] font-semibold tracking-widest px-3 py-1 rounded-full mb-3 lg:mb-4">COLLAB</span>
                 <p class="text-white font-extrabold leading-none text-3xl lg:text-4xl xl:text-5xl">MANSÃO<br>DA <span class="text-[#f65cc3]">JUJU</span></p>
-                <p class="text-white/80 text-sm xl:text-base mt-4">O grande lançamento de todas as collab da Mansão da Juju.</p>
+                {{-- "Sexta-feira" e linha do texto, nao badge (o Bento reclamou que 'faltou' quando estava so no badge, 19/08) --}}
+                <p class="text-[#14d1bc] font-bold text-lg lg:text-xl xl:text-2xl mt-3 lg:mt-4">Sexta-feira</p>
+                <p class="text-white/80 text-sm xl:text-base mt-1">O grande lançamento de todas as collab da Mansão da Juju.</p>
                 {{-- span, nao <a>: o link e o banner inteiro, isto aqui e so a pista visual de que clica --}}
-                <span class="mt-6 self-start inline-flex items-center gap-1.5 bg-[#14d1bc] group-hover:bg-[#0e9486] text-[#01323a] group-hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
+                <span class="mt-4 lg:mt-6 self-start inline-flex items-center gap-1.5 bg-[#14d1bc] group-hover:bg-[#0e9486] text-[#01323a] group-hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
                     ver o perfil →
                 </span>
             </div>
