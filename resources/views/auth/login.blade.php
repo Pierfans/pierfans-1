@@ -161,22 +161,22 @@
             </div>
         </div>
 
-        <!-- Coluna Direita: banner collab "Mansao da Juju" - a live passou; foto cortada da peca
-             + texto em HTML (pedido do Bento 17/08: sem data/"vem ai", link pro perfil da Juju).
+        <!-- Coluna Direita: banner lancamento das collab "Mansao da Juju" (pedido do Bento 19/08:
+             foto nova + "Sexta-feira / O grande lancamento de todas as collab da Mansao da Juju").
              Texto em HTML pra nunca mais ficar refem de arte chapada no JPG. -->
         <a href="{{ route('profile.show', 'jujuferrari') }}" class="group relative block w-full lg:w-1/2 overflow-hidden bg-[#01313B] aspect-[3/2] lg:aspect-auto">
-            <img src="/img/banner-mansao-juju-foto.jpg"
-                alt="Confira as imagens da collab da Mansao da Juju no perfil da Juju Ferrari"
+            <img src="/img/banner-mansao-juju-lancamento.jpg"
+                alt="Sexta-feira: o grande lançamento de todas as collab da Mansão da Juju"
                 class="absolute inset-y-0 right-0 h-full w-3/5 object-cover object-top">
             {{-- gradiente por cima da borda esquerda da foto, pro texto assentar no verde da peca --}}
             <div class="absolute inset-y-0 left-0 w-3/5 bg-gradient-to-r from-[#01313B] via-[#01313B]/90 to-transparent"></div>
             <div class="relative h-full flex flex-col justify-center px-6 lg:px-8 xl:px-12 w-3/5">
-                <span class="inline-flex self-start items-center border border-[#14d1bc]/60 text-[#14d1bc] text-[11px] font-semibold tracking-widest px-3 py-1 rounded-full mb-4">COLLAB</span>
+                <span class="inline-flex self-start items-center border border-[#14d1bc]/60 text-[#14d1bc] text-[11px] font-semibold tracking-widest px-3 py-1 rounded-full mb-4">SEXTA-FEIRA</span>
                 <p class="text-white font-extrabold leading-none text-3xl lg:text-4xl xl:text-5xl">MANSÃO<br>DA <span class="text-[#f65cc3]">JUJU</span></p>
-                <p class="text-white/80 text-sm xl:text-base mt-4">Confira as imagens da collab da Mansão da Juju no perfil da Juju Ferrari.</p>
+                <p class="text-white/80 text-sm xl:text-base mt-4">O grande lançamento de todas as collab da Mansão da Juju.</p>
                 {{-- span, nao <a>: o link e o banner inteiro, isto aqui e so a pista visual de que clica --}}
                 <span class="mt-6 self-start inline-flex items-center gap-1.5 bg-[#14d1bc] group-hover:bg-[#0e9486] text-[#01323a] group-hover:text-white font-semibold text-xs lg:text-sm px-4 py-2 lg:py-2.5 rounded-lg transition-colors">
-                    ver as imagens →
+                    ver o perfil →
                 </span>
             </div>
         </a>

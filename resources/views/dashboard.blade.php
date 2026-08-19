@@ -297,17 +297,17 @@
     <div class="pt-0 md:pt-16 pb-16 md:pb-0">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            {{-- banner collab "Mansao da Juju" - a live passou; foto cortada da peca + texto em HTML
-                 (pedido do Bento 17/08: sem data/"vem ai", link pro perfil da Juju) --}}
+            {{-- banner lancamento das collab "Mansao da Juju" (pedido do Bento 19/08:
+                 foto nova + "Sexta-feira / O grande lancamento de todas as collab da Mansao da Juju") --}}
             <a href="{{ route('profile.show', 'jujuferrari') }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
-                <img src="/img/banner-mansao-juju-dash-foto.jpg"
-                    alt="Confira as imagens da collab da Mansao da Juju no perfil da Juju Ferrari"
+                <img src="/img/banner-mansao-juju-lancamento.jpg"
+                    alt="Sexta-feira: o grande lançamento de todas as collab da Mansão da Juju"
                     class="absolute inset-y-0 right-0 h-full w-[45%] object-cover object-top" loading="lazy">
                 <div class="absolute inset-y-0 right-[20%] w-1/4 bg-gradient-to-r from-[#01313B] to-transparent"></div>
                 <div class="relative h-full flex flex-col justify-center px-6 sm:px-8 w-[62%]">
-                    <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
+                    <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">SEXTA-FEIRA</span>
                     <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
-                    <p class="text-white/80 text-[11px] sm:text-sm mt-1.5">Confira as imagens da collab no perfil da Juju Ferrari <span class="text-[#14d1bc] font-semibold">→</span></p>
+                    <p class="text-white/80 text-[11px] sm:text-sm mt-1.5">O grande lançamento de todas as collab da Mansão da Juju <span class="text-[#14d1bc] font-semibold">→</span></p>
                 </div>
             </a>
 
