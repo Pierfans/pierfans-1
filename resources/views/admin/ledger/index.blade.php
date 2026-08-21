@@ -6,7 +6,7 @@
     <div class="max-w-7xl mx-auto">
         <div class="mb-6">
             <h1 class="text-3xl font-bold text-gray-900">Fluxo de Caixa</h1>
-            <p class="text-gray-600 mt-2">Entradas, taxas do SuitPay e repasses — receita líquida real da plataforma</p>
+            <p class="text-gray-600 mt-2">O que entrou e saiu da conta SuitPay no período: vendas, recargas, taxas, comissões e saques.</p>
         </div>
 
         @if(session('status'))
@@ -28,12 +28,7 @@
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-teal-500">
                         <p class="text-sm text-gray-500">Saldo real (SuitPay)</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($recon['liveBalance'], 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">
-                            Base do extrato R$ {{ number_format($recon['realBalance'], 2, ',', '.') }} ({{ \Illuminate\Support\Carbon::parse($recon['realBalanceAt'])->emBrasilia()->format('d/m/Y H:i') }})
-                            @if($recon['appDelta'] != 0)
-                                {{ $recon['appDelta'] > 0 ? '+' : '−' }} R$ {{ number_format(abs($recon['appDelta']), 2, ',', '.') }} de vendas, recargas e saques registrados depois
-                            @endif
-                        </p>
+                        <p class="text-sm text-gray-500 mt-1">Quanto tem na conta SuitPay agora.</p>
                     </div>
                 @else
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-gray-300 text-sm text-gray-500">
@@ -43,10 +38,10 @@
                 @endif
 
                     <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
-                        <p class="text-sm text-gray-500">Devido a usuários</p>
+                        <p class="text-sm text-gray-500">Valores a serem pagos</p>
                         <p class="text-3xl font-bold text-gray-900 mt-1">R$ {{ number_format($owedToUsers, 2, ',', '.') }}</p>
                         {{-- expressão única em vez de @if inline: diretiva colada em palavra (gastaram@endif) o Blade ignora, e o if fica sem fechar --}}
-                        <p class="text-xs text-gray-400 mt-1">Não é seu — está na conta, mas é deles: o que criadores e afiliados podem sacar (inclui o que ainda está no prazo de liberação){{ $owedToWallets > 0 ? ', mais R$ ' . number_format($owedToWallets, 2, ',', '.') . ' de saldo em carteira que assinantes depositaram e ainda não gastaram' : '' }}.</p>
+                        <p class="text-sm text-gray-500 mt-1">Valores ainda não sacados pelos criadores e afiliados.{{ $owedToWallets > 0 ? ' Inclui também R$ ' . number_format($owedToWallets, 2, ',', '.') . ' de saldo em carteira dos assinantes.' : '' }}</p>
                         @if($owedRows->isNotEmpty())
                             <button type="button" onclick="document.getElementById('modalDevido').classList.remove('hidden')"
                                     class="mt-3 text-sm font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2">
@@ -60,9 +55,9 @@
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
                     @if($platformCash !== null)
                         <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
-                        <p class="text-xs text-gray-400 mt-1">O que é de fato seu, e o que dá pra sacar: saldo real menos tudo que é dos usuários (criadores, afiliados, carteiras e saques já pedidos).</p>
+                        <p class="text-sm text-gray-500 mt-1">O que sobra pra plataforma depois de separar o que é dos usuários.</p>
                         @if($platformCash < 0)
-                            <p class="text-xs text-red-600 mt-2 font-medium">Negativo: a conta não cobre o que é dos usuários. Ou saiu dinheiro demais (retirada manual/saque da plataforma), ou falta importar extrato novo, ou os depósitos em carteira ainda não foram gastos. Enquanto estiver negativo não dá pra sacar — o que está lá é deles.</p>
+                            <p class="text-sm text-red-600 mt-2 font-medium">Está negativo: hoje a conta não cobre o que é dos usuários, então não dá pra sacar.</p>
                         @elseif($platformAccounts->isEmpty())
                             <p class="text-xs text-gray-500 mt-3">Pra sacar pelo site, cadastre a chave PIX da plataforma na conta <span class="font-medium">@pierfans</span> (tela de saque, logado nela).</p>
                         @elseif($platformMax > 0)
@@ -288,22 +283,29 @@
         <!-- Cards de totais -->
         <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Movimento do período</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {{-- "Entradas" = o que caiu na conta (bate com o painel do SuitPay por definição).
+                 Pedido do Bento 21/08: o card antigo media receita de vendas e divergia do painel
+                 (venda com saldo entrava, recarga não) — a "diferença de 29,79" era isso. --}}
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-green-500">
-                <p class="text-sm text-gray-500">Bruto recebido (vendas)</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($grossSales, 2, ',', '.') }}</p>
-                <p class="text-xs text-gray-400 mt-1">Assinatura R$ {{ number_format($subTotal, 2, ',', '.') }} · PPV R$ {{ number_format($ppvTotal, 2, ',', '.') }}</p>
-                {{-- Linha separada, não mais um "·": a de cima quebra por produto, esta é uma ressalva
-                     de conciliação. Junto, pareceria só mais uma fatia do total. --}}
+                <p class="text-sm text-gray-500">Entradas (SuitPay)</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($entradas, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Tudo que caiu na conta no período: Assinatura R$ {{ number_format($subSuitpay, 2, ',', '.') }} · PPV R$ {{ number_format($ppvSuitpay, 2, ',', '.') }} · Recarga R$ {{ number_format($depositTotal, 2, ',', '.') }}</p>
                 @if($walletSales > 0)
-                    <p class="text-xs text-amber-700 mt-2">
-                        Inclui R$ {{ number_format($walletSales, 2, ',', '.') }} pagos com saldo em carteira — <span class="font-medium">não aparecem no extrato do SuitPay</span>, o dinheiro entrou na conta lá atrás, quando o usuário recarregou.
+                    {{-- Uma frase só, sem jargão: o pessoal não lia a versão longa (feedback 21/08). --}}
+                    <p class="text-sm text-amber-700 mt-2">
+                        Teve ainda R$ {{ number_format($walletSales, 2, ',', '.') }} de vendas pagas com saldo de carteira. Não entram aqui: esse dinheiro já estava na conta desde a recarga.
                     </p>
                 @endif
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-red-500">
-                <p class="text-sm text-gray-500">Taxas SuitPay</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($feeIn + $feeOut, 2, ',', '.') }}</p>
-                <p class="text-xs text-gray-400 mt-1">Entrada R$ {{ number_format($feeIn, 2, ',', '.') }} · Saída R$ {{ number_format($feeOut, 2, ',', '.') }}</p>
+                <p class="text-sm text-gray-500">Taxa de entrada (SuitPay)</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($feeIn, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Cobrada sobre cada PIX que entra (vendas e recargas).</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-red-500">
+                <p class="text-sm text-gray-500">Taxa de saída (SuitPay)</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($feeOut, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Cobrada sobre cada PIX que sai (saques e retiradas).</p>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-amber-500">
                 <p class="text-sm text-gray-500">Comissão dos criadores</p>
@@ -318,6 +320,7 @@
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-gray-400">
                 <p class="text-sm text-gray-500">Total sacado (saídas)</p>
                 <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($cashoutTotal, 2, ',', '.') }}</p>
+                <p class="text-xs text-gray-400 mt-1">Tudo que saiu da conta em saques no período.</p>
             </div>
             <div class="bg-white rounded-lg shadow-sm p-5 border-l-4 border-blue-700">
                 <p class="text-sm text-gray-500">Receita líquida da plataforma</p>

@@ -49,6 +49,18 @@ class AdminLedgerController extends Controller
         // aconteceu com o Bento em 25/07: R$35 de diferença nas entradas de julho).
         $walletSales = (float) (clone $sales)->where('paid_with', 'wallet')->sum('gross_amount');
 
+        // Card "Entradas": o que de fato CAIU na conta SuitPay no período — vendas pagas via
+        // gateway + recargas. É o número que o Bento concilia com o painel; renomear sem mudar a
+        // composição deixaria o rótulo prometendo "igual SuitPay" e o valor divergindo (os 29,79
+        // de 21/08 eram exatamente vendas com saldo menos recarga). Venda paga com saldo fica
+        // fora e vira a ressalva âmbar.
+        $walletSub    = (float) (clone $base)->where('entry_type', 'subscription_sale')->where('paid_with', 'wallet')->sum('gross_amount');
+        $walletPpv    = (float) (clone $base)->where('entry_type', 'ppv_sale')->where('paid_with', 'wallet')->sum('gross_amount');
+        $depositTotal = (float) (clone $base)->where('entry_type', 'wallet_deposit')->sum('gross_amount');
+        $subSuitpay   = $subTotal - $walletSub;
+        $ppvSuitpay   = $ppvTotal - $walletPpv;
+        $entradas     = $grossSales - $walletSales + $depositTotal;
+
         // Receita líquida da plataforma = parte da plataforma nas vendas, menos as taxas do
         // SuitPay (entrada + saída), mais a taxa de saque cobrada do usuário (receita).
         $platformNet = $grossSales - $creatorPaid - $affiliatePaid - $feeIn - $feeOut + $withdrawFee;
@@ -127,6 +139,7 @@ class AdminLedgerController extends Controller
             'entries', 'from', 'to', 'tipo', 'dono',
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal', 'walletSales',
+            'entradas', 'subSuitpay', 'ppvSuitpay', 'depositTotal',
             'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'owedRows', 'ledgerStart', 'recon', 'filtered'
         ));
     }
