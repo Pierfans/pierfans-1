@@ -57,7 +57,8 @@
                         <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
                         <p class="text-sm text-gray-500 mt-1">O que sobra pra plataforma depois de separar o que é dos usuários.</p>
                         @if($platformCash < 0)
-                            <p class="text-sm text-red-600 mt-2 font-medium">Está negativo: hoje a conta não cobre o que é dos usuários, então não dá pra sacar.</p>
+                            {{-- O total das retiradas manuais vem do extrato (recon), não chapado: se houver outra, a frase continua certa. --}}
+                            <p class="text-sm text-red-600 mt-2 font-medium">Está negativo: hoje a conta não cobre o que é dos usuários, então não dá pra sacar.{{ $recon && $recon['manualTotal'] != 0 ? ' A diferença vem de R$ ' . number_format(abs($recon['manualTotal']), 2, ',', '.') . ' sacados direto no painel do SuitPay, antes deste controle existir.' : '' }}</p>
                         @elseif($platformAccounts->isEmpty())
                             <p class="text-xs text-gray-500 mt-3">Pra sacar pelo site, cadastre a chave PIX da plataforma na conta <span class="font-medium">@pierfans</span> (tela de saque, logado nela).</p>
                         @elseif($platformMax > 0)
