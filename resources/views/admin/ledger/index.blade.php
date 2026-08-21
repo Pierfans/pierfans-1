@@ -281,6 +281,19 @@
             </form>
         </div>
 
+        {{-- Pedido do Bento 21/08 ("tenta colocar isso lá"): a explicação da carteira que o Pedro
+             mandou por áudio, dentro da tela. <details> nativo: fechado não atrapalha, aberto
+             responde a dúvida que gerou os 29,79 da Márcia sem ninguém precisar do WhatsApp. --}}
+        <details class="mb-6 bg-blue-50 border border-blue-100 rounded-lg">
+            <summary class="px-4 py-3 text-sm font-medium text-blue-900 cursor-pointer select-none">Como funciona a carteira (e por que ela confunde a conferência)</summary>
+            <div class="px-4 pb-4 text-sm text-blue-900/80 space-y-2">
+                <p>A carteira funciona como crédito de celular: o cliente coloca dinheiro primeiro e gasta depois.</p>
+                <p><span class="font-medium">Quando ele coloca</span>, o dinheiro cai na conta do SuitPay na hora. Na lista aparece como <span class="font-medium">Recarga</span>, com a etiqueta "não é receita": ainda não é venda, é crédito do cliente. A taxa de entrada é cobrada aqui.</p>
+                <p><span class="font-medium">Quando ele gasta</span>, a venda aparece com a etiqueta <span class="font-medium">"pago com saldo"</span>. O SuitPay não registra nada nesse momento, porque o dinheiro já estava na conta desde a recarga. Por isso essa venda vem sem taxa: a taxa já foi paga na recarga.</p>
+                <p>Resumindo: a <span class="font-medium">recarga</span> conta no card "Entradas" (dinheiro entrando); a <span class="font-medium">venda paga com saldo</span> conta nas comissões e na receita (é venda de verdade) e aparece na frase laranja do card. Cada real passa pelos dois momentos, nunca pelos dois ao mesmo tempo.</p>
+            </div>
+        </details>
+
         <!-- Cards de totais -->
         <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">Movimento do período</h2>
         <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
