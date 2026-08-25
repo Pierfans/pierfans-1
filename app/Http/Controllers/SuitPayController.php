@@ -308,7 +308,7 @@ class SuitPayController extends Controller
                 'status' => 'ERROR',
                 'http_status' => $response->status(),
                 'response_code' => $responseCode,
-                'message' => $errorMessages[$responseCode] ?? 'Erro não mapeado. Verifique logs.',
+                'message' => $errorMessages[$responseCode] ?? ($data['message'] ?? 'Erro não mapeado. Verifique logs.'), // ponytail: mostra o motivo que o suitpay mandou (24/08: 'limite de R$ 0,00' virou 'erro nao mapeado' e o bento tentou 4x)
                 'transaction_id' => $transactionId,
                 'external_id' => $externalId,
                 'data' => $data,
