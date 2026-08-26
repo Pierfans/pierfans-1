@@ -103,6 +103,17 @@
                                     <div class="error-message text-red-500 text-sm mt-1"></div>
                                 </div>
 
+                                {{-- Pedido do Bento 26/08: sem isso o @ nascia aleatorio na aprovacao (99Q4jGKU) e ninguem conseguia marcar a criadora --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Seu @ no Pierfans *</label>
+                                    <input type="text" name="username" id="username"
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                           value="{{ $user->username ?? '' }}"
+                                           placeholder="Ex.: jujuferrari" maxlength="30" autocomplete="off" required>
+                                    <p class="mt-1.5 text-sm text-gray-500">Seu perfil vai ficar em pierfans.com/<span id="username-preview" class="font-semibold">{{ $user->username ?: 'seunome' }}</span>. Só letras, números, _ e -, sem espaço. É assim que outras criadoras vão te marcar.</p>
+                                    <div class="error-message text-red-500 text-sm mt-1"></div>
+                                </div>
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
                                     <input type="text" name="creator_full_name" id="creator_full_name" 

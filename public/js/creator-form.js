@@ -72,6 +72,12 @@
         $('#creator_state').on('input', function() {
             this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '').substring(0, 2);
         });
+
+        // @ do perfil: sem @ na frente nem espaco, e mostra a URL enquanto digita
+        $('#username').on('input', function() {
+            this.value = this.value.replace(/^@+/, '').replace(/\s/g, '');
+            $('#username-preview').text(this.value || 'seunome');
+        });
     });
 
     // Preview de imagem

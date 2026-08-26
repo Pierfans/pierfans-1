@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class CreatorController extends Controller
 {
@@ -65,8 +66,12 @@ class CreatorController extends Controller
 
         switch ($step) {
             case 1: // Dados pessoais
+                // Criadora costuma digitar o @ na frente (a Marcinha ficou com '@marcinha' gravado)
+                $request->merge(['username' => ltrim(trim((string) $request->input('username')), '@')]);
                 $validated = $request->validate([
                     'name' => 'required|string|max:255',
+                    // ascii de proposito: e a URL do perfil e o que vai depois do @ na legenda
+                    'username' => ['required', 'string', 'max:30', 'alpha_dash:ascii', Rule::unique('users')->ignore($user->id)],
                     'creator_full_name' => 'required|string|max:255',
                     'creator_cpf' => ['required', 'string', 'size:11', 'regex:/^[0-9]{11}$/', function ($attr, $value, $fail) {
                         if (! $this->isValidCpf($value)) {
@@ -195,6 +200,7 @@ class CreatorController extends Controller
             'data' => [
                 'step1' => [
                     // 'name' (Nome de exibição) não é retornado: o usuário deve preencher sempre
+                    'username' => $user->username,
                     'creator_full_name' => $user->creator_full_name,
                     'creator_cpf' => $user->creator_cpf,
                     'creator_birth_date' => $user->creator_birth_date,

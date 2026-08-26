@@ -33,6 +33,7 @@ class CreatorStatusMail extends Mailable
                 'lines'   => [
                     'Parabéns! Seu cadastro de criadora na Pierfans foi aprovado.',
                     'Você já pode publicar seus conteúdos e começar a receber assinantes.',
+                    'Seu perfil está em ' . url('/' . $this->user->username) . ' e outras criadoras podem te marcar com @' . $this->user->username . '.',
                 ],
                 'cta'     => ['url' => url('/dashboard'), 'label' => 'Acessar minha conta'],
             ],
