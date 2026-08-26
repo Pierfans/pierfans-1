@@ -28,7 +28,7 @@
     <!-- Descrição -->
     @if ($post->description)
         <div class="px-4 pt-3 pb-2">
-            <p class="text-sm text-gray-900 line-clamp-3">{{ $post->description }}</p>
+            <p class="text-sm text-gray-900 line-clamp-3">{!! $post->descriptionHtml() !!}</p>
         </div>
     @endif
 

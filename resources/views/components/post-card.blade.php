@@ -340,11 +340,7 @@
             @if ($post->description && !$isPostLocked)
                 <div class="text-sm text-gray-900 ">
                     <span class="font-semibold">{{ $post->user->name }}</span>
-                    <span>{!! nl2br(preg_replace(
-                        '/(https?:\/\/[^\s]+)/',
-                        '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#18DBC1;text-decoration:underline;">$1</a>',
-                        e($post->description)
-                    )) !!}</span>
+                    <span>{!! $post->descriptionHtml() !!}</span>
                 </div>
             @endif
             @if (!$isPostLocked)

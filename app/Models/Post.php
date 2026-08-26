@@ -139,4 +139,34 @@ class Post extends Model
     {
         return $this->visibility === 'paid' && $this->purchases()->exists();
     }
+
+    /**
+     * Legenda pronta pra tela: escapada, URL vira link e @username vira link pro perfil
+     * (pedido do Bento 26/08: a Juju posta a collab e marca a menina). Só linka @ de quem
+     * existe no Pierfans; @ de instagram fica texto, senão vira link morto pra 404.
+     * URL primeiro e @ depois com lookbehind, pra um @ dentro de URL/email não virar link.
+     */
+    public function descriptionHtml(): string
+    {
+        $html = preg_replace(
+            '/(https?:\/\/[^\s]+)/',
+            '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#18DBC1;text-decoration:underline;">$1</a>',
+            e($this->description)
+        );
+
+        $mention = '/(?<![\w\/])@([A-Za-z0-9_-]+)/';
+        if (preg_match_all($mention, $html, $m)) {
+            // ponytail: uma query por post com @, cache se o feed sentir
+            $known = User::whereIn('username', array_unique($m[1]))->pluck('username')
+                ->mapWithKeys(fn ($u) => [mb_strtolower($u) => $u]);
+            $html = preg_replace_callback($mention, function ($x) use ($known) {
+                $u = $known[mb_strtolower($x[1])] ?? null;
+                return $u
+                    ? '<a href="' . route('profile.show', $u) . '" style="color:#18DBC1;font-weight:600;">@' . $x[1] . '</a>'
+                    : $x[0];
+            }, $html);
+        }
+
+        return nl2br($html);
+    }
 }
