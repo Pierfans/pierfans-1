@@ -176,7 +176,7 @@
             {{-- o degradê termina onde a foto começa (fio de 8% de fade), senão come o lado esquerdo
                  da foto, que agora é quadrada com gente nos dois lados. Antes cobria 60% e a Tayná sumia no verde --}}
             <div class="absolute inset-y-0 left-0 w-[52%] lg:w-[42%] bg-gradient-to-r from-[#01313B] via-[#01313B] via-80% to-transparent pointer-events-none"></div>
-            <div class="relative h-full flex flex-col justify-center pl-6 pr-3 lg:pl-8 xl:pl-12 lg:pr-4 w-[45%] lg:w-[40%]">
+            <div class="relative h-full flex flex-col justify-center pl-6 pr-3 lg:pl-8 xl:pl-12 lg:pr-4 w-[45%] lg:w-[34%]">
                 <span class="inline-flex self-start items-center border border-[#14d1bc]/60 text-[#14d1bc] text-[11px] font-semibold tracking-widest px-3 py-1 rounded-full mb-3 lg:mb-4">COLLAB</span>
                 <p class="text-white font-extrabold leading-none text-3xl lg:text-4xl xl:text-5xl">MANSÃO<br>DA <span class="text-[#f65cc3]">JUJU</span></p>
                 <p class="text-white/80 text-sm xl:text-base mt-3 lg:mt-4">{!! \App\Models\Post::linkify($banner['text']) !!}</p>
