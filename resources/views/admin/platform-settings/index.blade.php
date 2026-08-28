@@ -237,6 +237,8 @@
                         <p class="mt-2 text-sm text-gray-500">
                             JPG, PNG ou WEBP até 5 MB. Sem escolher nada, a foto de hoje continua. A foto é cortada pra caber:
                             funciona melhor quadrada ou em pé, com as pessoas no centro.
+                            <strong class="text-amber-700">Use o arquivo original.</strong> Foto que veio pelo WhatsApp como imagem chega
+                            pequena e borrada no banner; peça como <em>documento</em> ou pelo Drive.
                         </p>
                     </div>
                 </div>
