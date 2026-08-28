@@ -148,10 +148,16 @@ class Post extends Model
      */
     public function descriptionHtml(): string
     {
+        return nl2br(self::linkify((string) $this->description));
+    }
+
+    /** Escapa e linka URL e @criadora num texto qualquer (legenda de post, frase do banner). */
+    public static function linkify(string $text): string
+    {
         $html = preg_replace(
             '/(https?:\/\/[^\s]+)/',
             '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#18DBC1;text-decoration:underline;">$1</a>',
-            e($this->description)
+            e($text)
         );
 
         $mention = '/(?<![\w\/])@([A-Za-z0-9_-]+)/';
@@ -167,6 +173,6 @@ class Post extends Model
             }, $html);
         }
 
-        return nl2br($html);
+        return $html;
     }
 }

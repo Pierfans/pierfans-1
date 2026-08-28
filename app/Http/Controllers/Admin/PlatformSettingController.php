@@ -28,6 +28,8 @@ class PlatformSettingController extends Controller
             'live_url' => $liveUrl,
             'live_stream_url' => PlatformSetting::getValue('live_stream_url'),
             'banner' => PlatformSetting::collabBanner(),
+            // cru, sem fallback: vazio na tela = "usa o banner geral"
+            'bannerDash' => PlatformSetting::where('key', 'like', 'banner_dash_%')->pluck('value', 'key'),
             'platform_percentage' => $platformPercentage,
             'daily_withdraw_limit' => $dailyWithdrawLimit,
             'min_withdraw_amount' => $minWithdrawAmount,
@@ -46,7 +48,9 @@ class PlatformSettingController extends Controller
     public function update(Request $request)
     {
         // o Bento vai colar "@Taynaandrade": tira o @ antes do exists, senao recusa
-        $request->merge(['banner_username' => ltrim(trim((string) $request->input('banner_username')), '@')]);
+        foreach (['banner_username', 'banner_dash_username'] as $k) {
+            $request->merge([$k => ltrim(trim((string) $request->input($k)), '@')]);
+        }
 
         $validated = $request->validate([
             'platform_percentage' => 'required|numeric|min:0|max:100',
@@ -68,48 +72,36 @@ class PlatformSettingController extends Controller
             'banner_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'banner_text' => 'nullable|string|max:150',
             'banner_username' => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::exists('users', 'username')->where('creator_status', 'approved')],
+            // dashboard opcional: mesmos campos, vazio usa o geral
+            'banner_dash_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'banner_dash_text' => 'nullable|string|max:150',
+            'banner_dash_username' => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::exists('users', 'username')->where('creator_status', 'approved')],
+            'banner_dash_image_remove' => 'nullable|boolean',
         ]);
 
-        if ($file = $request->file('banner_image')) {
-            // nome datado e nao fixo: o Cloudflare cacheia /img e a foto velha ficaria no ar
-            $name = 'collab-' . now()->format('Ymd-His') . '.' . $file->extension();
-            $file->move(public_path('img/banners'), $name);
-            $old = PlatformSetting::getValue('banner_image');
-            if ($old && str_starts_with($old, '/img/banners/')) {
-                @unlink(public_path($old));
+        foreach (['banner' => 'geral (login e dashboard)', 'banner_dash' => 'só do dashboard'] as $k => $desc) {
+            if ($file = $request->file("{$k}_image")) {
+                // nome datado e nao fixo: o Cloudflare cacheia /img e a foto velha ficaria no ar
+                $name = 'collab-' . now()->format('Ymd-His') . '-' . $k . '.' . $file->extension();
+                $file->move(public_path('img/banners'), $name);
+                $this->unlinkBanner(PlatformSetting::getValue("{$k}_image"));
+                PlatformSetting::setValue("{$k}_image", '/img/banners/' . $name, "Foto do banner $desc");
             }
-            PlatformSetting::setValue('banner_image', '/img/banners/' . $name, 'Foto do banner da collab (login e dashboard)');
+            PlatformSetting::setValue("{$k}_text", (string) ($validated["{$k}_text"] ?? ''), "Frase do banner $desc");
+            PlatformSetting::setValue("{$k}_username", (string) ($validated["{$k}_username"] ?? ''), "@ da criadora pra onde o banner $desc leva");
         }
-        PlatformSetting::setValue('banner_text', (string) ($validated['banner_text'] ?? ''), 'Frase do banner da collab');
-        PlatformSetting::setValue('banner_username', (string) ($validated['banner_username'] ?? ''), '@ da criadora pra onde o banner da collab leva');
-
-        PlatformSetting::setValue(
-            'platform_percentage',
-            (string) $validated['platform_percentage'],
-            'Porcentagem que a plataforma recebe de cada assinatura'
-        );
-
-        PlatformSetting::setDailyWithdrawLimit($validated['daily_withdraw_limit']);
-        PlatformSetting::setMinWithdrawAmount($validated['min_withdraw_amount']);
-        PlatformSetting::setPixReleaseDays($validated['pix_release_days'] ?? 0);
-        PlatformSetting::setCardReleaseDays($validated['card_release_days'] ?? 0);
-        PlatformSetting::setAffiliateCommissionPercentage($validated['affiliate_commission_percentage']);
-        PlatformSetting::setAffiliateCommissionLimit($validated['affiliate_commission_limit']);
-        PlatformSetting::setEmailVerificationRequired($validated['email_verification_required'] ?? false);
-        PlatformSetting::setUseR2Upload($request->boolean('use_r2_upload'));
-
-        PlatformSetting::setValue(
-            'live_url',
-            (string) ($validated['live_url'] ?? ''),
-            'Link da transmissão ao vivo exibida em /live. Vazio = página mostra "em breve"'
-        );
-
-        PlatformSetting::setValue(
-            'live_stream_url',
-            (string) ($validated['live_stream_url'] ?? ''),
-            'Link .m3u8 do stream, tocado no player da própria /live. Tem preferência sobre live_url'
-        );
+        if ($request->boolean('banner_dash_image_remove')) {
+            $this->unlinkBanner(PlatformSetting::getValue('banner_dash_image'));
+            PlatformSetting::setValue('banner_dash_image', '', 'Foto do banner só do dashboard');
+        }
 
         return redirect()->back()->with('success', 'Configurações atualizadas com sucesso!');
+    }
+
+    private function unlinkBanner(?string $path): void
+    {
+        if ($path && str_starts_with($path, '/img/banners/')) {
+            @unlink(public_path($path));
+        }
     }
 }

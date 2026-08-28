@@ -301,20 +301,22 @@
                  foto nova + "Sexta-feira / O grande lancamento de todas as collab da Mansao da Juju") --}}
             {{-- 28/08: foto, frase e perfil vem do admin (configuracoes > banner da collab); o Bento
                  troca a foto todo dia sem deploy. Vazio cai no hardcoded do collabBanner(). --}}
-            @php($banner = \App\Models\PlatformSetting::collabBanner())
-            <a href="{{ route('profile.show', $banner['username']) }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
-                <img src="{{ $banner['image'] }}"
-                    alt="{{ $banner['text'] }}"
-                    class="absolute inset-y-0 right-0 h-full w-1/2 object-cover" loading="lazy">
-                {{-- 28/08: fade de 10% a partir de onde a foto começa (50%); antes ia de 55% a 80% e apagava metade da foto --}}
-                <div class="absolute inset-y-0 left-1/2 w-[10%] bg-gradient-to-r from-[#01313B] to-transparent"></div>
+            @php($banner = \App\Models\PlatformSetting::collabBanner('dashboard'))
+            {{-- div e nao <a> (28/08): os @ da frase sao links proprios, e link dentro de link nao existe em HTML.
+                 Foto e titulo levam pro perfil do campo --}}
+            <div class="relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
+                <a href="{{ route('profile.show', $banner['username']) }}" class="absolute inset-y-0 right-0 h-full w-1/2">
+                    <img src="{{ $banner['image'] }}" alt="{{ $banner['text'] }}" class="h-full w-full object-cover" loading="lazy">
+                </a>
+                {{-- fade de 10% a partir de onde a foto começa (50%); antes ia de 55% a 80% e apagava metade da foto --}}
+                <div class="absolute inset-y-0 left-1/2 w-[10%] bg-gradient-to-r from-[#01313B] to-transparent pointer-events-none"></div>
                 {{-- w-1/2: o texto termina onde a foto comeca, sem invadir (pedido do Pedro 19/08) --}}
                 <div class="relative h-full flex flex-col justify-center pl-6 pr-2 sm:pl-8 w-1/2">
                     <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
-                    <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
-                    <p class="text-white/80 text-[11px] sm:text-sm mt-1">{{ rtrim($banner['text'], '.') }} <span class="text-[#14d1bc] font-semibold">→</span></p>
+                    <a href="{{ route('profile.show', $banner['username']) }}" class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span> <span class="text-[#14d1bc]">→</span></a>
+                    <p class="text-white/80 text-[11px] sm:text-sm mt-1">{!! \App\Models\Post::linkify(rtrim($banner['text'], '.')) !!}</p>
                 </div>
-            </a>
+            </div>
 
             <!-- Top 5 Criadores -->
             @if (isset($featuredCreators) && $featuredCreators->count() > 0)

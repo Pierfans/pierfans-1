@@ -249,14 +249,16 @@ class PlatformSetting extends Model
      * sem deploy (o Bento troca a foto todo dia, pedido de 28/08). Campo vazio cai no que
      * estava chapado no Blade naquele dia, por isso `?:` e não `??`: setValue grava '' e não null.
      */
-    public static function collabBanner(): array
+    public static function collabBanner(string $place = 'login'): array
     {
-        $v = self::whereIn('key', ['banner_image', 'banner_text', 'banner_username'])->pluck('value', 'key');
+        $v = self::where('key', 'like', 'banner_%')->pluck('value', 'key');
+        // dashboard: campo a campo, vazio cai no banner geral (pedido do Pedro 28/08)
+        $get = fn ($f) => ($place === 'dashboard' ? ($v["banner_dash_$f"] ?? '') : '') ?: ($v["banner_$f"] ?? '');
 
         return [
-            'image'    => ($v['banner_image'] ?? '') ?: '/img/banner-collab-tayna-juju.jpg',
-            'text'     => ($v['banner_text'] ?? '') ?: 'O grande lançamento da collab Tayná e Juju, direto da Mansão da Juju.',
-            'username' => ($v['banner_username'] ?? '') ?: 'Taynaandrade',
+            'image'    => $get('image') ?: '/img/banner-collab-tayna-juju.jpg',
+            'text'     => $get('text') ?: 'O grande lançamento da collab Tayná e Juju, direto da Mansão da Juju.',
+            'username' => $get('username') ?: 'Taynaandrade',
         ];
     }
 }
