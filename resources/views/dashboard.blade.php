@@ -305,10 +305,11 @@
             <a href="{{ route('profile.show', $banner['username']) }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
                 <img src="{{ $banner['image'] }}"
                     alt="{{ $banner['text'] }}"
-                    class="absolute inset-y-0 right-0 h-full w-[45%] object-cover" loading="lazy">
-                <div class="absolute inset-y-0 right-[20%] w-1/4 bg-gradient-to-r from-[#01313B] to-transparent"></div>
-                {{-- w-[55%]: o texto termina onde a foto comeca, sem invadir (pedido do Pedro 19/08) --}}
-                <div class="relative h-full flex flex-col justify-center pl-6 pr-2 sm:pl-8 w-[55%]">
+                    class="absolute inset-y-0 right-0 h-full w-1/2 object-cover" loading="lazy">
+                {{-- 28/08: fade de 10% a partir de onde a foto começa (50%); antes ia de 55% a 80% e apagava metade da foto --}}
+                <div class="absolute inset-y-0 left-1/2 w-[10%] bg-gradient-to-r from-[#01313B] to-transparent"></div>
+                {{-- w-1/2: o texto termina onde a foto comeca, sem invadir (pedido do Pedro 19/08) --}}
+                <div class="relative h-full flex flex-col justify-center pl-6 pr-2 sm:pl-8 w-1/2">
                     <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
                     <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
                     <p class="text-white/80 text-[11px] sm:text-sm mt-1">{{ rtrim($banner['text'], '.') }} <span class="text-[#14d1bc] font-semibold">→</span></p>
