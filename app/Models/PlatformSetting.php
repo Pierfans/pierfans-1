@@ -243,4 +243,20 @@ class PlatformSetting extends Model
     {
         return (float) self::getValue('suitpay_fee_pix_out_percent', 3.5);
     }
+
+    /**
+     * Banner da collab (login + dashboard): foto, frase e @ da criadora, trocados pelo admin
+     * sem deploy (o Bento troca a foto todo dia, pedido de 28/08). Campo vazio cai no que
+     * estava chapado no Blade naquele dia, por isso `?:` e não `??`: setValue grava '' e não null.
+     */
+    public static function collabBanner(): array
+    {
+        $v = self::whereIn('key', ['banner_image', 'banner_text', 'banner_username'])->pluck('value', 'key');
+
+        return [
+            'image'    => ($v['banner_image'] ?? '') ?: '/img/banner-collab-tayna-juju.jpg',
+            'text'     => ($v['banner_text'] ?? '') ?: 'O grande lançamento da collab Tayná e Juju, direto da Mansão da Juju.',
+            'username' => ($v['banner_username'] ?? '') ?: 'Taynaandrade',
+        ];
+    }
 }

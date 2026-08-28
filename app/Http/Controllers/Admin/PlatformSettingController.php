@@ -27,6 +27,7 @@ class PlatformSettingController extends Controller
         return view('admin.platform-settings.index', [
             'live_url' => $liveUrl,
             'live_stream_url' => PlatformSetting::getValue('live_stream_url'),
+            'banner' => PlatformSetting::collabBanner(),
             'platform_percentage' => $platformPercentage,
             'daily_withdraw_limit' => $dailyWithdrawLimit,
             'min_withdraw_amount' => $minWithdrawAmount,
@@ -44,6 +45,9 @@ class PlatformSettingController extends Controller
      */
     public function update(Request $request)
     {
+        // o Bento vai colar "@Taynaandrade": tira o @ antes do exists, senao recusa
+        $request->merge(['banner_username' => ltrim(trim((string) $request->input('banner_username')), '@')]);
+
         $validated = $request->validate([
             'platform_percentage' => 'required|numeric|min:0|max:100',
             'daily_withdraw_limit' => 'required|integer|min:1|max:100',
@@ -60,7 +64,24 @@ class PlatformSettingController extends Controller
             // 2000 e nao 500: o link do .m3u8 carrega o token da sessao de playback
             // e passa de mil caracteres. A coluna e text(), entao o banco aguenta.
             'live_stream_url' => 'nullable|url:http,https|max:2000',
+            // banner da collab: foto de celular passa de 2 MB facil, 5 MB de teto; o fpm aceita 512M
+            'banner_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'banner_text' => 'nullable|string|max:150',
+            'banner_username' => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::exists('users', 'username')->where('creator_status', 'approved')],
         ]);
+
+        if ($file = $request->file('banner_image')) {
+            // nome datado e nao fixo: o Cloudflare cacheia /img e a foto velha ficaria no ar
+            $name = 'collab-' . now()->format('Ymd-His') . '.' . $file->extension();
+            $file->move(public_path('img/banners'), $name);
+            $old = PlatformSetting::getValue('banner_image');
+            if ($old && str_starts_with($old, '/img/banners/')) {
+                @unlink(public_path($old));
+            }
+            PlatformSetting::setValue('banner_image', '/img/banners/' . $name, 'Foto do banner da collab (login e dashboard)');
+        }
+        PlatformSetting::setValue('banner_text', (string) ($validated['banner_text'] ?? ''), 'Frase do banner da collab');
+        PlatformSetting::setValue('banner_username', (string) ($validated['banner_username'] ?? ''), '@ da criadora pra onde o banner da collab leva');
 
         PlatformSetting::setValue(
             'platform_percentage',

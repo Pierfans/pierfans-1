@@ -299,18 +299,19 @@
 
             {{-- banner lancamento das collab "Mansao da Juju" (pedido do Bento 19/08:
                  foto nova + "Sexta-feira / O grande lancamento de todas as collab da Mansao da Juju") --}}
-            {{-- 28/08: foto da collab do dia (Tayna + Juju) e link pro perfil da Tayna; o Bento vai
-                 mandar uma foto nova por dia. Foto quadrada, rostos no meio: sem object-top --}}
-            <a href="{{ route('profile.show', 'Taynaandrade') }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
-                <img src="/img/banner-collab-tayna-juju.jpg"
-                    alt="O grande lançamento da collab Tayná e Juju, direto da Mansão da Juju"
+            {{-- 28/08: foto, frase e perfil vem do admin (configuracoes > banner da collab); o Bento
+                 troca a foto todo dia sem deploy. Vazio cai no hardcoded do collabBanner(). --}}
+            @php($banner = \App\Models\PlatformSetting::collabBanner())
+            <a href="{{ route('profile.show', $banner['username']) }}" class="group relative block w-full overflow-hidden rounded-xl bg-[#01313B] aspect-[12/5]">
+                <img src="{{ $banner['image'] }}"
+                    alt="{{ $banner['text'] }}"
                     class="absolute inset-y-0 right-0 h-full w-[45%] object-cover" loading="lazy">
                 <div class="absolute inset-y-0 right-[20%] w-1/4 bg-gradient-to-r from-[#01313B] to-transparent"></div>
                 {{-- w-[55%]: o texto termina onde a foto comeca, sem invadir (pedido do Pedro 19/08) --}}
                 <div class="relative h-full flex flex-col justify-center pl-6 pr-2 sm:pl-8 w-[55%]">
                     <span class="text-[#14d1bc] text-[10px] sm:text-xs font-semibold tracking-widest mb-1.5">COLLAB</span>
                     <p class="text-white font-extrabold leading-tight text-xl sm:text-3xl">MANSÃO DA <span class="text-[#f65cc3]">JUJU</span></p>
-                    <p class="text-white/80 text-[11px] sm:text-sm mt-1">O grande lançamento da collab Tayná e Juju, direto da Mansão da Juju <span class="text-[#14d1bc] font-semibold">→</span></p>
+                    <p class="text-white/80 text-[11px] sm:text-sm mt-1">{{ rtrim($banner['text'], '.') }} <span class="text-[#14d1bc] font-semibold">→</span></p>
                 </div>
             </a>
 

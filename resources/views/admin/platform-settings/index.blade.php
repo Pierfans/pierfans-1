@@ -25,7 +25,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('admin.platform-settings.update') }}">
+        <form method="POST" action="{{ route('admin.platform-settings.update') }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -219,6 +219,42 @@
                             @endif
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {{-- Card do banner da collab (login + dashboard). A foto muda todo dia (Bento, 28/08);
+                 antes cada troca era um deploy. Campos mostram o que esta no ar agora. --}}
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Banner da collab</h2>
+                <p class="mb-6 text-sm text-gray-500">O banner grande da tela de login e do dashboard. O título "MANSÃO DA JUJU" é fixo; aqui trocam a foto, a frase e o perfil pra onde o banner leva.</p>
+
+                <div class="mb-6 flex flex-col sm:flex-row gap-4 sm:items-start">
+                    <img src="{{ $banner['image'] }}" alt="" class="w-40 h-40 object-cover rounded-lg bg-gray-100 flex-shrink-0">
+                    <div class="flex-1">
+                        <label for="banner_image" class="block text-sm font-medium text-gray-700 mb-2">Foto nova</label>
+                        <input type="file" id="banner_image" name="banner_image" accept="image/jpeg,image/png,image/webp"
+                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="mt-2 text-sm text-gray-500">
+                            JPG, PNG ou WEBP até 5 MB. Sem escolher nada, a foto de hoje continua. A foto é cortada pra caber:
+                            funciona melhor quadrada ou em pé, com as pessoas no centro.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="banner_text" class="block text-sm font-medium text-gray-700 mb-2">Frase</label>
+                    <input type="text" id="banner_text" name="banner_text" value="{{ $banner['text'] }}" maxlength="150"
+                        class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <div class="mb-2">
+                    <label for="banner_username" class="block text-sm font-medium text-gray-700 mb-2">Perfil pra onde o banner leva</label>
+                    <div class="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                        <span class="pl-4 text-gray-400 select-none">pierfans.com/</span>
+                        <input type="text" id="banner_username" name="banner_username" value="{{ $banner['username'] }}" maxlength="31"
+                            class="flex-1 px-1 py-3 border-0 rounded-r-lg focus:ring-0">
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">O @ da criadora, como aparece no link do perfil dela. Só aceita criadora aprovada.</p>
                 </div>
             </div>
 
