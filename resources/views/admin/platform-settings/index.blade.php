@@ -225,7 +225,7 @@
             {{-- Card do banner da collab (login + dashboard). A foto muda todo dia (Bento, 28/08);
                  antes cada troca era um deploy. Campos mostram o que esta no ar agora. --}}
             <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Banner da collab</h2>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Banner</h2>
                 <p class="mb-6 text-sm text-gray-500">O banner grande da tela de login e do dashboard. O título "MANSÃO DA JUJU" é fixo; aqui trocam a foto, a frase e o perfil pra onde o banner leva.</p>
 
                 <div class="mb-6 flex flex-col sm:flex-row gap-4 sm:items-start">
