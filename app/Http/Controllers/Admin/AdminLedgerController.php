@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Withdrawal;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminLedgerController extends Controller
@@ -25,7 +26,13 @@ class AdminLedgerController extends Controller
         // Dono do saque (criador/afiliado/plataforma). Só faz sentido em cashout — filtra pelo withdrawal.type.
         $dono = in_array($request->get('dono'), ['creator', 'affiliate', 'platform']) ? $request->get('dono') : 'todos';
 
-        $base = LedgerEntry::whereBetween('occurred_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+        // O dia do filtro é o dia de quem lê (Brasília); o banco está em UTC. Sem converter, o corte
+        // cai às 20:59 daqui e tudo das 21h à meia-noite vai pro dia seguinte (10/09: a Márcia comparou
+        // 01 a 08/09 com o painel do SuitPay e sobrou o saque das 21:57 do dia 08).
+        $base = LedgerEntry::whereBetween('occurred_at', [
+            Carbon::parse($from, 'America/Sao_Paulo')->startOfDay()->utc(),
+            Carbon::parse($to, 'America/Sao_Paulo')->endOfDay()->utc(),
+        ]);
 
         $sales    = (clone $base)->whereIn('entry_type', ['subscription_sale', 'ppv_sale']);
         $cashouts = (clone $base)->where('entry_type', 'cashout');
@@ -398,8 +405,10 @@ class AdminLedgerController extends Controller
 
     private function period(Request $request): array
     {
-        $from = $request->get('from') ?: now()->startOfMonth()->toDateString();
-        $to   = $request->get('to') ?: now()->toDateString();
+        // Padrão no dia de Brasília: depois das 21h o now() em UTC já é amanhã.
+        $hoje = now()->emBrasilia();
+        $from = $request->get('from') ?: $hoje->copy()->startOfMonth()->toDateString();
+        $to   = $request->get('to') ?: $hoje->toDateString();
         return [$from, $to];
     }
 
