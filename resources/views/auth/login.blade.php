@@ -102,6 +102,8 @@
                     </div>
                 @endif
 
+                @include('auth._escolha')
+
                 <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
                     <div>

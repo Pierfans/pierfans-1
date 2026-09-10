@@ -922,10 +922,16 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                         <p class="text-gray-700 text-lg font-semibold mb-2 text-center">Conteúdo exclusivo</p>
-                        <p class="text-gray-600 text-sm mb-6 text-center px-4">Para ver o conteúdo de {{ $user->name }}, você precisa fazer login ou criar uma conta.</p>
-                        <a href="{{ route('login') }}" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            Entrar
-                        </a>
+                        <p class="text-gray-600 text-sm mb-6 text-center px-4">Para ver o conteúdo de {{ $user->name }}, crie uma conta grátis ou entre na sua.</p>
+                        {{-- Dois caminhos em vez de um "Entrar" (bento 10/09). ?creator= faz login e cadastro voltarem pra este perfil. --}}
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <a href="{{ route('register', ['creator' => $user->username]) }}" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors text-center">
+                                Criar conta para desbloquear
+                            </a>
+                            <a href="{{ route('login', ['creator' => $user->username]) }}" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-400 font-semibold py-2 px-6 rounded-lg transition-colors text-center">
+                                Já tenho conta
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Ações do Post (desabilitadas) -->

@@ -24,6 +24,10 @@
                 <div class="w-full max-w-md">
                     <h1 class="text-3xl font-bold mb-2 text-gray-900">{{ request('type') === 'creator' ? 'Cadastro de criador' : 'Apoie seu criador favorito!' }}</h1>
 
+                    @if(request('type') !== 'creator')
+                        @include('auth._escolha')
+                    @endif
+
                     @if (session('info'))
                         <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <p class="text-sm text-blue-800">{{ session('info') }}</p>

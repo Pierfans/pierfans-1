@@ -7,6 +7,7 @@ use App\Mail\VerifyEmailMail;
 use App\Models\PlatformSetting;
 use App\Models\Post;
 use App\Models\Referral;
+use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ class AuthController extends Controller
     /**
      * Mostra o formulário de login
      */
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
         $featuredPosts = Post::with(['user', 'media'])
             ->where('visibility', 'free')
@@ -32,7 +33,42 @@ class AuthController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('auth.login', compact('featuredPosts'));
+        $escolha = $this->escolhaPendente($request);
+
+        return view('auth.login', compact('featuredPosts', 'escolha'));
+    }
+
+    /**
+     * O que o visitante escolheu antes de cair no login/cadastro, pra tela mostrar e o
+     * retorno levar de volta (bento 10/09: quem criava conta perdia a criadora e o plano).
+     *
+     * Plano: o 'auth' já guarda a URL do checkout em url.intended quando o visitante clica
+     * em pagar; o id do plano sai dela e o plano sabe a criadora. Nada novo em sessão.
+     * Só criadora: o CTA do conteúdo bloqueado manda ?creator=@; aí o destino vira o perfil,
+     * pelo mesmo url.intended que o login e o cadastro já respeitam.
+     *
+     * @return array{creator: ?User, plan: ?SubscriptionPlan}
+     */
+    private function escolhaPendente(Request $request): array
+    {
+        // ?creator= primeiro: é o clique mais recente e ganha de um checkout velho na sessão
+        // (clicou num plano da A, depois no "criar conta" do perfil da B: vai pra B).
+        if ($request->filled('creator')) {
+            $creator = User::where('username', $request->creator)->where('creator_status', 'approved')->first();
+            if ($creator) {
+                session(['url.intended' => route('profile.show', $creator->username)]);
+                return ['creator' => $creator, 'plan' => null];
+            }
+        }
+
+        if (preg_match('#/checkout/(\d+)/#', (string) session('url.intended'), $m)) {
+            $plan = SubscriptionPlan::with('user')->find($m[1]);
+            if ($plan && $plan->user) {
+                return ['creator' => $plan->user, 'plan' => $plan];
+            }
+        }
+
+        return ['creator' => null, 'plan' => null];
     }
 
     /**
@@ -103,8 +139,8 @@ class AuthController extends Controller
             $fullUrl = $request->fullUrl();
             session(['registration_url' => $fullUrl]);
         }
-        
-        return view('auth.register');
+
+        return view('auth.register', ['escolha' => $this->escolhaPendente($request)]);
     }
 
     /**
@@ -271,8 +307,9 @@ class AuthController extends Controller
         // Limpa cookies após criar a conta (indicação já foi capturada)
         $this->clearReferralCookies();
 
-        // Se havia creator_slug, redireciona para o perfil do criador
-        if ($creatorSlug) {
+        // Se havia creator_slug (link de afiliado), redireciona para o perfil do criador.
+        // Um plano escolhido (url.intended, abaixo) é mais específico e ganha.
+        if ($creatorSlug && !session()->has('url.intended')) {
             $creator = User::where('slug', $creatorSlug)->first();
             if ($creator) {
                 return redirect()->route('profile.show', $creator->slug)
@@ -280,7 +317,9 @@ class AuthController extends Controller
             }
         }
 
-        return redirect()->route('dashboard')
+        // Mesmo retorno do login: quem clicou num plano antes de se cadastrar cai no checkout
+        // dele (antes ia pro dashboard e tinha que achar a criadora de novo).
+        return redirect()->intended(route('dashboard'))
             ->with('success', 'Conta criada com sucesso! Bem-vindo!');
     }
 
