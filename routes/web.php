@@ -323,6 +323,15 @@ Route::get('/search', [\App\Http\Controllers\CreatorSearchController::class, 'in
  */
 Route::get('/live', [\App\Http\Controllers\LiveController::class, 'show'])->name('live');
 
+/*
+ | Landing do trafego pago (bento 15/09): o mesmo feed do dashboard, sem login.
+ | Reusa o PostController::index inteiro; o feed nunca dependeu de quem esta logado
+ | (posts em destaque de criadoras aprovadas) e post-card/topnav/bottomnav ja tratam
+ | visitante (post pago vira 'entrar para comprar', de assinante fica trancado).
+ | Antes do catch-all pelo mesmo motivo da /live. Nenhum username 'inicio' na prod em 15/09.
+ */
+Route::get('/inicio', [\App\Http\Controllers\PostController::class, 'index'])->name('landing');
+
 // Rotas de tracking de afiliados (devem vir antes das rotas de perfil)
 Route::get('/a/{referrerSlug}/{creatorSlug}', [\App\Http\Controllers\AffiliateTrackingController::class, 'trackWithCreator'])->name('affiliate.track.creator');
 Route::get('/a/{slug}', [\App\Http\Controllers\AffiliateTrackingController::class, 'track'])->name('affiliate.track');

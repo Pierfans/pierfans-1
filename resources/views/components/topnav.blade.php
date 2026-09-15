@@ -11,7 +11,7 @@
 
             {{-- Logo --}}
             <div class="flex-shrink-0">
-                <a href="{{ route('dashboard') }}" class="flex items-center">
+                <a href="{{ auth()->check() ? route('dashboard') : route('landing') }}" class="flex items-center">
                     <img class="w-20" src="/img/logo.svg" />
                 </a>
             </div>
@@ -88,14 +88,16 @@
                     </button>
 
                 @else
-                    {{-- Visitante: botão de perfil genérico --}}
-                    <button onclick="openProfileOverlay()"
-                            class="p-2 text-gray-600 hover:text-pink-500 transition-colors rounded-lg hover:bg-gray-50"
-                            title="Perfil">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                    </button>
+                    {{-- Visitante: o overlay de perfil so existe logado, o botao era morto.
+                         Landing do trafego pago e busca mostram entrar / criar conta (bento 15/09). --}}
+                    <a href="{{ route('login') }}"
+                       class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-pink-500 hover:bg-gray-50 transition-colors">
+                        Entrar
+                    </a>
+                    <a href="{{ route('register') }}"
+                       class="ml-1 px-4 py-2 rounded-full text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 transition-colors">
+                        Criar conta
+                    </a>
                 @endauth
 
             </div>

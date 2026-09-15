@@ -46,13 +46,26 @@
             </a>
         @endauth
 
-        <button onclick="openProfileOverlay()"
-           class="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-500 hover:text-pink-500"
-           title="Perfil">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        </button>
+        @auth
+            <button onclick="openProfileOverlay()"
+               class="flex flex-col items-center justify-center flex-1 h-full transition-colors text-gray-500 hover:text-pink-500"
+               title="Perfil">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </button>
+        @else
+            {{-- Visitante: o overlay de perfil so existe logado (todo dentro de @auth), o botao era morto.
+                 Landing do trafego pago e busca mostram entrar / criar conta (bento 15/09). --}}
+            <a href="{{ route('login') }}"
+               class="flex flex-col items-center justify-center flex-1 h-full text-sm font-medium text-gray-600 hover:text-pink-500 transition-colors">
+                Entrar
+            </a>
+            <a href="{{ route('register') }}"
+               class="flex flex-col items-center justify-center flex-1 h-full text-sm font-semibold text-pink-500 hover:text-pink-600 transition-colors">
+                Criar conta
+            </a>
+        @endauth
 
     </div>
 </nav>
