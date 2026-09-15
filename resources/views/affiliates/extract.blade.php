@@ -109,6 +109,7 @@
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#FDFDFC] text-[#1b1b18] min-h-screen">
     <!-- Top Navigation (Desktop) -->

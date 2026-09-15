@@ -276,6 +276,7 @@
             font-size: 16px;
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#F5F7FA]">
     <!-- Top Navigation (Desktop) -->

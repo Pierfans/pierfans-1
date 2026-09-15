@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="/css/app.css">
+    @include('partials.tracking')
 </head>
 <body class="bg-gray-50 min-h-screen">
     <x-topnav />

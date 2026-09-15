@@ -27,6 +27,7 @@ class PlatformSettingController extends Controller
         return view('admin.platform-settings.index', [
             'live_url' => $liveUrl,
             'live_stream_url' => PlatformSetting::getValue('live_stream_url'),
+            'tracking_head' => PlatformSetting::getValue('tracking_head'),
             'banner' => PlatformSetting::collabBanner(),
             // cru, sem fallback: vazio na tela = "usa o banner geral"
             'bannerDash' => PlatformSetting::where('key', 'like', 'banner_dash_%')->pluck('value', 'key'),
@@ -77,7 +78,41 @@ class PlatformSettingController extends Controller
             'banner_dash_text' => 'nullable|string|max:150',
             'banner_dash_username' => ['nullable', 'string', 'max:30', \Illuminate\Validation\Rule::exists('users', 'username')->where('creator_status', 'approved')],
             'banner_dash_image_remove' => 'nullable|boolean',
+            // pixel do trafego pago: html cru colado pelo admin, vai no <head> de toda pagina.
+            // 10000 e nao 5000: tag manager + pixel de conversao juntos passam de 3 mil facil.
+            'tracking_head' => 'nullable|string|max:10000',
         ]);
+
+        // Bloco restaurado em 15/09: o commit do banner de 28/08 (ab4b3b2) apagou isto sem querer
+        // e desde entao a tela so gravava o banner. Tudo abaixo validava e caia no chao.
+        PlatformSetting::setValue(
+            'platform_percentage',
+            (string) $validated['platform_percentage'],
+            'Porcentagem que a plataforma recebe de cada assinatura'
+        );
+        PlatformSetting::setDailyWithdrawLimit($validated['daily_withdraw_limit']);
+        PlatformSetting::setMinWithdrawAmount($validated['min_withdraw_amount']);
+        PlatformSetting::setPixReleaseDays($validated['pix_release_days'] ?? 0);
+        PlatformSetting::setCardReleaseDays($validated['card_release_days'] ?? 0);
+        PlatformSetting::setAffiliateCommissionPercentage($validated['affiliate_commission_percentage']);
+        PlatformSetting::setAffiliateCommissionLimit($validated['affiliate_commission_limit']);
+        PlatformSetting::setEmailVerificationRequired($validated['email_verification_required'] ?? false);
+        PlatformSetting::setUseR2Upload($request->boolean('use_r2_upload'));
+        PlatformSetting::setValue(
+            'live_url',
+            (string) ($validated['live_url'] ?? ''),
+            'Link da transmissão ao vivo exibida em /live. Vazio = página mostra "em breve"'
+        );
+        PlatformSetting::setValue(
+            'live_stream_url',
+            (string) ($validated['live_stream_url'] ?? ''),
+            'Link .m3u8 do stream, tocado no player da própria /live. Tem preferência sobre live_url'
+        );
+        PlatformSetting::setValue(
+            'tracking_head',
+            trim((string) ($validated['tracking_head'] ?? '')),
+            'Código de rastreamento (pixel) colado no <head> de todas as páginas'
+        );
 
         foreach (['banner' => 'geral (login e dashboard)', 'banner_dash' => 'só do dashboard'] as $k => $desc) {
             if ($file = $request->file("{$k}_image")) {

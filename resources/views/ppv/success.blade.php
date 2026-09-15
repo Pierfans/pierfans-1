@@ -6,6 +6,7 @@
     <title>Conteúdo Liberado!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/app.css">
+    @include('partials.tracking')
 </head>
 <body class="bg-gray-50 min-h-screen">
     <x-topnav />

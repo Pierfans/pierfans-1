@@ -301,6 +301,16 @@
             </div>
 
             <!-- Card da Live -->
+            {{-- Pixel do trafego pago (bento 15/09). Html cru, vai no <head> de toda pagina via partials.tracking.
+                 Sem maxlength no textarea, pelo mesmo motivo do link da live: maxlength corta a colagem em silencio. --}}
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Código de rastreamento</h2>
+                <p class="mb-6 text-sm text-gray-500">O pixel de quem faz o tráfego pago (e, no futuro, Google Ads ou parecido). Cole o código <strong>exatamente como veio</strong>, com as tags <code>&lt;script&gt;</code> e tudo. Entra em todas as páginas do site: login, cadastro, dashboard, perfil das criadoras, compra e pagamento. Vazio = nada é carregado.</p>
+                <textarea id="tracking_head" name="tracking_head" rows="8" spellcheck="false" placeholder="&lt;script&gt;...&lt;/script&gt;"
+                    class="block w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ $tracking_head }}</textarea>
+                <p class="mt-2 text-sm text-gray-500">Pra conferir se pegou: abra qualquer página do site, clique com o botão direito, "exibir código-fonte" e procure um trecho do código. Só admin edita isto, e o que for colado roda no navegador de todo mundo: cole só código de quem você confia.</p>
+            </div>
+
             <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Transmissão ao Vivo</h2>
 

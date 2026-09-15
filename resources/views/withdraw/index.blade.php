@@ -122,6 +122,7 @@
             color: #1E40AF;
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#FDFDFC] text-[#1b1b18] min-h-screen">
     <!-- Top Navigation (Desktop) -->

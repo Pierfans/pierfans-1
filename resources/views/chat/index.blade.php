@@ -207,6 +207,7 @@
             border-radius: 8px;
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#FDFDFC] text-[#1b1b18] min-h-screen">
     <!-- Top Navigation (Desktop) -->

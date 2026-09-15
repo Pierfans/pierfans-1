@@ -10,6 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Nova postagem (R2) - {{ config('app.name') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    @include('partials.tracking')
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
     <div class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">

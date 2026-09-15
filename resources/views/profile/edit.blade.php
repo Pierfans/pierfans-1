@@ -150,6 +150,7 @@
             flex: 1;
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#F5F5F5] text-[#1b1b18] min-h-screen">
     <!-- Top Navigation -->

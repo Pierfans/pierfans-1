@@ -17,6 +17,7 @@
     <style>
         body { background: #F5F7FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="text-[#1a202c] min-h-screen">
 

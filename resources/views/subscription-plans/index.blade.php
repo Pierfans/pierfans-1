@@ -200,6 +200,7 @@
             background-color: #e55a2b;
         }
     </style>
+    @include('partials.tracking')
 </head>
 <body class="bg-[#FDFDFC] text-[#1b1b18] min-h-screen">
     <!-- Top Navigation -->
