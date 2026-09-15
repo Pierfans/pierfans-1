@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -117,32 +116,17 @@ class ProfileController extends Controller
         // Prepara dados para o link de compartilhamento
         $shareLink = $this->generateShareLink($user, $referrerSlug);
         
-        // Busca postagens do criador (apenas para usuários autenticados)
-        if (Auth::check()) {
-            $postsQuery = \App\Models\Post::where('user_id', $user->id)
-                ->with(['user', 'media', 'likes', 'comments'])
-                ->orderBy('created_at', 'desc');
-            
-            // Se não é o dono do perfil, busca todas as postagens
-            // O componente post-card decide se deve mostrar bloqueado ou não
-            if (!$isOwner) {
-                // Busca todas as postagens (free e subscriber)
-                // O post-card verifica a assinatura e mostra bloqueado se necessário
-                $postsQuery->whereIn('visibility', ['free', 'subscriber', 'paid']);
-            }
-            
-            $posts = $postsQuery->paginate(12);
-        } else {
-            // Para usuários não autenticados, não busca postagens
-            // Cria um paginator vazio
-            $posts = new LengthAwarePaginator(
-                collect([]), // items
-                0, // total
-                12, // perPage
-                1, // currentPage
-                ['path' => request()->url(), 'query' => request()->query()] // options
-            );
+        // Postagens do criador, logado OU visitante (bento 15/09: 'deixar ele ver o maximo
+        // possivel sem estar logado'; ate aqui o visitante recebia lista vazia e um post falso).
+        // O post-card decide o que cada um ve: gratis aberto, pago 'entrar para comprar',
+        // de assinante trancado com criar conta / ja tenho conta.
+        $postsQuery = \App\Models\Post::where('user_id', $user->id)
+            ->with(['user', 'media', 'likes', 'comments'])
+            ->orderBy('created_at', 'desc');
+        if (!$isOwner) {
+            $postsQuery->whereIn('visibility', ['free', 'subscriber', 'paid']);
         }
+        $posts = $postsQuery->paginate(12);
         
         return view('profile.show', compact(
             'user', 

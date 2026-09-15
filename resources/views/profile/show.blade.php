@@ -888,70 +888,6 @@
         <div class="max-w-4xl mx-auto">
             <h2 class="text-2xl font-bold text-[#1b1b18] mb-6">Postagens</h2>
 
-            @guest
-                <!-- Postagem fictícia para usuários não autenticados -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-                    <!-- Header do Post -->
-                    <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-                                @if($user->profile_photo)
-                                    <img src="{{ $user->profile_photo_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
-                                @else
-                                    <span class="text-gray-600 font-medium text-sm">
-                                        {{ strtoupper(substr($user->name, 0, 2)) }}
-                                    </span>
-                                @endif
-                            </div>
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="font-semibold text-gray-900">{{ $user->name }}</span>
-                                    @if($user->creator_status === 'approved')
-                                        <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                        </svg>
-                                    @endif
-                                </div>
-                                <span class="text-xs text-gray-500">{{ now()->format('d M') }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Conteúdo bloqueado -->
-                    <div class="bg-gray-300 flex flex-col items-center justify-center py-16 px-4 min-h-[400px]">
-                        <svg class="w-16 h-16 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        <p class="text-gray-700 text-lg font-semibold mb-2 text-center">Conteúdo exclusivo</p>
-                        <p class="text-gray-600 text-sm mb-6 text-center px-4">Para ver o conteúdo de {{ $user->name }}, crie uma conta grátis ou entre na sua.</p>
-                        {{-- Dois caminhos em vez de um "Entrar" (bento 10/09). ?creator= faz login e cadastro voltarem pra este perfil. --}}
-                        <div class="flex flex-col sm:flex-row gap-3">
-                            <a href="{{ route('register', ['creator' => $user->username]) }}" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors text-center">
-                                Criar conta para desbloquear
-                            </a>
-                            <a href="{{ route('login', ['creator' => $user->username]) }}" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-400 font-semibold py-2 px-6 rounded-lg transition-colors text-center">
-                                Já tenho conta
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Ações do Post (desabilitadas) -->
-                    <div class="p-4 space-y-3">
-                        <div class="flex items-center space-x-4">
-                            <button class="text-gray-400 cursor-not-allowed" disabled>
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                </svg>
-                            </button>
-                            <button class="text-gray-400 cursor-not-allowed" disabled>
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            @else
                 @if(isset($posts) && $posts->count() > 0)
                     <div class="space-y-6">
                         @foreach($posts as $post)
@@ -974,7 +910,6 @@
                         </p>
                     </div>
                 @endif
-            @endguest
         </div>
     </div>
 

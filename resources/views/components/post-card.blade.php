@@ -211,7 +211,8 @@
                                 Comprar agora
                             </a>
                         @else
-                            <a href="{{ route('login') }}"
+                            {{-- ?creator= faz o login voltar pro perfil dela (escolhaPendente) --}}
+                            <a href="{{ route('login', ['creator' => $post->user->username]) }}"
                                class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-8 rounded-full transition-colors">
                                 Entrar para comprar
                             </a>
@@ -224,11 +225,25 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                         <p class="text-gray-700  text-lg font-semibold mb-4">Apenas para assinantes</p>
-                        <button
-                            onclick="handleUnlockContent({{ $post->user_id }}, {{ json_encode($post->user->name) }})"
-                            class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            Desbloquear conteúdo
-                        </button>
+                        @auth
+                            <button
+                                onclick="handleUnlockContent({{ $post->user_id }}, {{ json_encode($post->user->name) }})"
+                                class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                                Desbloquear conteúdo
+                            </button>
+                        @else
+                            {{-- Visitante: os dois caminhos do perfil (bento 10/09), ?creator= volta pra ela depois --}}
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <a href="{{ route('register', ['creator' => $post->user->username]) }}"
+                                   class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors text-center">
+                                    Criar conta para desbloquear
+                                </a>
+                                <a href="{{ route('login', ['creator' => $post->user->username]) }}"
+                                   class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-400 font-semibold py-2 px-6 rounded-lg transition-colors text-center">
+                                    Já tenho conta
+                                </a>
+                            </div>
+                        @endauth
                     </div>
                 @endif
             @else
