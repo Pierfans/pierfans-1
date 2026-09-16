@@ -259,18 +259,37 @@ class AdminLedgerController extends Controller
             return back()->withErrors(['amount' => 'Conta da plataforma (' . self::PLATFORM_EMAIL . ') não encontrada.']);
         }
 
+        // Sem chave cadastrada, a chave vem no próprio formulário do saque (pedir antes escondia o botão).
         $validated = $request->validate([
             'amount'          => 'required|numeric|min:1',
-            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'bank_account_id' => 'nullable|exists:bank_accounts,id',
+            'pix_key_type'    => 'required_with:pix_key|nullable|in:cpf,email,telefone,aleatoria',
+            'pix_key'         => 'required_without:bank_account_id|nullable|string|max:255',
         ], [
-            'bank_account_id.required' => 'Escolha a conta que vai receber.',
+            'pix_key.required_without'         => 'Informe a chave PIX que vai receber.',
+            'pix_key_type.required_with'       => 'Escolha o tipo da chave PIX.',
         ]);
 
-        $bankAccount = BankAccount::where('id', $validated['bank_account_id'])
-            ->where('user_id', $user->id)
-            ->first();
-        if (!$bankAccount) {
-            return back()->withErrors(['bank_account_id' => 'Essa conta não é da plataforma.']);
+        if (!empty($validated['bank_account_id'])) {
+            $bankAccount = BankAccount::where('id', $validated['bank_account_id'])
+                ->where('user_id', $user->id)
+                ->first();
+            if (!$bankAccount) {
+                return back()->withErrors(['bank_account_id' => 'Essa conta não é da plataforma.']);
+            }
+        } else {
+            // O PIX de saída só usa chave e tipo; banco/agência/conta são NOT NULL na tabela e ficam em branco.
+            $bankAccount = BankAccount::create([
+                'user_id'        => $user->id,
+                'bank_name'      => 'PIX',
+                'bank_code'      => '000',
+                'account_type'   => 'corrente',
+                'agency'         => '-',
+                'account_number' => '-',
+                'pix_key_type'   => $validated['pix_key_type'],
+                'pix_key'        => trim($validated['pix_key']),
+                'is_primary'     => !BankAccount::where('user_id', $user->id)->exists(),
+            ]);
         }
 
         // Saldo checado DENTRO da transação: dois cliques simultâneos não podem sacar o mesmo caixa.

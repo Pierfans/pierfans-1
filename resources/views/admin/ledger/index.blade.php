@@ -59,8 +59,6 @@
                         @if($platformCash < 0)
                             {{-- O total das retiradas manuais vem do extrato (recon), não chapado: se houver outra, a frase continua certa. --}}
                             <p class="text-sm text-red-600 mt-2 font-medium">{{ $recon && $recon['manualTotal'] != 0 ? 'Está negativo porque no começo saíram R$ ' . number_format(abs($recon['manualTotal']), 2, ',', '.') . ' direto no painel do SuitPay, mais do que a plataforma tinha pra sacar. O lucro novo vai cobrindo essa diferença; enquanto não zerar, não dá pra sacar.' : 'Está negativo: hoje a conta não cobre o que é dos usuários, então não dá pra sacar.' }}</p>
-                        @elseif($platformAccounts->isEmpty())
-                            <p class="text-xs text-gray-500 mt-3">Pra sacar pelo site, cadastre a chave PIX da plataforma na conta <span class="font-medium">@pierfans</span> (tela de saque, logado nela).</p>
                         @elseif($platformMax > 0)
                             <button type="button" onclick="document.getElementById('modalSaque').classList.remove('hidden')"
                                     class="mt-3 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">
@@ -77,8 +75,8 @@
         </div>
 
         {{-- Saque do caixa da plataforma: cai na fila normal de saques (aprovar dispara o PIX). --}}
-        @if($platformCash !== null && $platformAccounts->isNotEmpty() && $platformMax > 0)
-            <div id="modalSaque" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        @if($platformCash !== null && $platformMax > 0)
+            <div id="modalSaque" class="{{ $errors->hasAny(['amount', 'bank_account_id', 'pix_key', 'pix_key_type']) ? '' : 'hidden' }} fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                 <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                     <h3 class="text-lg font-bold text-gray-900">Sacar caixa da plataforma</h3>
                     <p class="text-sm text-gray-500 mt-1">
@@ -87,20 +85,44 @@
 
                     <form method="POST" action="{{ route('admin.fluxo-caixa.sacar') }}" class="mt-4 space-y-4">
                         @csrf
+                        @if($errors->hasAny(['amount', 'bank_account_id', 'pix_key', 'pix_key_type']))
+                            <p class="text-sm text-red-600 font-medium">{{ $errors->first() }}</p>
+                        @endif
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Valor (máximo R$ {{ number_format($platformMax, 2, ',', '.') }})</label>
                             <input type="number" name="amount" step="0.01" min="1" max="{{ $platformMax }}" value="{{ $platformMax }}" required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             <p class="text-xs text-gray-400 mt-1">O caixa é R$ {{ number_format($platformCash, 2, ',', '.') }}; a SuitPay ainda cobra {{ number_format($feeOutPct, 1, ',', '.') }}% em cima do valor pra fazer o PIX.</p>
                         </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Conta que recebe</label>
-                            <select name="bank_account_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                                @foreach($platformAccounts as $acc)
-                                    <option value="{{ $acc->id }}">{{ $acc->bank_name }} — {{ ucfirst($acc->pix_key_type) }}: {{ $acc->pix_key }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @if($platformAccounts->isNotEmpty())
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Conta que recebe</label>
+                                <select name="bank_account_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    @foreach($platformAccounts as $acc)
+                                        <option value="{{ $acc->id }}">{{ $acc->bank_name }} — {{ ucfirst($acc->pix_key_type) }}: {{ $acc->pix_key }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @else
+                            {{-- Primeira vez: a chave fica salva na @pierfans e vira opção nos próximos saques. --}}
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Tipo da chave</label>
+                                    <select name="pix_key_type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                        <option value="">Escolha</option>
+                                        <option value="cpf" @selected(old('pix_key_type') === 'cpf')>CPF/CNPJ</option>
+                                        <option value="email" @selected(old('pix_key_type') === 'email')>E-mail</option>
+                                        <option value="telefone" @selected(old('pix_key_type') === 'telefone')>Telefone</option>
+                                        <option value="aleatoria" @selected(old('pix_key_type') === 'aleatoria')>Aleatória</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-xs text-gray-500 mb-1">Chave PIX que recebe</label>
+                                    <input type="text" name="pix_key" value="{{ old('pix_key') }}" required maxlength="255"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                </div>
+                            </div>
+                        @endif
                         <div class="flex justify-end gap-2 pt-2">
                             <button type="button" onclick="document.getElementById('modalSaque').classList.add('hidden')"
                                     class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm">Cancelar</button>
