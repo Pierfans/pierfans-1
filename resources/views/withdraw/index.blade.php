@@ -168,6 +168,14 @@
                 >
                     Sacar
                 </button>
+
+                {{-- Admin caindo aqui procurando o caixa da plataforma (16/09): esse saldo é só o de criador. --}}
+                @if(auth()->user()->is_admin)
+                    <p class="text-sm text-[#706f6c] mt-4">
+                        Esse é o saldo de criador desta conta. O dinheiro da plataforma não fica aqui:
+                        <a href="{{ route('admin.fluxo-caixa.index') }}" class="text-[#FF6B35] font-medium underline">sacar o caixa da plataforma</a>.
+                    </p>
+                @endif
             </div>
 
             <!-- Extrato -->
