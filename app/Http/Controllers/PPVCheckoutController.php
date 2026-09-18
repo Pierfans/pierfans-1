@@ -187,6 +187,13 @@ class PPVCheckoutController extends Controller
             return redirect()->route('dashboard')->with('error', 'Acesso negado.');
         }
 
+        // Pixel de venda do trafego pago: so na primeira vez, logo depois da compra (post ja comprado cai aqui de novo pelo applyGuards)
+        $visto = 'tj_visto.ppv' . $purchase->id;
+        if ($purchase->created_at > now()->subHour() && !session()->has($visto)) {
+            session()->put($visto, true);
+            session()->put('tj_pixel', ['tipo' => 'ppv', 'id' => 'ppv' . $purchase->id]);
+        }
+
         $post    = $purchase->post->load('media');
         $creator = $purchase->creator;
 

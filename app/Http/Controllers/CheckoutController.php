@@ -907,7 +907,14 @@ class CheckoutController extends Controller
         if ($subscription->user_id !== $user->id) {
             return redirect()->route('dashboard')->with('error', 'Acesso negado.');
         }
-        
+
+        // Pixel de venda do trafego pago: so na primeira vez, logo depois da compra (recarregar ou voltar depois nao conta de novo)
+        $visto = 'tj_visto.sub' . $subscription->id;
+        if ($subscription->created_at > now()->subHour() && !session()->has($visto)) {
+            session()->put($visto, true);
+            session()->put('tj_pixel', ['tipo' => 'assinatura', 'id' => 'sub' . $subscription->id]);
+        }
+
         return view('checkout.success', [
             'subscription' => $subscription,
             'creator' => $subscription->creator,

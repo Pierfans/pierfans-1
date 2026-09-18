@@ -210,6 +210,9 @@ class AuthController extends Controller
 
             DB::commit();
 
+            // Pixel de cadastro do trafego pago, disparado pelo partials.tracking da proxima pagina
+            session()->put('tj_pixel', ['tipo' => 'cadastro', 'id' => 'user' . $user->id]);
+
             \Log::info('Transação commitada com sucesso', [
                 'user_id' => $user->id,
             ]);
