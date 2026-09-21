@@ -87,7 +87,7 @@ class PaidMessageController extends Controller
     {
         $preco = round((float) $message->price, 2);
 
-        return DB::transaction(function () use ($message, $user, $preco) {
+        return DB::transaction(function () use ($message, $user, $preco, $formaOriginal) {
             // Webhook reenviado ou clique duplo: devolve a compra que ja existe sem
             // debitar de novo. O unique (user_id, message_id) e a trava final.
             $jaComprou = MessagePurchase::where('user_id', $user->id)
