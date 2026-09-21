@@ -1448,9 +1448,10 @@
             // Fecha o modal
             closeSubscriptionModal();
 
-            // Redireciona para o checkout de PIX
-            // O CheckoutController verificará se o usuário tem dados completos
-            window.location.href = `/checkout/${planId}/pix`;
+            // Metodo que a criadora aceita (bento 21/09, audio 16): PIX quando ela aceita,
+            // cartao quando ela so aceita cartao. O CheckoutController confere de novo do lado
+            // de la e tambem verifica se o usuario tem dados completos.
+            window.location.href = `/checkout/${planId}/{{ $user->defaultCheckoutMethod() }}`;
         }
     </script>
 </body>

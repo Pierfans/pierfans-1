@@ -46,7 +46,12 @@ class SubscriptionPlanController extends Controller
                 ->get();
         }
 
-        return view('subscription-plans.index', compact('plans'));
+        // Pros dois percentuais aparecerem na tela: o bento pediu que ficasse "bem claro"
+        // pra criadora quanto ela recebe em cada forma de pagamento (audio 16).
+        $platformPercentage = \App\Models\PlatformSetting::getPlatformPercentage();
+        $platformPercentageCard = \App\Models\PlatformSetting::getPlatformPercentageCard();
+
+        return view('subscription-plans.index', compact('plans', 'platformPercentage', 'platformPercentageCard'));
     }
 
     /**
@@ -63,10 +68,29 @@ class SubscriptionPlanController extends Controller
         }
 
         $request->validate([
+            'accepts_pix' => 'nullable|boolean',
+            'accepts_card' => 'nullable|boolean',
             'plans' => 'required|array',
             'plans.*.id' => 'required|exists:subscription_plans,id',
             'plans.*.price' => 'required|string',
             'plans.*.is_active' => 'nullable',
+        ]);
+
+        // Formas de pagamento aceitas (bento 21/09, audio 16). Pelo menos uma tem que ficar
+        // ligada, senao ela nao vende nada e nem entende por que.
+        $aceitaPix = $request->boolean('accepts_pix');
+        $aceitaCartao = $request->boolean('accepts_card');
+
+        if (!$aceitaPix && !$aceitaCartao) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Você precisa aceitar pelo menos uma forma de pagamento.',
+            ], 400);
+        }
+
+        Auth::user()->update([
+            'accepts_pix' => $aceitaPix,
+            'accepts_card' => $aceitaCartao,
         ]);
 
         foreach ($request->plans as $planData) {

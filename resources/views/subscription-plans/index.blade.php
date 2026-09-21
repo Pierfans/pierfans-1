@@ -222,6 +222,36 @@
 
             <form id="plansForm">
                 @csrf
+
+                {{-- Formas de pagamento aceitas (bento 21/09, áudio 16). Fica aqui, junto dos
+                     preços, porque é onde ela pensa em quanto vai receber. --}}
+                <div class="plan-card">
+                    <h3 class="plan-title">Formas de pagamento que você aceita</h3>
+                    <p class="plan-description">
+                        Vale para as suas assinaturas e para o conteúdo avulso.
+                    </p>
+
+                    <label style="display:flex;align-items:center;gap:10px;margin:14px 0;cursor:pointer">
+                        <input type="checkbox" id="accepts_pix" {{ Auth::user()->accepts_pix ? 'checked' : '' }}>
+                        <span>
+                            <strong>PIX</strong> — você recebe
+                            <strong>{{ number_format(100 - $platformPercentage, 0) }}%</strong> de cada venda
+                        </span>
+                    </label>
+
+                    <label style="display:flex;align-items:center;gap:10px;margin:14px 0;cursor:pointer">
+                        <input type="checkbox" id="accepts_card" {{ Auth::user()->accepts_card ? 'checked' : '' }}>
+                        <span>
+                            <strong>Cartão de crédito</strong> — você recebe
+                            <strong>{{ number_format(100 - $platformPercentageCard, 0) }}%</strong> de cada venda
+                        </span>
+                    </label>
+
+                    <p class="plan-description" style="margin-top:12px">
+                        No cartão a taxa cobrada pelo banco é bem maior que no PIX, por isso a diferença.
+                        Você precisa aceitar pelo menos uma forma de pagamento.
+                    </p>
+                </div>
                 @foreach($plans as $plan)
                     <div class="plan-card">
                         <h3 class="plan-title">{{ $plan->name }}</h3>
@@ -372,6 +402,8 @@
             // Prepara dados para envio
             const data = {
                 _token: document.querySelector('input[name="_token"]').value,
+                accepts_pix: document.getElementById('accepts_pix').checked ? 1 : 0,
+                accepts_card: document.getElementById('accepts_card').checked ? 1 : 0,
                 plans: plansArray
             };
             

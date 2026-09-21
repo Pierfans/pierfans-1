@@ -514,8 +514,11 @@
     function selectPostPlan(planId, planName, planPrice, durationDays) {
         closePostPlansModal();
 
-        // Redireciona para o checkout com o plano selecionado
-        window.location.href = `/checkout/${planId}/card`;
+        // PIX e nao cartao: este modal mandava hardcoded pro cartao, o unico metodo que
+        // nunca aprovou uma venda na plataforma, enquanto o modal do perfil mandava pro PIX.
+        // Agora os dois caminhos levam pro mesmo lugar. Se a criadora nao aceitar PIX, o
+        // checkout devolve com aviso.
+        window.location.href = `/checkout/${planId}/pix`;
     }
 
     // Fecha modal ao clicar fora

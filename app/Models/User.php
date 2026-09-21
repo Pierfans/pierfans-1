@@ -28,6 +28,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'profile_photo',
         'social_media',
         'creator_status',
+        'accepts_pix',
+        'accepts_card',
         'creator_rejection_reason',
         'creator_full_name',
         'creator_cpf',
@@ -93,6 +95,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'featured_in_top_creators' => 'boolean',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
+            'accepts_pix' => 'boolean',
+            'accepts_card' => 'boolean',
             'blocked_at' => 'datetime',
             'creator_onboarding' => 'boolean',
         ];
@@ -106,6 +110,30 @@ class User extends Authenticatable implements MustVerifyEmail
                   ->orWhere('creator_status', 'none');
             });
         });
+    }
+
+    /**
+     * A criadora aceita receber por este método? (bento 21/09, áudio 16)
+     *
+     * 'wallet' sempre passa: compra com saldo não é venda no cartão nem no PIX, porque o
+     * dinheiro já entrou na plataforma lá atrás, na recarga.
+     */
+    public function acceptsMethod(?string $method): bool
+    {
+        return match ($method) {
+            'card'  => (bool) $this->accepts_card,
+            'pix'   => (bool) $this->accepts_pix,
+            default => true,
+        };
+    }
+
+    /**
+     * Para onde mandar quem clicou em assinar/comprar sem escolher o método.
+     * PIX primeiro porque é o que funciona: cartão nunca teve uma venda aprovada.
+     */
+    public function defaultCheckoutMethod(): string
+    {
+        return $this->accepts_pix ? 'pix' : 'card';
     }
 
     /**

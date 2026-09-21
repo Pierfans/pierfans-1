@@ -28,6 +28,11 @@ class PPVCheckoutController extends Controller
     {
         $this->applyGuards($post);
 
+        if (in_array($method, ['pix', 'card']) && !$post->user->acceptsMethod($method)) {
+            return redirect()->route('profile.show', $post->user->username)
+                ->with('error', 'Esta criadora não está aceitando pagamento por ' . ($method === 'card' ? 'cartão' : 'PIX') . ' no momento.');
+        }
+
         if (!in_array($method, ['pix', 'card'])) {
             return redirect()->back()->with('error', 'Método de pagamento inválido.');
         }
@@ -71,6 +76,13 @@ class PPVCheckoutController extends Controller
     public function process(Post $post, string $method, Request $request)
     {
         $this->applyGuards($post);
+
+        if (in_array($method, ['pix', 'card']) && !$post->user->acceptsMethod($method)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta criadora não está aceitando pagamento por ' . ($method === 'card' ? 'cartão' : 'PIX') . ' no momento.',
+            ], 400);
+        }
 
         if (!in_array($method, ['pix', 'card', 'wallet'])) {
             return response()->json(['success' => false, 'message' => 'Método inválido.'], 400);

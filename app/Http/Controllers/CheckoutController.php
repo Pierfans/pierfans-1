@@ -59,6 +59,13 @@ class CheckoutController extends Controller
         }
         
         // Valida o método de pagamento
+        // A criadora escolhe o que aceita (bento 21/09, audio 16). Carteira nao entra aqui:
+        // saldo ja e dinheiro dentro da plataforma.
+        if (in_array($method, ['card', 'pix']) && !$plan->user->acceptsMethod($method)) {
+            return redirect()->route('profile.show', $plan->user->username)
+                ->with('error', 'Esta criadora não está aceitando pagamento por ' . ($method === 'card' ? 'cartão' : 'PIX') . ' no momento.');
+        }
+
         if (!in_array($method, ['card', 'pix'])) {
             return redirect()->back()->with('error', 'Método de pagamento inválido.');
         }
@@ -128,6 +135,13 @@ class CheckoutController extends Controller
         }
         
         // Valida o método de pagamento ('wallet' = pagar com saldo da carteira, sem gateway)
+        if (in_array($method, ['card', 'pix']) && !$plan->user->acceptsMethod($method)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta criadora não está aceitando pagamento por ' . ($method === 'card' ? 'cartão' : 'PIX') . ' no momento.',
+            ], 400);
+        }
+
         if (!in_array($method, ['card', 'pix', 'wallet'])) {
             return response()->json([
                 'success' => false,
