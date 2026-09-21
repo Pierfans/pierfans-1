@@ -12,6 +12,7 @@ class PaymentTransaction extends Model
         'subscription_plan_id',
         'creator_id',
         'post_id',
+        'message_id',
         'request_number',
         'transaction_id',
         'type',
