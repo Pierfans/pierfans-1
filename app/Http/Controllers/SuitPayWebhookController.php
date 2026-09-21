@@ -363,6 +363,14 @@ class SuitPayWebhookController extends Controller
      * Nunca rodou em producao: nenhum cartao foi aprovado na historia da plataforma (16
      * tentativas, zero pagas, antifraude do SuitPay). Isto existe pra estar pronto ANTES de
      * o cartao ser liberado, senao o saque automatico deixa o dinheiro sair sem volta.
+     *
+     * ponytail: o debito bate sempre no saldo LIBERADO. Se o estorno chegar dentro dos
+     * 7 dias de card_release_days, a venda ainda esta em 'a liberar' e por alguns dias a
+     * tela mostra liberado a menos e a liberar a mais. A conta fecha sozinha quando o
+     * prazo vence (a assinatura entra no liberado e cancela o debito), e o erro e pro lado
+     * seguro: segura mais dinheiro, nao menos. Se incomodar, o proximo passo e filtrar as
+     * assinaturas estornadas em getAvailableBalance E getPendingBalance e largar o
+     * lancamento negativo so pra parte que ja tinha sido sacada.
      */
     private function handleChargeback(PaymentTransaction $transaction): void
     {
