@@ -83,7 +83,7 @@ class PaidMessageController extends Controller
      *
      * Roda inteiro dentro de transacao: se qualquer parte falhar, o saldo volta.
      */
-    public static function comprarComSaldo(Message $message, User $user): MessagePurchase
+    public static function comprarComSaldo(Message $message, User $user, string $formaOriginal = 'wallet'): MessagePurchase
     {
         $preco = round((float) $message->price, 2);
 
@@ -117,10 +117,18 @@ class PaidMessageController extends Controller
                 'type'           => 'wallet',
                 'status'         => 'paid_out',
                 'amount'         => $preco,
-                'note'           => 'Mensagem do chat paga com saldo da carteira',
+                'note'           => $formaOriginal === 'card'
+                    ? 'Mensagem do chat paga com saldo recarregado no cartão'
+                    : 'Mensagem do chat paga com saldo da carteira',
             ]);
 
-            $percentual = PlatformSetting::getPlatformPercentage();
+            // Bento 21/09 mandou a tabela: "Chat de 100 = 76% criadora - 24% pierfans" na
+            // linha do cartao. Aqui a compra e sempre com saldo, entao o que manda e de onde
+            // o saldo veio: recarga no cartao usa o percentual do cartao, recarga no PIX e
+            // saldo que ja estava na carteira usam o normal.
+            $percentual = $formaOriginal === 'card'
+                ? PlatformSetting::getPlatformPercentageCard()
+                : PlatformSetting::getPlatformPercentage();
             $daPlataforma = round($preco * $percentual / 100, 2);
 
             return MessagePurchase::create([
@@ -158,7 +166,8 @@ class PaidMessageController extends Controller
                 return;
             }
 
-            self::comprarComSaldo($mensagem, $comprador);
+            // O tipo da recarga e o que define a divisao: cartao cai em 76/24.
+            self::comprarComSaldo($mensagem, $comprador, $transacao->type);
 
             Log::info('MENSAGEM PAGA - ABERTA APOS RECARGA', [
                 'transaction_id' => $transacao->id,

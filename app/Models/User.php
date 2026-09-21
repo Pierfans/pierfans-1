@@ -322,8 +322,9 @@ class User extends Authenticatable implements MustVerifyEmail
         // Vendas de Conteúdo Único (PPV) já liberadas — mesma regra de prazo das assinaturas
         $releasedAmount += \App\Models\PostPurchase::creatorAmount($this->id, released: true);
 
-        // Mensagens trancadas vendidas no chat. Sempre pagas com saldo da carteira, entao
-        // seguem o prazo do PIX, igual a compra com saldo logo acima.
+        // Mensagens trancadas vendidas no chat. Prazo proprio (chat_release_days, 7 dias
+        // por padrao), porque a compra e sempre com saldo e a forma de pagamento original
+        // ficou la atras, na recarga da carteira.
         $releasedAmount += \App\Models\MessagePurchase::creatorAmount($this->id, released: true);
 
         // Subtrai saques pendentes e transferidos (valor + taxa do saque)

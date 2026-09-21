@@ -159,7 +159,11 @@ class CheckoutController extends Controller
         }
         
         // Obtém porcentagem da plataforma
-        $platformPercentage = PlatformSetting::getPlatformPercentage();
+        // Cartao tem percentual proprio: a taxa do cartao nao fica toda com a plataforma
+        // (bento 21/09). Carteira e PIX seguem o percentual normal.
+        $platformPercentage = $method === 'card'
+            ? PlatformSetting::getPlatformPercentageCard()
+            : PlatformSetting::getPlatformPercentage();
         
         // Calcula valores base
         $totalAmount = $plan->price;

@@ -52,8 +52,35 @@
                         <span class="absolute right-4 top-3 text-gray-500 text-lg">%</span>
                     </div>
                     <p class="mt-2 text-sm text-gray-500">
-                        Esta porcentagem será aplicada a todas as novas assinaturas. 
+                        Esta porcentagem será aplicada a todas as novas assinaturas.
                         Assinaturas antigas manterão a porcentagem que foi configurada no momento da criação.
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    <label for="platform_percentage_card" class="block text-sm font-medium text-gray-700 mb-2">
+                        Porcentagem da plataforma quando a venda é no cartão (%)
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="number"
+                            id="platform_percentage_card"
+                            name="platform_percentage_card"
+                            value="{{ $platform_percentage_card }}"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                        >
+                        <span class="absolute right-4 top-3 text-gray-500 text-lg">%</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">
+                        No cartão a taxa do gateway é bem maior que no PIX, e hoje quem absorve é a plataforma.
+                        Com <strong>{{ number_format($platform_percentage_card, 2, ',', '.') }}%</strong>,
+                        numa venda de R$ 100,00 no cartão o criador recebe
+                        <strong>R$ {{ number_format(100 - $platform_percentage_card, 2, ',', '.') }}</strong>.
+                        Vale para assinatura e conteúdo avulso pagos no cartão; venda paga com saldo da carteira
+                        usa a porcentagem normal, porque a taxa já foi paga na recarga.
                     </p>
                 </div>
 
@@ -121,6 +148,28 @@
                         <p class="mt-2 text-sm text-gray-500">
                             Número de dias que pagamentos via Cartão ficam bloqueados antes de liberar para saque. 
                             <strong>0 = liberação imediata</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Dias de Bloqueio - Venda no Chat -->
+                    <div>
+                        <label for="chat_release_days" class="block text-sm font-medium text-gray-700 mb-2">
+                            Dias de Bloqueio - Venda no Chat
+                        </label>
+                        <div class="relative">
+                            <input
+                                type="number"
+                                id="chat_release_days"
+                                name="chat_release_days"
+                                value="{{ $chat_release_days ?? 7 }}"
+                                min="0"
+                                class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                            >
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Número de dias que a venda de foto ou áudio no chat fica bloqueada antes de liberar
+                            para saque. Independe da forma de pagamento, porque a compra no chat é sempre feita
+                            com saldo da carteira.
                         </p>
                     </div>
                 </div>

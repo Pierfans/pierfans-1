@@ -103,7 +103,15 @@ class ChatController extends Controller
                 ->exists();
 
             if (!$hasActiveSubscription) {
-                return redirect()->route('chat.index')->with('error', 'Você precisa estar assinando este criador para iniciar uma conversa.');
+                // Manda pro perfil dela e nao pra lista de conversas: e la que estao os
+                // planos, entao o aviso vira caminho pra assinar em vez de beco sem saida
+                // (bento 21/09: "ideal e ate colocar um aviso la no chat quando ele abrir
+                // o chat de uma menina").
+                $aviso = 'Para falar com ' . ($otherUser->name ?: 'um criador') . ' no chat, você precisa ser assinante. Escolha um plano abaixo.';
+
+                return $otherUser->username
+                    ? redirect()->route('profile.show', $otherUser->username)->with('error', $aviso)
+                    : redirect()->route('chat.index')->with('error', $aviso);
             }
 
             // Busca ou cria a conversa (criador = $otherUser, assinante = $user)

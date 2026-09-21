@@ -17,6 +17,8 @@ class PlatformSettingController extends Controller
         $dailyWithdrawLimit = PlatformSetting::getDailyWithdrawLimit();
         $minWithdrawAmount = PlatformSetting::getMinWithdrawAmount();
         $autoWithdrawLimit = PlatformSetting::getAutoWithdrawLimit();
+        $platformPercentageCard = PlatformSetting::getPlatformPercentageCard();
+        $chatReleaseDays = PlatformSetting::getChatReleaseDays();
         $pixReleaseDays = PlatformSetting::getPixReleaseDays();
         $cardReleaseDays = PlatformSetting::getCardReleaseDays();
         $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
@@ -36,6 +38,8 @@ class PlatformSettingController extends Controller
             'daily_withdraw_limit' => $dailyWithdrawLimit,
             'min_withdraw_amount' => $minWithdrawAmount,
             'auto_withdraw_limit' => $autoWithdrawLimit,
+            'platform_percentage_card' => $platformPercentageCard,
+            'chat_release_days' => $chatReleaseDays,
             'pix_release_days' => $pixReleaseDays,
             'card_release_days' => $cardReleaseDays,
             'affiliate_commission_percentage' => $affiliateCommissionPercentage,
@@ -60,6 +64,8 @@ class PlatformSettingController extends Controller
             'daily_withdraw_limit' => 'required|integer|min:1|max:100',
             'min_withdraw_amount' => 'required|numeric|min:1',
             'auto_withdraw_limit' => 'nullable|numeric|min:0',
+            'platform_percentage_card' => 'nullable|numeric|min:0|max:100',
+            'chat_release_days' => 'nullable|integer|min:0',
             'pix_release_days' => 'nullable|integer|min:0',
             'card_release_days' => 'nullable|integer|min:0',
             'affiliate_commission_percentage' => 'required|numeric|min:0|max:100',
@@ -96,6 +102,8 @@ class PlatformSettingController extends Controller
         PlatformSetting::setDailyWithdrawLimit($validated['daily_withdraw_limit']);
         PlatformSetting::setMinWithdrawAmount($validated['min_withdraw_amount']);
         PlatformSetting::setAutoWithdrawLimit((float) ($validated['auto_withdraw_limit'] ?? 0));
+        PlatformSetting::setPlatformPercentageCard((float) ($validated['platform_percentage_card'] ?? $validated['platform_percentage']));
+        PlatformSetting::setChatReleaseDays((int) ($validated['chat_release_days'] ?? 7));
         PlatformSetting::setPixReleaseDays($validated['pix_release_days'] ?? 0);
         PlatformSetting::setCardReleaseDays($validated['card_release_days'] ?? 0);
         PlatformSetting::setAffiliateCommissionPercentage($validated['affiliate_commission_percentage']);

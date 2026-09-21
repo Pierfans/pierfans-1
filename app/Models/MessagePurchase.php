@@ -48,13 +48,14 @@ class MessagePurchase extends Model
     /**
      * Quanto a criadora tem de mensagem vendida, liberado ou ainda preso no prazo.
      *
-     * Mensagem trancada e SEMPRE paga com saldo da carteira (PIX e cartao so recarregam
-     * a carteira), entao vale o prazo do PIX, a mesma regra que o getAvailableBalance ja
-     * aplica pra compra feita com saldo.
+     * Prazo proprio, de 7 dias por padrao (bento 21/09: "essa pra evitar problemas, deve
+     * ficar presa por 7 dias, seja pix ou cartao"). Nao usa o prazo do PIX nem o do
+     * cartao porque a venda de mensagem e sempre paga com saldo: a forma de pagamento
+     * original ficou la atras, na recarga da carteira.
      */
     public static function creatorAmount(int $creatorId, bool $released): float
     {
-        $days = PlatformSetting::getPixReleaseDays();
+        $days = PlatformSetting::getChatReleaseDays();
         $date = $days == 0 ? now() : now()->subDays($days)->endOfDay();
 
         return (float) self::where('creator_id', $creatorId)

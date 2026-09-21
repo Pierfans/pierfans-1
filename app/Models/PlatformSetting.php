@@ -44,6 +44,57 @@ class PlatformSetting extends Model
     }
 
     /**
+     * Percentual da plataforma quando a venda e no CARTAO (bento 21/09: "na parte do
+     * cartao, ideal seria diminuir a porcentagem da criadora... se for no cartao ela
+     * recebe so 76% e o restante fica pra plataforma"). A ideia e a plataforma nao
+     * absorver sozinha a taxa do cartao, que come uns 8%.
+     *
+     * Venda paga com saldo da carteira NAO usa isto: a taxa ja foi paga la atras, na
+     * recarga. Vale so pra assinatura e conteudo avulso pagos com cartao.
+     */
+    public static function getPlatformPercentageCard(): float
+    {
+        $value = self::getValue('platform_percentage_card', null);
+        // Sem valor gravado, cai no percentual normal: nunca cobra a mais por engano.
+        return $value === null || $value === '' ? self::getPlatformPercentage() : (float) $value;
+    }
+
+    /**
+     * Define o percentual da plataforma no cartao
+     */
+    public static function setPlatformPercentageCard(float $percentage): void
+    {
+        self::setValue(
+            'platform_percentage_card',
+            (string) $percentage,
+            'Porcentagem da plataforma quando a venda é no cartão. Vazio = usa a porcentagem normal'
+        );
+    }
+
+    /**
+     * Dias que a venda de mensagem do chat fica presa antes de liberar pro saque
+     * (bento 21/09: "deve ficar presa por 7 dias, seja pix ou cartao"). Independe da
+     * forma de pagamento, por isso nao reusa pix_release_days nem card_release_days.
+     */
+    public static function getChatReleaseDays(): int
+    {
+        $value = self::getValue('chat_release_days', 7);
+        return $value === null || $value === '' ? 7 : (int) $value;
+    }
+
+    /**
+     * Define os dias de bloqueio da venda de mensagem do chat
+     */
+    public static function setChatReleaseDays(int $days): void
+    {
+        self::setValue(
+            'chat_release_days',
+            (string) $days,
+            'Número de dias que a venda de mensagem no chat fica bloqueada antes de liberar para saque'
+        );
+    }
+
+    /**
      * Obtém o limite diário de saques
      */
     public static function getDailyWithdrawLimit(): int

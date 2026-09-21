@@ -439,7 +439,10 @@ class PPVCheckoutController extends Controller
             return $existing;
         }
 
-        $platformPercentage = PlatformSetting::getPlatformPercentage();
+        // Cartao tem percentual proprio (bento 21/09); pix e carteira seguem o normal.
+        $platformPercentage = $transaction->type === 'card'
+            ? PlatformSetting::getPlatformPercentageCard()
+            : PlatformSetting::getPlatformPercentage();
         $platformAmount     = round($transaction->amount * $platformPercentage / 100, 2);
         $creatorAmount      = round($transaction->amount - $platformAmount, 2);
 
