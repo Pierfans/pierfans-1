@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'creator.onboarding' => \App\Http\Middleware\EnsureCreatorOnboarding::class,
+            'not.blocked' => \App\Http\Middleware\EnsureUserNotBlocked::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

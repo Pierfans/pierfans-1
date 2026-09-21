@@ -289,4 +289,47 @@ class AdminUserController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Bloqueia ou desbloqueia um usuário (bento 21/09, sobre estorno de cartão: o bloqueio
+     * é automático, "e dai manda um email pra pessoa, se a gente ver que ela nao fez de
+     * proposito, liberamos a conta dela novamente").
+     *
+     * Campo próprio (blocked_at) e não is_active: o global scope 'active' esconderia o
+     * usuário desta mesma tela, e aí ninguém conseguiria desbloquear.
+     */
+    public function toggleBlock(Request $request, $id)
+    {
+        $user = User::withoutGlobalScope('active')->findOrFail($id);
+
+        if ($user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não dá para bloquear um administrador.',
+            ], 400);
+        }
+
+        if ($user->blocked_at) {
+            $user->update(['blocked_at' => null, 'blocked_reason' => null]);
+            $mensagem = 'Usuário desbloqueado.';
+        } else {
+            $user->update([
+                'blocked_at'     => now(),
+                'blocked_reason' => $request->input('reason') ?: 'Bloqueado manualmente pelo admin',
+            ]);
+            $mensagem = 'Usuário bloqueado.';
+        }
+
+        Log::info('ADMIN TOGGLE BLOCK', [
+            'admin_user_id' => Auth::id(),
+            'user_id'       => $user->id,
+            'blocked'       => (bool) $user->blocked_at,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $mensagem,
+            'blocked' => (bool) $user->blocked_at,
+        ]);
+    }
 }

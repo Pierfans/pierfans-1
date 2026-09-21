@@ -44,7 +44,7 @@ Route::middleware('guest')->group(function () {
 Route::get('/post-media/{id}/stream', [\App\Http\Controllers\PostMediaController::class, 'stream'])->name('post-media.stream');
 
 // Rota de logout (requer autenticação)
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'not.blocked'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Dashboard com feed de postagens
@@ -219,6 +219,7 @@ Route::middleware('auth')->group(function () {
             Route::put('/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'update'])->name('update');
             Route::get('/{id}', [\App\Http\Controllers\Admin\AdminUserController::class, 'show'])->name('show');
             Route::post('/{id}/add-credit', [\App\Http\Controllers\Admin\AdminUserController::class, 'addCredit'])->name('add-credit');
+            Route::post('/{id}/toggle-block', [\App\Http\Controllers\Admin\AdminUserController::class, 'toggleBlock'])->name('toggle-block');
         });
 
         // Criadores

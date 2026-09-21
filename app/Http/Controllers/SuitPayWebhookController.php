@@ -272,6 +272,12 @@ class SuitPayWebhookController extends Controller
                             $this->creditWalletFromTransaction($transaction);
                         }
                     }
+
+                    // Estorno: tira o dinheiro da criadora, corta o acesso da venda e
+                    // bloqueia quem pediu (bento 21/09).
+                    if ($statusTransaction === 'CHARGEBACK') {
+                        $this->handleChargeback($transaction);
+                    }
                 }
 
                 break;
@@ -348,6 +354,111 @@ class SuitPayWebhookController extends Controller
     /**
      * Cria assinatura quando pagamento PIX é confirmado
      */
+    /**
+     * Estorno de cartao (bento 21/09): o banco devolveu o dinheiro pro cliente, entao o
+     * valor sai do saldo da criadora, o acesso que a venda deu morre e quem pediu o estorno
+     * e bloqueado. O debito vai como credito manual NEGATIVO, que o getAvailableBalance ja
+     * soma — e por isso o saldo pode ficar negativo quando a venda ja tinha sido sacada.
+     *
+     * Nunca rodou em producao: nenhum cartao foi aprovado na historia da plataforma (16
+     * tentativas, zero pagas, antifraude do SuitPay). Isto existe pra estar pronto ANTES de
+     * o cartao ser liberado, senao o saque automatico deixa o dinheiro sair sem volta.
+     */
+    private function handleChargeback(PaymentTransaction $transaction): void
+    {
+        // O SuitPay reenvia webhook. Sem esta trava, o mesmo estorno debitava a criadora
+        // duas vezes. O marcador vai gravado no admin_notes do lancamento negativo.
+        $marcador = "estorno:tx:{$transaction->id}";
+        if (\App\Models\ManualCredit::where('admin_notes', 'like', "%{$marcador}%")->exists()) {
+            Log::info('ESTORNO JA PROCESSADO, IGNORANDO REENVIO', ['transaction_id' => $transaction->id]);
+            return;
+        }
+
+        // withoutGlobalScope: conta desativada some do Eloquent e a gente precisa dela pra
+        // bloquear e pra ter o email.
+        $comprador = \App\Models\User::withoutGlobalScope('active')->find($transaction->user_id);
+
+        $debito    = 0.0;
+        $criadorId = null;
+        $oQueEra   = null;
+
+        if ($transaction->post_id) {
+            $compra = \App\Models\PostPurchase::where('payment_transaction_id', $transaction->id)->first();
+            if ($compra) {
+                $debito    = (float) $compra->creator_amount;
+                $criadorId = $compra->creator_id;
+                $oQueEra   = 'um conteúdo avulso';
+                $compra->delete(); // o acesso ao post morre junto com a venda
+            }
+        } elseif ($transaction->subscription_plan_id && $transaction->creator_id) {
+            $assinatura = $transaction->subscription_id
+                ? \App\Models\Subscription::find($transaction->subscription_id)
+                : null;
+            if ($assinatura) {
+                $debito    = (float) $assinatura->creator_amount;
+                $criadorId = $assinatura->creator_id;
+                $oQueEra   = 'uma assinatura';
+                $assinatura->update(['is_active' => false]);
+            }
+        } else {
+            // ponytail: recarga de carteira estornada nao debita sozinho. O dinheiro pode ja
+            // ter virado compra e estar espalhado em varias criadoras, e desfazer isso e um
+            // estorno em cascata que nunca aconteceu aqui. Grita no log pra um humano. Se
+            // comecar a acontecer, o proximo passo e debitar a carteira do comprador e deixar
+            // ela negativa, igual ao saldo da criadora.
+            Log::error('ESTORNO DE RECARGA DE CARTEIRA - PRECISA DE HUMANO', [
+                'transaction_id' => $transaction->id,
+                'user_id'        => $transaction->user_id,
+                'amount'         => $transaction->amount,
+            ]);
+        }
+
+        if ($criadorId && $debito > 0) {
+            \App\Models\ManualCredit::create([
+                'user_id'       => $criadorId,
+                'type'          => 'creator',
+                'admin_user_id' => null,
+                'amount'        => -$debito,
+                'reason'        => 'Estorno de cartão: o cliente pediu estorno ao banco e o dinheiro foi devolvido a ele.',
+                'admin_notes'   => "Automático. {$marcador}, {$oQueEra}, comprador #{$transaction->user_id}.",
+            ]);
+
+            $criadora = \App\Models\User::withoutGlobalScope('active')->find($criadorId);
+            if ($criadora) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($criadora->email)->send(
+                        new \App\Mail\ChargebackMail($criadora, 'creator', ['valor' => $debito, 'oQueEra' => $oQueEra])
+                    );
+                } catch (\Exception $e) {
+                    Log::error('ESTORNO - FALHA NO EMAIL DA CRIADORA', ['error' => $e->getMessage()]);
+                }
+            }
+        }
+
+        // Bloqueia quem pediu o estorno. Admin nunca, pra ninguem se trancar fora do painel.
+        if ($comprador && !$comprador->is_admin && !$comprador->blocked_at) {
+            $comprador->update([
+                'blocked_at'     => now(),
+                'blocked_reason' => "Estorno de cartão na transação #{$transaction->id}",
+            ]);
+
+            try {
+                \Illuminate\Support\Facades\Mail::to($comprador->email)->send(
+                    new \App\Mail\ChargebackMail($comprador, 'subscriber')
+                );
+            } catch (\Exception $e) {
+                Log::error('ESTORNO - FALHA NO EMAIL DO COMPRADOR', ['error' => $e->getMessage()]);
+            }
+        }
+
+        Log::warning('ESTORNO DE CARTAO PROCESSADO', [
+            'transaction_id' => $transaction->id,
+            'debito'         => $debito,
+            'creator_id'     => $criadorId,
+            'comprador'      => $transaction->user_id,
+        ]);
+    }
+
     private function createSubscriptionFromTransaction(PaymentTransaction $transaction)
     {
         try {

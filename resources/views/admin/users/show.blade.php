@@ -193,6 +193,61 @@
                 </div>
                 @endif
 
+                <!-- Acesso à plataforma -->
+                <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Acesso à plataforma</h2>
+
+                    @if($user->blocked_at)
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                            <p class="text-sm font-medium text-red-900">Conta bloqueada</p>
+                            <p class="text-sm text-red-700 mt-1">Desde {{ $user->blocked_at->emBrasilia()->format('d/m/Y H:i') }}</p>
+                            @if($user->blocked_reason)
+                                <p class="text-sm text-red-700 mt-1">Motivo: {{ $user->blocked_reason }}</p>
+                            @endif
+                        </div>
+                        <button type="button" id="btnBloqueio" onclick="alternarBloqueio()"
+                                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+                            Desbloquear conta
+                        </button>
+                    @else
+                        <p class="text-sm text-gray-600 mb-4">A conta está liberada: o usuário entra e usa a plataforma normalmente.</p>
+                        <button type="button" id="btnBloqueio" onclick="alternarBloqueio()"
+                                class="w-full px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors">
+                            Bloquear conta
+                        </button>
+                    @endif
+
+                    <div id="erroBloqueio" class="hidden mt-3 text-sm text-red-600"></div>
+
+                    <script>
+                        function alternarBloqueio() {
+                            const btn  = document.getElementById('btnBloqueio');
+                            const erro = document.getElementById('erroBloqueio');
+                            btn.disabled = true;
+                            erro.classList.add('hidden');
+
+                            fetch('{{ route('admin.users.toggle-block', $user->id) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                },
+                            })
+                            .then(r => r.json())
+                            .then(d => {
+                                if (d.success) { location.reload(); return; }
+                                erro.textContent = d.message || 'Erro ao alterar o acesso.';
+                                erro.classList.remove('hidden');
+                                btn.disabled = false;
+                            })
+                            .catch(() => {
+                                erro.textContent = 'Erro de conexão. Tente de novo.';
+                                erro.classList.remove('hidden');
+                                btn.disabled = false;
+                            });
+                        }
+                    </script>
+                </div>
                 <!-- Adicionar Crédito -->
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4">Adicionar Crédito</h2>

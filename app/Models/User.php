@@ -58,6 +58,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'top_creators_order',
         'is_admin',
         'is_active',
+        'blocked_at',
+        'blocked_reason',
         'registration_url',
         'creator_onboarding',
     ];
@@ -91,6 +93,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'featured_in_top_creators' => 'boolean',
             'is_admin' => 'boolean',
             'is_active' => 'boolean',
+            'blocked_at' => 'datetime',
             'creator_onboarding' => 'boolean',
         ];
     }
@@ -330,7 +333,12 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('type', 'creator')
             ->sum('amount');
         
-        return max(0, (float) $releasedAmount - (float) $pendingWithdrawals + (float) $manualCredits);
+        // Sem max(0) desde 21/09: estorno de cartao lanca credito manual NEGATIVO e o
+        // saldo pode ficar negativo quando a venda ja tinha sido sacada (bento: "caso
+        // ela ja tenha recebido, fica como saldo negativo na conta dela"). Quem le isto
+        // e so tela e a validacao do saque, que passa a barrar sozinha enquanto negativo.
+        // O saldo de AFILIADO continua com max(0): o estorno debita so o tipo 'creator'.
+        return (float) $releasedAmount - (float) $pendingWithdrawals + (float) $manualCredits;
     }
 
     /**

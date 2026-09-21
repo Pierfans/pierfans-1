@@ -143,6 +143,19 @@
                 <p class="text-[#706f6c]">Gerencie seus saques e saldo disponível</p>
             </div>
 
+            @if($availableBalance < 0)
+                <div class="withdraw-card mb-6" style="border-left:4px solid #dc2626">
+                    <h2 class="text-lg font-semibold text-[#1b1b18] mb-2">Seu saldo está negativo</h2>
+                    <p class="text-sm text-[#706f6c]">
+                        {{ $ultimoDebito->reason ?? 'Um lançamento negativo deixou seu saldo abaixo de zero.' }}
+                    </p>
+                    <p class="text-sm text-[#706f6c] mt-2">
+                        Como esse valor já tinha sido liberado, ele ficou como saldo negativo e vai ser descontado
+                        das suas próximas vendas. Você não precisa fazer nada, e o saque volta a ficar disponível
+                        assim que o saldo passar de zero.
+                    </p>
+                </div>
+            @endif
             <!-- Card Nacional -->
             <div class="withdraw-card mb-6">
                 <h2 class="text-lg font-semibold text-[#1b1b18] mb-6">Nacional</h2>

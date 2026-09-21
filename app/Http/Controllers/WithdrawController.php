@@ -44,7 +44,14 @@ class WithdrawController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('withdraw.index', compact('availableBalance', 'pendingBalance', 'extract', 'bankAccounts', 'minWithdrawAmount', 'dailyWithdrawLimit'));
+        // Saldo negativo tem o motivo escrito no ultimo lancamento negativo (hoje so o
+        // estorno de cartao gera isso). Sem isso a criadora ve um numero negativo e nada
+        // explicando (bento 21/09: "informa o porque isso ta acontecendo").
+        $ultimoDebito = $availableBalance < 0
+            ? $user->manualCredits()->where('type', 'creator')->where('amount', '<', 0)->latest()->first()
+            : null;
+
+        return view('withdraw.index', compact('availableBalance', 'pendingBalance', 'extract', 'bankAccounts', 'minWithdrawAmount', 'dailyWithdrawLimit', 'ultimoDebito'));
     }
 
     /**
