@@ -94,6 +94,34 @@ class PlatformSetting extends Model
         );
     }
 
+
+    /**
+     * Comissão do afiliado da CRIADORA numa venda dela (bento 21/09: "o afiliado só ganha
+     * 5% em cima dos criadores... tudo o que a criadora vender ali, 5% é do afiliado").
+     *
+     * Sai da parte da plataforma, nunca da criadora.
+     *
+     * @return array{0: ?int, 1: float} id do afiliado (ou null) e o valor da comissão
+     */
+    public static function comissaoDoAfiliado(int $creatorId, float $valorDaVenda): array
+    {
+        $indicacao = \App\Models\Referral::where('referred_user_id', $creatorId)->first();
+
+        if (!$indicacao) {
+            return [null, 0.0];
+        }
+
+        // withoutGlobalScope: afiliado desativado nao some e continua recebendo o que e dele
+        $afiliado = \App\Models\User::withoutGlobalScope('active')->find($indicacao->referrer_user_id);
+
+        if (!$afiliado) {
+            return [null, 0.0];
+        }
+
+        $percentual = \App\Models\PlatformSetting::getAffiliateCommissionPercentage();
+
+        return [$afiliado->id, round($valorDaVenda * $percentual / 100, 2)];
+    }
     /**
      * Obtém o limite diário de saques
      */

@@ -214,28 +214,8 @@ class AdminSubscriptionController extends Controller
         $referral = Referral::where('referred_user_id', $user->id)->first();
         $referrerAmount = 0;
 
-        // Se há indicação válida, verifica limite e calcula comissão do indicador
-        if ($referral) {
-            $affiliateCommissionLimit = PlatformSetting::getAffiliateCommissionLimit();
-
-            $canReceiveCommission = true;
-            if ($affiliateCommissionLimit > 0) {
-                $existingCommissionsCount = Subscription::where('user_id', $user->id)
-                    ->where('referrer_amount', '>', 0)
-                    ->where('id', '!=', $subscription->id) // Exclui a própria assinatura
-                    ->count();
-
-                if ($existingCommissionsCount >= $affiliateCommissionLimit) {
-                    $canReceiveCommission = false;
-                }
-            }
-
-            if ($canReceiveCommission) {
-                $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                $referrerAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                $platformAmount = $platformAmount - $referrerAmount;
-            }
-        }
+        // Afiliado de assinante saiu em 21/09 (bento: "afiliado é só pra criador"). Fica em
+        // zero pra coluna continuar existindo com o histórico antigo.
 
         // Verifica se o criador foi indicado por um afiliado e calcula comissão sobre a venda
         $creatorAffiliateAmount = 0;

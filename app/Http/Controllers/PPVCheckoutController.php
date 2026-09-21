@@ -446,14 +446,25 @@ class PPVCheckoutController extends Controller
         $platformAmount     = round($transaction->amount * $platformPercentage / 100, 2);
         $creatorAmount      = round($transaction->amount - $platformAmount, 2);
 
+        // 5% do afiliado que trouxe a criadora, saindo da parte da PLATAFORMA (bento
+        // 21/09: "5% afiliado se tiver, sai dos 20 do pier"). Ate hoje so a assinatura
+        // pagava; o conteudo avulso ficava de fora.
+        [$affiliateUserId, $affiliateAmount] = PlatformSetting::comissaoDoAfiliado(
+            $transaction->post->user_id,
+            (float) $transaction->amount
+        );
+        $platformAmount = round($platformAmount - $affiliateAmount, 2);
+
         $purchase = PostPurchase::create([
             'user_id'                => $transaction->user_id,
             'post_id'                => $transaction->post_id,
             'creator_id'             => $transaction->post->user_id,
+            'affiliate_user_id'      => $affiliateUserId,
             'payment_transaction_id' => $transaction->id,
             'amount_paid'            => $transaction->amount,
             'platform_percentage'    => $platformPercentage,
             'platform_amount'        => $platformAmount,
+            'affiliate_amount'       => $affiliateAmount,
             'creator_amount'         => $creatorAmount,
             'purchased_at'           => now(),
         ]);

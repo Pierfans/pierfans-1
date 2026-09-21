@@ -357,7 +357,9 @@ class User extends Authenticatable implements MustVerifyEmail
         $cardReleaseDays = \App\Models\PlatformSetting::getCardReleaseDays();
         
         // Se dias = 0, não há saldo a liberar (tudo é liberado imediatamente)
-        if ($pixReleaseDays == 0 && $cardReleaseDays == 0) {
+        // O prazo do chat entrou em 21/09 e precisa estar aqui: sem ele, cartao em 0
+        // fazia a venda do chat sumir do 'a liberar' mesmo estando presa pelos 7 dias dela.
+        if ($pixReleaseDays == 0 && $cardReleaseDays == 0 && \App\Models\PlatformSetting::getChatReleaseDays() == 0) {
             return 0.00;
         }
         
@@ -454,27 +456,11 @@ class User extends Authenticatable implements MustVerifyEmail
             return \App\Models\Subscription::whereRaw('1 = 0');
         }
         
-        // Busca subscriptions que geraram comissão para este afiliado:
-        // 1. Quando o indicado assina (referrer_amount > 0 e user_id está na lista de indicados)
-        // 2. Quando o criador indicado vende (creator_affiliate_amount > 0 e creator_id está na lista de indicados)
-        return \App\Models\Subscription::where(function($query) use ($referredUserIds) {
-            // Comissões quando o indicado assina
-            $query->where(function($q) use ($referredUserIds) {
-                $q->whereIn('user_id', $referredUserIds)
-                  ->where('referrer_amount', '>', 0)
-                  ->whereHas('user', function ($subQuery) {
-                      $subQuery->whereHas('referral', function ($refQuery) {
-                          $refQuery->where('referrer_user_id', $this->id);
-                      });
-                  });
-            })
-            // Comissões quando o criador indicado vende
-            ->orWhere(function($q) use ($referredUserIds) {
-                $q->whereIn('creator_id', $referredUserIds)
-                  ->where('creator_affiliate_amount', '>', 0)
-                  ->where('creator_affiliate_user_id', $this->id);
-            });
-        });
+        // Só comissão de CRIADORA indicada que vendeu. O afiliado de assinante foi removido
+        // em 21/09 (bento: "afiliado é só pra criador, não pra assinante").
+        return \App\Models\Subscription::whereIn('creator_id', $referredUserIds)
+            ->where('creator_affiliate_amount', '>', 0)
+            ->where('creator_affiliate_user_id', $this->id);
     }
 
     /**
@@ -495,7 +481,7 @@ class User extends Authenticatable implements MustVerifyEmail
             : now()->subDays($cardReleaseDays)->endOfDay();
         
         // Soma o valor de comissões já liberadas
-        // Inclui tanto referrer_amount (quando indicado assina) quanto creator_affiliate_amount (quando criador indicado vende)
+        // Só comissão de criadora indicada que vendeu.
         $releasedCommissions = $this->affiliateCommissions()
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
                 // PIX e CARTEIRA: liberado se created_at + dias <= hoje. Carteira segue a regra do PIX
@@ -512,10 +498,13 @@ class User extends Authenticatable implements MustVerifyEmail
             })
             ->get();
         
-        // Soma referrer_amount (comissões quando indicado assina) + creator_affiliate_amount (comissões quando criador indicado vende)
-        $releasedAmount = $releasedCommissions->sum(function($subscription) {
-            return (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
-        });
+        // Só creator_affiliate_amount: o referrer_amount (afiliado de assinante) saiu em 21/09.
+        $releasedAmount = $releasedCommissions->sum(fn ($s) => (float) $s->creator_affiliate_amount);
+
+        // Conteúdo avulso e mensagem do chat vendidos pelas criadoras que ele trouxe
+        // (bento 21/09: 5% de tudo que a criadora vender, não só da assinatura).
+        $releasedAmount += \App\Models\PostPurchase::affiliateAmount($this->id, released: true);
+        $releasedAmount += \App\Models\MessagePurchase::affiliateAmount($this->id, released: true);
         
         // Subtrai saques pendentes e transferidos do afiliado (valor + taxa do saque)
         $pendingWithdrawals = $this->affiliateWithdrawals()
@@ -540,7 +529,9 @@ class User extends Authenticatable implements MustVerifyEmail
         $cardReleaseDays = \App\Models\PlatformSetting::getCardReleaseDays();
         
         // Se dias = 0, não há saldo a liberar
-        if ($pixReleaseDays == 0 && $cardReleaseDays == 0) {
+        // O prazo do chat entrou em 21/09 e precisa estar aqui: sem ele, cartao em 0
+        // fazia a venda do chat sumir do 'a liberar' mesmo estando presa pelos 7 dias dela.
+        if ($pixReleaseDays == 0 && $cardReleaseDays == 0 && \App\Models\PlatformSetting::getChatReleaseDays() == 0) {
             return 0.00;
         }
         
@@ -553,7 +544,7 @@ class User extends Authenticatable implements MustVerifyEmail
             : now()->subDays($cardReleaseDays)->endOfDay();
         
         // Soma o valor de comissões ainda não liberadas
-        // Inclui tanto referrer_amount (quando indicado assina) quanto creator_affiliate_amount (quando criador indicado vende)
+        // Só comissão de criadora indicada que vendeu.
         $pendingCommissions = $this->affiliateCommissions()
             ->where(function ($query) use ($pixReleaseDate, $cardReleaseDate) {
                 // PIX: não liberado se created_at + dias > hoje
@@ -569,10 +560,11 @@ class User extends Authenticatable implements MustVerifyEmail
             })
             ->get();
         
-        // Soma referrer_amount (comissões quando indicado assina) + creator_affiliate_amount (comissões quando criador indicado vende)
-        $pendingAmount = $pendingCommissions->sum(function($subscription) {
-            return (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
-        });
+        // Só creator_affiliate_amount: o referrer_amount (afiliado de assinante) saiu em 21/09.
+        $pendingAmount = $pendingCommissions->sum(fn ($s) => (float) $s->creator_affiliate_amount);
+
+        $pendingAmount += \App\Models\PostPurchase::affiliateAmount($this->id, released: false);
+        $pendingAmount += \App\Models\MessagePurchase::affiliateAmount($this->id, released: false);
         
         return (float) $pendingAmount;
     }

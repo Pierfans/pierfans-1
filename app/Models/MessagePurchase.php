@@ -14,10 +14,12 @@ class MessagePurchase extends Model
         'user_id',
         'message_id',
         'creator_id',
+        'affiliate_user_id',
         'payment_transaction_id',
         'amount_paid',
         'platform_percentage',
         'platform_amount',
+        'affiliate_amount',
         'creator_amount',
         'purchased_at',
     ];
@@ -61,5 +63,19 @@ class MessagePurchase extends Model
         return (float) self::where('creator_id', $creatorId)
             ->where('purchased_at', $released ? '<=' : '>', $date)
             ->sum('creator_amount');
+    }
+
+    /**
+     * Quanto o afiliado tem de mensagem vendida pelas criadoras que ele trouxe.
+     * Mesmo prazo da venda do chat.
+     */
+    public static function affiliateAmount(int $affiliateId, bool $released): float
+    {
+        $days = PlatformSetting::getChatReleaseDays();
+        $date = $days == 0 ? now() : now()->subDays($days)->endOfDay();
+
+        return (float) self::where('affiliate_user_id', $affiliateId)
+            ->where('purchased_at', $released ? '<=' : '>', $date)
+            ->sum('affiliate_amount');
     }
 }

@@ -112,8 +112,8 @@ class AffiliateController extends Controller
 
         // Filtro por tipo de comissão
         if ($commissionType === 'subscription') {
-            // Apenas comissões quando indicado assina
-            $commissionsQuery->where('referrer_amount', '>', 0);
+            // Comissao por assinante nao existe mais (bento 21/09): nada pra listar.
+            $commissionsQuery->whereRaw('1 = 0');
         } elseif ($commissionType === 'creator_sale') {
             // Apenas comissões quando criador indicado vende
             $commissionsQuery->where('creator_affiliate_amount', '>', 0);
@@ -156,8 +156,8 @@ class AffiliateController extends Controller
             $isReleased = now() >= $releaseDate;
             $status = $isReleased ? 'Liberado' : 'Bloqueado';
             
-            // Calcula valor total da comissão
-            $totalCommission = (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
+            // Só a comissão de venda da criadora indicada: o afiliado de assinante saiu em 21/09.
+            $totalCommission = (float) $subscription->creator_affiliate_amount;
             
             // Determina o tipo de comissão
             $commissionType = 'Assinatura';
@@ -176,7 +176,7 @@ class AffiliateController extends Controller
                 'date_string' => $subscription->created_at->format('d M, Y, h:i A'), // String formatada para JavaScript
                 'data' => $subscription,
                 'commission_type' => $commissionType,
-                'referrer_amount' => $subscription->referrer_amount,
+                'referrer_amount' => null, // comissao por assinante saiu em 21/09
                 'creator_affiliate_amount' => $subscription->creator_affiliate_amount,
                 'plan_name' => $subscription->plan->name ?? 'N/A',
                 'creator_name' => $subscription->creator->name ?? 'N/A',
@@ -384,14 +384,11 @@ class AffiliateController extends Controller
             ->findOrFail($subscriptionId);
 
         // Verifica se esta subscription gerou comissão para este afiliado
-        // Pode ser referrer_amount (quando indicado assina) ou creator_affiliate_amount (quando criador indicado vende)
+        // Só creator_affiliate_amount: a comissao por assinante saiu em 21/09.
         $hasCommission = false;
         $referral = $subscription->user->referral ?? null;
         
-        // Verifica se é comissão quando indicado assina
-        if ($referral && $referral->referrer_user_id === $user->id && $subscription->referrer_amount > 0) {
-            $hasCommission = true;
-        }
+        // Comissao por assinante saiu em 21/09: so conta o lado da criadora indicada.
         
         // Verifica se é comissão quando criador indicado vende
         if ($subscription->creator_affiliate_user_id === $user->id && $subscription->creator_affiliate_amount > 0) {
@@ -421,7 +418,7 @@ class AffiliateController extends Controller
         $commissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
         
         // Calcula valor total da comissão
-        $totalCommission = (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
+        $totalCommission = (float) $subscription->creator_affiliate_amount;
         
         // Determina o tipo de comissão
         $commissionType = 'Assinatura do Indicado';
@@ -439,7 +436,7 @@ class AffiliateController extends Controller
                 'commission_percentage' => number_format($commissionPercentage, 2, ',', '.') . '%',
                 'commission_amount' => 'R$ ' . number_format($totalCommission, 2, ',', '.'),
                 'commission_type' => $commissionType,
-                'referrer_amount' => $subscription->referrer_amount > 0 ? 'R$ ' . number_format($subscription->referrer_amount, 2, ',', '.') : null,
+                'referrer_amount' => null, // comissao por assinante saiu em 21/09
                 'creator_affiliate_amount' => $subscription->creator_affiliate_amount > 0 ? 'R$ ' . number_format($subscription->creator_affiliate_amount, 2, ',', '.') : null,
                 'status' => $status,
                 'release_date' => $releaseDateFormatted,
@@ -480,8 +477,8 @@ class AffiliateController extends Controller
                 $status = 'Pago'; // Simplificado - na prática seria mais complexo
             }
 
-            // Calcula valor total da comissão (referrer_amount + creator_affiliate_amount)
-            $totalCommission = (float) $subscription->referrer_amount + (float) $subscription->creator_affiliate_amount;
+            // Calcula valor total da comissão
+            $totalCommission = (float) $subscription->creator_affiliate_amount;
             
             // Determina o tipo de comissão para exibição
             $commissionType = 'Assinatura';
@@ -499,7 +496,7 @@ class AffiliateController extends Controller
                 'release_date' => $releaseDate->format('d/m/Y'),
                 'is_released' => $isReleased,
                 'commission_type' => $commissionType,
-                'referrer_amount' => $subscription->referrer_amount,
+                'referrer_amount' => null, // comissao por assinante saiu em 21/09
                 'creator_affiliate_amount' => $subscription->creator_affiliate_amount,
             ];
         });

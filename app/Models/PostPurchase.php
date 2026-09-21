@@ -11,10 +11,12 @@ class PostPurchase extends Model
         'user_id',
         'post_id',
         'creator_id',
+        'affiliate_user_id',
         'payment_transaction_id',
         'amount_paid',
         'platform_percentage',
         'platform_amount',
+        'affiliate_amount',
         'creator_amount',
         'purchased_at',
     ];
@@ -73,5 +75,30 @@ class PostPurchase extends Model
         });
 
         return (float) $q->sum('creator_amount');
+    }
+
+    /**
+     * Quanto o afiliado tem de conteúdo avulso vendido pelas criadoras que ele trouxe.
+     * Mesma regra de prazo do valor da criadora.
+     */
+    public static function affiliateAmount(int $affiliateId, bool $released): float
+    {
+        $limits = [
+            'pix'    => PlatformSetting::getPixReleaseDays(),
+            'card'   => PlatformSetting::getCardReleaseDays(),
+            'wallet' => PlatformSetting::getPixReleaseDays(),
+        ];
+        $op = $released ? '<=' : '>';
+
+        $q = self::where('affiliate_user_id', $affiliateId)->where(function ($outer) use ($limits, $op) {
+            foreach ($limits as $method => $days) {
+                $date = $days == 0 ? now() : now()->subDays($days)->endOfDay();
+                $outer->orWhere(fn ($q) => $q
+                    ->where('purchased_at', $op, $date)
+                    ->whereHas('transaction', fn ($t) => $t->where('type', $method)));
+            }
+        });
+
+        return (float) $q->sum('affiliate_amount');
     }
 }

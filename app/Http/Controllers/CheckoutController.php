@@ -170,39 +170,16 @@ class CheckoutController extends Controller
         $platformAmount = ($totalAmount * $platformPercentage) / 100;
         $creatorAmount = $totalAmount - $platformAmount;
         
-        // Verifica se há indicação válida para este usuário
-        $referral = \App\Models\Referral::where('referred_user_id', $user->id)->first();
+        // Afiliado de ASSINANTE não existe mais (bento 21/09, áudios 14 e 15: "não tem
+        // lógica hoje eu trazer um assinante e ganhar 5% em cima do que o assinante pagar...
+        // se essa lógica existe hoje, pode excluir. O afiliado só ganha 5% em cima dos
+        // criadores").
+        //
+        // A coluna referrer_amount fica na tabela com as 3 linhas antigas (R$ 4,50, todas da
+        // conta do próprio Bento) como histórico: apagar dado de dinheiro não pagava o risco.
+        // Ela só não é mais gerada nem somada em saldo nenhum.
         $referrerAmount = 0;
-        
-        // Se há indicação válida, verifica limite e calcula comissão do indicador
-        if ($referral) {
-            $affiliateCommissionLimit = PlatformSetting::getAffiliateCommissionLimit();
-            
-            // Se há limite configurado (diferente de 0), verifica se já atingiu
-            $canReceiveCommission = true;
-            if ($affiliateCommissionLimit > 0) {
-                // Conta quantas comissões já foram geradas para este par afiliado/indicado
-                // Como o usuário foi indicado por um afiliado específico, todas as assinaturas
-                // deste usuário com referrer_amount > 0 são comissões para aquele afiliado
-                $existingCommissionsCount = \App\Models\Subscription::where('user_id', $user->id)
-                    ->where('referrer_amount', '>', 0)
-                    ->count();
-                
-                // Se já atingiu o limite, não gera nova comissão
-                if ($existingCommissionsCount >= $affiliateCommissionLimit) {
-                    $canReceiveCommission = false;
-                }
-            }
-            
-            // Se pode receber comissão, calcula usando porcentagem configurada
-            if ($canReceiveCommission) {
-                $affiliateCommissionPercentage = PlatformSetting::getAffiliateCommissionPercentage();
-                $referrerAmount = ($totalAmount * $affiliateCommissionPercentage) / 100;
-                // Ajusta o valor da plataforma (desconta a comissão do afiliado)
-                $platformAmount = $platformAmount - $referrerAmount;
-            }
-        }
-        
+
         // Verifica se o criador foi indicado por um afiliado e calcula comissão sobre a venda
         $creatorAffiliateAmount = 0;
         $creatorAffiliateUserId = null;

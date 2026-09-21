@@ -130,16 +130,24 @@ class PaidMessageController extends Controller
                 ? PlatformSetting::getPlatformPercentageCard()
                 : PlatformSetting::getPlatformPercentage();
             $daPlataforma = round($preco * $percentual / 100, 2);
+            $daCriadora   = round($preco - $daPlataforma, 2);
+
+            // 5% do afiliado que trouxe a criadora, saindo da parte da PLATAFORMA
+            // (bento 21/09: "tudo o que a criadora vender ali, 5% e do afiliado").
+            [$afiliadoId, $doAfiliado] = PlatformSetting::comissaoDoAfiliado($message->user_id, $preco);
+            $daPlataforma = round($daPlataforma - $doAfiliado, 2);
 
             return MessagePurchase::create([
                 'user_id'                => $user->id,
                 'message_id'             => $message->id,
                 'creator_id'             => $message->user_id,
+                'affiliate_user_id'      => $afiliadoId,
                 'payment_transaction_id' => $transacao->id,
                 'amount_paid'            => $preco,
                 'platform_percentage'    => $percentual,
                 'platform_amount'        => $daPlataforma,
-                'creator_amount'         => round($preco - $daPlataforma, 2),
+                'affiliate_amount'       => $doAfiliado,
+                'creator_amount'         => $daCriadora,
                 'purchased_at'           => now(),
             ]);
         });
