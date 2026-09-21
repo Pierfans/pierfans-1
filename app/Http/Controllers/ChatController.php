@@ -172,13 +172,19 @@ class ChatController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'content' => 'required_without:image|string|max:5000',
-            'image' => 'required_without:content|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB
+            'content' => 'required_without_all:image,audio|nullable|string|max:5000',
+            'image'   => 'required_without_all:content,audio|nullable|image|mimes:jpeg,jpg,png,gif|max:10240', // 10MB
+            'audio'   => 'required_without_all:content,image|nullable|file|mimes:mp3,m4a,aac,ogg,wav,webm|max:25600', // 25MB
+            'price'   => 'nullable|numeric|min:1|max:9999',
         ], [
-            'content.required_without' => 'A mensagem precisa ter conteúdo ou uma imagem.',
-            'image.required_without' => 'A mensagem precisa ter conteúdo ou uma imagem.',
+            'content.required_without_all' => 'A mensagem precisa ter texto, uma foto ou um áudio.',
+            'image.required_without_all'   => 'A mensagem precisa ter texto, uma foto ou um áudio.',
+            'audio.required_without_all'   => 'A mensagem precisa ter texto, uma foto ou um áudio.',
             'image.image' => 'O arquivo deve ser uma imagem.',
-            'image.max' => 'A imagem não pode ter mais de 10MB.',
+            'image.max'   => 'A imagem não pode ter mais de 10MB.',
+            'audio.mimes' => 'O áudio precisa ser mp3, m4a, aac, ogg, wav ou webm.',
+            'audio.max'   => 'O áudio não pode ter mais de 25MB.',
+            'price.min'   => 'O valor mínimo para cobrar é R$ 1,00.',
         ]);
 
         if ($validator->fails()) {
@@ -197,16 +203,39 @@ class ChatController extends Controller
             ], 400);
         }
 
+        // Preço: só a criadora da conversa cobra, e só em cima de um arquivo. Cobrar por
+        // texto não faz sentido — o fã não teria como saber o que está comprando.
+        $preco = $request->filled('price') ? round((float) $request->input('price'), 2) : null;
+
+        if ($preco !== null) {
+            if ($conversation->creator_id !== $user->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Só a criadora pode cobrar por um conteúdo.',
+                ], 403);
+            }
+
+            if (!$request->hasFile('image') && !$request->hasFile('audio')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Para cobrar, mande uma foto ou um áudio junto.',
+                ], 400);
+            }
+        }
+
         $messageType = 'text';
         $content = $request->input('content');
         $filePath = null;
+        $fileDisk = null;
 
-        // Se houver imagem
-        if ($request->hasFile('image')) {
-            $messageType = 'image';
-            $file = $request->file('image');
-            $filePath = $file->store('chat/' . $conversation->id, 'public');
-            $content = null; // Para imagens, o conteúdo pode ser null ou uma descrição
+        $arquivo = $request->file('audio') ?? $request->file('image');
+
+        if ($arquivo) {
+            $messageType = $request->hasFile('audio') ? 'audio' : 'image';
+            // Conteúdo pago NUNCA no disco público: lá quem tem o link baixa sem pagar.
+            // O 'local' fica fora do alcance da web e sai pela rota chat.media, que confere.
+            $fileDisk = $preco !== null ? 'local' : 'public';
+            $filePath = $arquivo->store('chat/' . $conversation->id, $fileDisk);
         }
 
         // Cria a mensagem
@@ -216,6 +245,8 @@ class ChatController extends Controller
             'message_type' => $messageType,
             'content' => $content,
             'file_path' => $filePath,
+            'file_disk' => $fileDisk,
+            'price' => $preco,
         ]);
 
         // Atualiza last_message_at da conversa
@@ -224,7 +255,7 @@ class ChatController extends Controller
         // Retorna a mensagem criada
         return response()->json([
             'success' => true,
-            'message' => $message->load('user'),
+            'message' => $message->load('user')->toChatPayload($user),
         ]);
     }
 
@@ -262,9 +293,11 @@ class ChatController extends Controller
             }
         }
 
+        // toChatPayload e nao o model cru: mensagem trancada nao pode levar o caminho do
+        // arquivo pra quem nao comprou.
         return response()->json([
             'success' => true,
-            'messages' => $newMessages,
+            'messages' => $newMessages->map(fn ($m) => $m->toChatPayload($user))->values(),
         ]);
     }
 

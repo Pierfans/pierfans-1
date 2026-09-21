@@ -135,6 +135,73 @@
             display: block;
         }
 
+        .message-audio {
+            display: block;
+            width: 240px;
+            max-width: 100%;
+            margin-top: 6px;
+        }
+
+        .paid-lock {
+            margin-top: 6px;
+            padding: 16px;
+            border: 1px dashed rgba(0, 0, 0, 0.18);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.03);
+            text-align: center;
+        }
+
+        .message.own .paid-lock {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .paid-lock-icon {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .paid-lock-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin: 6px 0 10px;
+        }
+
+        .paid-lock-button {
+            width: 100%;
+            padding: 8px 12px;
+            border: 0;
+            border-radius: 8px;
+            background: #FF6B35;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .message.own .paid-lock-button {
+            background: #fff;
+            color: #FF6B35;
+        }
+
+        .paid-lock-button[disabled] {
+            opacity: .6;
+            cursor: default;
+        }
+
+        .paid-lock-erro {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #b91c1c;
+        }
+
+        .price-field {
+            width: 92px;
+            padding: 10px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
         .message-time {
             font-size: 11px;
             color: #706f6c;
@@ -317,14 +384,38 @@
                             @endif
                         @endif
                         <div class="message-content">
-                            @if($message->message_type === 'image' && $message->file_path)
-                                <img src="{{ asset('storage/' . $message->file_path) }}"
-                                     alt="Imagem"
-                                     class="message-image"
-                                     onclick="openImageModal('{{ asset('storage/' . $message->file_path) }}')">
-                            @else
+                            @if($message->content)
                                 <p>{{ $message->content }}</p>
                             @endif
+
+                            @if($message->isPaid() && ! $message->isUnlockedFor(Auth::user()))
+                                <div class="paid-lock" id="lock-{{ $message->id }}">
+                                    <div class="paid-lock-icon">&#128274;</div>
+                                    <div class="paid-lock-label">
+                                        {{ $message->message_type === 'audio' ? 'Áudio' : 'Foto' }}
+                                        de R$ {{ number_format($message->price, 2, ',', '.') }}
+                                    </div>
+                                    <button type="button" class="paid-lock-button" onclick="desbloquear({{ $message->id }}, this)">
+                                        Desbloquear
+                                    </button>
+                                    <div class="paid-lock-erro" style="display:none"></div>
+                                </div>
+                            @elseif($message->message_type === 'audio' && $message->file_path)
+                                <audio class="message-audio" controls preload="none" src="{{ route('chat.media', $message->id) }}"></audio>
+                            @elseif($message->message_type === 'image' && $message->file_path)
+                                <img src="{{ route('chat.media', $message->id) }}"
+                                     alt="Imagem"
+                                     class="message-image"
+                                     onclick="openImageModal('{{ route('chat.media', $message->id) }}')">
+                            @endif
+
+                            @if($message->isPaid() && $message->user_id === Auth::id())
+                                <p class="message-time">
+                                    Cobrado R$ {{ number_format($message->price, 2, ',', '.') }}
+                                    &middot; {{ $message->purchases()->count() > 0 ? 'liberado' : 'aguardando pagamento' }}
+                                </p>
+                            @endif
+
                             <p class="message-time">{{ $message->created_at->format('H:i') }}</p>
                         </div>
                     </div>
@@ -334,6 +425,16 @@
             <!-- Área de Input -->
             <div class="chat-input-area">
                 <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+                <input type="file" id="audioInput" accept="audio/*" style="display: none;" onchange="handleAudioSelect(event)">
+
+                <button type="button" onclick="document.getElementById('audioInput').click()"
+                        title="Enviar áudio"
+                        class="px-3 py-3 text-xl leading-none">&#127908;</button>
+
+                @if($conversation->creator_id === Auth::id())
+                    <input type="number" id="priceInput" class="price-field" min="1" step="0.01"
+                           placeholder="R$" title="Preço para desbloquear. Deixe vazio para enviar de graça.">
+                @endif
                 <input
                     type="text"
                     id="messageInput"
@@ -445,11 +546,30 @@
             }
 
             let contentHtml = '';
-            if (message.message_type === 'image' && message.file_path) {
-                const imageUrl = `{{ asset('storage/') }}/${message.file_path}`;
-                contentHtml = `<img src="${imageUrl}" alt="Imagem" class="message-image" onclick="openImageModal('${imageUrl}')">`;
-            } else {
-                contentHtml = `<p>${escapeHtml(message.content || '')}</p>`;
+
+            if (message.content) {
+                contentHtml += `<p>${escapeHtml(message.content)}</p>`;
+            }
+
+            if (message.is_paid && !message.unlocked) {
+                const tipo = message.message_type === 'audio' ? 'Áudio' : 'Foto';
+                const valor = Number(message.price || 0).toFixed(2).replace('.', ',');
+                contentHtml += `
+                    <div class="paid-lock" id="lock-${message.id}">
+                        <div class="paid-lock-icon">&#128274;</div>
+                        <div class="paid-lock-label">${tipo} de R$ ${valor}</div>
+                        <button type="button" class="paid-lock-button" onclick="desbloquear(${message.id}, this)">Desbloquear</button>
+                        <div class="paid-lock-erro" style="display:none"></div>
+                    </div>`;
+            } else if (message.message_type === 'audio' && message.media_url) {
+                contentHtml += `<audio class="message-audio" controls preload="none" src="${message.media_url}"></audio>`;
+            } else if (message.message_type === 'image' && message.media_url) {
+                contentHtml += `<img src="${message.media_url}" alt="Imagem" class="message-image" onclick="openImageModal('${message.media_url}')">`;
+            }
+
+            if (message.is_paid && message.user_id === currentUserId) {
+                const valor = Number(message.price || 0).toFixed(2).replace('.', ',');
+                contentHtml += `<p class="message-time">Cobrado R$ ${valor}</p>`;
             }
 
             const time = new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -465,6 +585,60 @@
             messagesContainer.appendChild(messageDiv);
         }
 
+        // Escolha de áudio: reaproveita o mesmo aviso da foto.
+        function handleAudioSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                messageInput.placeholder = 'Áudio selecionado: ' + file.name;
+            }
+        }
+
+        // Desbloqueia uma mensagem paga com saldo da carteira. Sem saldo, o servidor
+        // devolve pra onde recarregar levando a mensagem junto, e o pagamento abre sozinho.
+        function desbloquear(messageId, botao) {
+            const caixa = document.getElementById('lock-' + messageId);
+            const erro = caixa ? caixa.querySelector('.paid-lock-erro') : null;
+
+            botao.disabled = true;
+            botao.textContent = 'Liberando...';
+            if (erro) { erro.style.display = 'none'; }
+
+            fetch(`/chat/message/${messageId}/unlock`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    location.reload();
+                    return;
+                }
+
+                if (d.recarregar && d.redirect) {
+                    window.location.href = d.redirect;
+                    return;
+                }
+
+                if (erro) {
+                    erro.textContent = d.message || 'Não foi possível liberar.';
+                    erro.style.display = 'block';
+                }
+                botao.disabled = false;
+                botao.textContent = 'Desbloquear';
+            })
+            .catch(() => {
+                if (erro) {
+                    erro.textContent = 'Erro de conexão. Tente de novo.';
+                    erro.style.display = 'block';
+                }
+                botao.disabled = false;
+                botao.textContent = 'Desbloquear';
+            });
+        }
+
         // Função para escapar HTML
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -476,8 +650,16 @@
         function sendMessage() {
             const content = messageInput.value.trim();
             const imageFile = document.getElementById('imageInput').files[0];
+            const audioFile = document.getElementById('audioInput').files[0];
+            const priceEl = document.getElementById('priceInput');
+            const price = priceEl ? priceEl.value.trim() : '';
 
-            if (!content && !imageFile) {
+            if (!content && !imageFile && !audioFile) {
+                return;
+            }
+
+            if (price && !imageFile && !audioFile) {
+                alert('Para cobrar, escolha uma foto ou um áudio.');
                 return;
             }
 
@@ -488,7 +670,12 @@
             if (imageFile) {
                 formData.append('image', imageFile);
             }
-
+            if (audioFile) {
+                formData.append('audio', audioFile);
+            }
+            if (price) {
+                formData.append('price', price);
+            }
             // Desabilita o botão durante o envio
             const sendButton = document.getElementById('sendButton');
             sendButton.disabled = true;
@@ -507,6 +694,10 @@
                     // Limpa o input
                     messageInput.value = '';
                     document.getElementById('imageInput').value = '';
+                    document.getElementById('audioInput').value = '';
+                    if (document.getElementById('priceInput')) {
+                        document.getElementById('priceInput').value = '';
+                    }
 
                     // Adiciona a mensagem ao DOM imediatamente
                     addMessageToDOM(data.message);

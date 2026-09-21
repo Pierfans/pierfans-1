@@ -322,6 +322,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // Vendas de Conteúdo Único (PPV) já liberadas — mesma regra de prazo das assinaturas
         $releasedAmount += \App\Models\PostPurchase::creatorAmount($this->id, released: true);
 
+        // Mensagens trancadas vendidas no chat. Sempre pagas com saldo da carteira, entao
+        // seguem o prazo do PIX, igual a compra com saldo logo acima.
+        $releasedAmount += \App\Models\MessagePurchase::creatorAmount($this->id, released: true);
+
         // Subtrai saques pendentes e transferidos (valor + taxa do saque)
         $pendingWithdrawals = $this->withdrawals()
             ->where('type', 'creator')
@@ -385,6 +389,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         // PPV ainda no prazo de liberação
         $pendingAmount += \App\Models\PostPurchase::creatorAmount($this->id, released: false);
+        $pendingAmount += \App\Models\MessagePurchase::creatorAmount($this->id, released: false);
 
         return (float) $pendingAmount;
     }

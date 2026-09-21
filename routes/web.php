@@ -188,6 +188,9 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
         Route::get('/', [\App\Http\Controllers\ChatController::class, 'index'])->name('index');
         Route::get('/new', [\App\Http\Controllers\ChatController::class, 'newMessage'])->name('new');
         Route::get('/search-users', [\App\Http\Controllers\ChatController::class, 'searchUsers'])->name('search-users');
+        // Antes das rotas com {conversationId} de proposito, pra nao serem engolidas por elas.
+        Route::get('/message/{message}/media', [\App\Http\Controllers\PaidMessageController::class, 'media'])->name('media');
+        Route::post('/message/{message}/unlock', [\App\Http\Controllers\PaidMessageController::class, 'unlock'])->name('unlock');
         Route::get('/start/{userId}', [\App\Http\Controllers\ChatController::class, 'startConversation'])->name('start');
         Route::get('/{conversationId}', [\App\Http\Controllers\ChatController::class, 'show'])->name('show');
         Route::post('/{conversationId}/message', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('send-message');

@@ -170,12 +170,12 @@ class WalletController extends Controller
 
         // Se for PIX, processa via SuitPay
         if ($method === 'pix') {
-            return $this->processWalletPixPayment($user, $amount);
+            return $this->processWalletPixPayment($user, $amount, $request->input('message_id'));
         }
 
         // Se for CARTÃO, processa via SuitPay
         if ($method === 'card') {
-            return $this->processWalletCardPayment($user, $amount, $request);
+            return $this->processWalletCardPayment($user, $amount, $request, $request->input('message_id'));
         }
 
         return response()->json([
@@ -187,7 +187,7 @@ class WalletController extends Controller
     /**
      * Gera transação PIX para adicionar saldo na carteira
      */
-    private function generateWalletPixTransaction(User $user, float $amount)
+    private function generateWalletPixTransaction(User $user, float $amount, $messageId = null)
     {
         // Obtém dados de identificação do usuário
         $identification = $user->identification;
@@ -246,6 +246,7 @@ class WalletController extends Controller
             'creator_id' => null, // Wallet não tem criador
             'request_number' => $requestNumber,
             'transaction_id' => $suitPayData['idTransaction'] ?? null,
+            'message_id' => $messageId, // mensagem trancada que esta recarga vai abrir
             'type' => 'pix',
             'status' => 'pending',
             'amount' => $amount,
@@ -261,7 +262,11 @@ class WalletController extends Controller
     /**
      * Processa pagamento PIX para adicionar saldo na carteira
      */
-    private function processWalletPixPayment(User $user, float $amount)
+    /**
+     * $messageId: mensagem trancada do chat que o fa quis abrir sem ter saldo. Fica
+     * gravada na transacao pro webhook desbloquear sozinho quando o pagamento cair.
+     */
+    private function processWalletPixPayment(User $user, float $amount, $messageId = null)
     {
         // Verifica se já existe transação pendente válida
         $transaction = PaymentTransaction::where('user_id', $user->id)
@@ -285,7 +290,7 @@ class WalletController extends Controller
 
         // Gera nova transação
         try {
-            $transaction = $this->generateWalletPixTransaction($user, $amount);
+            $transaction = $this->generateWalletPixTransaction($user, $amount, $messageId);
             
             return response()->json([
                 'success' => true,
@@ -308,7 +313,7 @@ class WalletController extends Controller
     /**
      * Processa pagamento com cartão para adicionar saldo na carteira
      */
-    private function processWalletCardPayment(User $user, float $amount, Request $request)
+    private function processWalletCardPayment(User $user, float $amount, Request $request, $messageId = null)
     {
         // Valida dados do cartão
         $request->validate([
@@ -406,6 +411,7 @@ class WalletController extends Controller
             'creator_id' => null,
             'request_number' => $requestNumber,
             'transaction_id' => $suitPayResponse['data']['idTransaction'] ?? null,
+            'message_id' => $messageId, // mensagem trancada que esta recarga vai abrir
             'type' => 'card',
             'status' => $newStatus,
             'amount' => $amount,
@@ -475,6 +481,9 @@ class WalletController extends Controller
                 "Transação de pagamento: {$transaction->request_number}",
                 $transaction->id // payment_transaction_id
             );
+
+            // Recarga feita pra abrir uma mensagem trancada: abre agora.
+            \App\Http\Controllers\PaidMessageController::desbloquearAposRecarga($transaction);
             
             Log::info('Saldo creditado na carteira', [
                 'user_id' => $user->id,
