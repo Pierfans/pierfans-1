@@ -112,10 +112,33 @@ class WithdrawController extends Controller
 
             DB::commit();
 
-            // Retorna sucesso SEM validação adicional
+            // Saque automatico (bento 21/09): ate o teto vai direto pro SuitPay, sem
+            // esperar o admin; acima disso segue pendente, o fluxo de sempre.
+            // Roda DEPOIS do commit de proposito: chamada HTTP nao pode segurar o lock
+            // da linha do saque. Se falhar, o saque fica pendente e o admin aprova na mao,
+            // que e exatamente o que ja acontece quando o SuitPay recusa na aprovacao.
+            $autoLimit = PlatformSetting::getAutoWithdrawLimit();
+            $enviadoAgora = false;
+            if ($autoLimit > 0
+                && (float) $withdrawal->amount <= $autoLimit
+                && $bankAccount->pix_key
+                && $bankAccount->pix_key_type) {
+                try {
+                    $withdrawal->sendPixTransfer();
+                    $enviadoAgora = $withdrawal->status === 'transferred';
+                } catch (\Exception $e) {
+                    \Log::error('SAQUE AUTOMATICO - ERRO AO TRANSFERIR', [
+                        'withdrawal_id' => $withdrawal->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Solicitação de saque criada com sucesso!',
+                'message' => $enviadoAgora
+                    ? 'Saque enviado! O PIX cai na sua conta em instantes.'
+                    : 'Solicitação de saque criada com sucesso!',
                 'withdrawal' => $withdrawal->load('bankAccount'),
             ], 200);
         } catch (\Exception $e) {

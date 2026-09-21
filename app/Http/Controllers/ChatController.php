@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Subscription;
+use App\Support\PhoneFilter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -184,6 +185,15 @@ class ChatController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()->first(),
+            ], 400);
+        }
+
+        // Trava de telefone (bento 21/09): numero de celular nao passa pelo chat,
+        // nem da criadora nem do assinante. Tudo tem que ser fechado aqui dentro.
+        if (PhoneFilter::hasPhoneNumber($request->input('content'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Não dá para enviar número de telefone pelo chat. Combine tudo por aqui mesmo.',
             ], 400);
         }
 

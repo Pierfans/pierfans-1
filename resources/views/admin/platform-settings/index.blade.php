@@ -507,6 +507,29 @@
                             Valor mínimo que um criador pode solicitar para saque.
                         </p>
                     </div>
+
+                    <!-- Teto do Saque Automático -->
+                    <div>
+                        <label for="auto_withdraw_limit" class="block text-sm font-medium text-gray-700 mb-2">
+                            Saque Automático até (R$)
+                        </label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500 text-lg">R$</span>
+                            <input 
+                                type="number" 
+                                id="auto_withdraw_limit" 
+                                name="auto_withdraw_limit" 
+                                value="{{ number_format($auto_withdraw_limit, 2, '.', '') }}" 
+                                min="0" 
+                                step="0.01"
+                                class="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                            >
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Saques até este valor vão direto para o SuitPay, sem aprovação manual.
+                            <strong>0 = desligado</strong>, todo saque passa pelo admin.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-6">
@@ -521,6 +544,11 @@
                                 <li>O primeiro saque do dia é <strong>gratuito</strong></li>
                                 <li>Os próximos saques do dia custam <strong>3,5% do valor</strong> (a taxa real do SuitPay, repassada a quem saca)</li>
                                 <li>O valor mínimo para saque é <strong>R$ {{ number_format($min_withdraw_amount, 2, ',', '.') }}</strong></li>
+                                @if($auto_withdraw_limit > 0)
+                                    <li>Saques de até <strong>R$ {{ number_format($auto_withdraw_limit, 2, ',', '.') }}</strong> vão direto para o SuitPay, <strong>sem aprovação manual</strong></li>
+                                @else
+                                    <li>O saque automático está <strong>desligado</strong>: todo saque espera aprovação do admin</li>
+                                @endif
                             </ul>
                         </div>
                     </div>

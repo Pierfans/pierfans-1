@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Withdrawal extends Model
 {
@@ -27,6 +28,42 @@ class Withdrawal extends Model
         'processed_at' => 'datetime',
         'suitpay_response_data' => 'array',
     ];
+
+    /**
+     * Manda este saque pro SuitPay e grava o resultado.
+     *
+     * Unico ponto do sistema que transfere dinheiro de saque: usado pela aprovacao
+     * manual do admin e pelo saque automatico. So marca 'transferred' quando o PIX
+     * saiu mesmo; em qualquer outra resposta o saque fica como esta (pending) com a
+     * resposta gravada, pro admin reprocessar na mao. E o comportamento que a
+     * aprovacao manual ja tinha antes de virar metodo.
+     */
+    public function sendPixTransfer(array $extraUpdates = []): array
+    {
+        $externalId = (string) Str::uuid();
+
+        $suitPayResponse = (new \App\Http\Controllers\SuitPayController())->pixTransfer(
+            $this->bankAccount->pix_key,
+            $this->bankAccount->pix_key_type,
+            (float) $this->amount,
+            $externalId
+        );
+
+        $updateData = $extraUpdates + [
+            'processed_at' => now(),
+            'suitpay_external_id' => $externalId,
+            'suitpay_response_data' => $suitPayResponse,
+        ];
+
+        if (($suitPayResponse['success'] ?? false) && ($suitPayResponse['status'] ?? null) === 'PAID_OUT') {
+            $updateData['status'] = 'transferred';
+            $updateData['suitpay_transaction_id'] = $suitPayResponse['transaction_id'] ?? null;
+        }
+
+        $this->update($updateData);
+
+        return $suitPayResponse;
+    }
 
     /**
      * Regra de saque estilo Privacy: 1 saque grátis por dia (por tipo criador/afiliado),

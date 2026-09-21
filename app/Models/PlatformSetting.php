@@ -84,6 +84,30 @@ class PlatformSetting extends Model
     }
 
     /**
+     * Teto do saque automatico: saque de criador ate esse valor vai direto pro
+     * SuitPay, sem passar pela aprovacao do admin. 0 = desligado, tudo manual.
+     * (bento 21/09: "coloca 100 no automatico... o restante no manual... mais pra
+     * frente vamos aumentando esse automatico")
+     */
+    public static function getAutoWithdrawLimit(): float
+    {
+        $value = self::getValue('auto_withdraw_limit', 0);
+        return $value === null || $value === '' ? 0.0 : (float) $value;
+    }
+
+    /**
+     * Define o teto do saque automatico
+     */
+    public static function setAutoWithdrawLimit(float $amount): void
+    {
+        self::setValue(
+            'auto_withdraw_limit',
+            (string) $amount,
+            'Saques de criador até este valor vão direto para o SuitPay, sem aprovação manual. 0 = desligado'
+        );
+    }
+
+    /**
      * Obtém os dias de bloqueio para pagamentos via PIX
      */
     public static function getPixReleaseDays(): int

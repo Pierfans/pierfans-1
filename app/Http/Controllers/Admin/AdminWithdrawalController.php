@@ -7,7 +7,6 @@ use App\Models\Withdrawal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class AdminWithdrawalController extends Controller
 {
@@ -85,35 +84,20 @@ class AdminWithdrawalController extends Controller
                 ], 400);
             }
 
-            $externalId = (string) Str::uuid();
-
-            $suitPayController = new \App\Http\Controllers\SuitPayController();
-            $suitPayResponse = $suitPayController->pixTransfer(
-                $withdrawal->bankAccount->pix_key,
-                $withdrawal->bankAccount->pix_key_type,
-                (float) $withdrawal->amount,
-                $externalId
-            );
+            // A transferencia mora no model desde 21/09, pro saque automatico do
+            // WithdrawController usar exatamente o mesmo caminho daqui.
+            $suitPayResponse = $withdrawal->sendPixTransfer([
+                'admin_notes' => $request->input('notes'),
+            ]);
 
             Log::info('ADMIN WITHDRAWAL APPROVE - RESPOSTA SUITPAY', [
                 'withdrawal_id' => $withdrawal->id,
                 'suitpay_response' => $suitPayResponse,
             ]);
 
-            $updateData = [
-                'processed_at' => now(),
-                'admin_notes' => $request->input('notes'),
-                'suitpay_external_id' => $externalId,
-                'suitpay_response_data' => $suitPayResponse,
-            ];
+            DB::commit();
 
-            if ($suitPayResponse['success'] && $suitPayResponse['status'] === 'PAID_OUT') {
-                $updateData['status'] = 'transferred';
-                $updateData['suitpay_transaction_id'] = $suitPayResponse['transaction_id'] ?? null;
-
-                $withdrawal->update($updateData);
-                DB::commit();
-
+            if ($withdrawal->status === 'transferred') {
                 Log::info('ADMIN WITHDRAWAL APPROVE - SAQUE APROVADO E TRANSFERIDO', [
                     'withdrawal_id' => $withdrawal->id,
                     'transaction_id' => $suitPayResponse['transaction_id'],
@@ -125,9 +109,6 @@ class AdminWithdrawalController extends Controller
                     'transaction_id' => $suitPayResponse['transaction_id'],
                 ]);
             }
-
-            $withdrawal->update($updateData);
-            DB::commit();
 
             $errorMessage = $suitPayResponse['message'] ?? 'Erro desconhecido ao processar transferência PIX.';
 
