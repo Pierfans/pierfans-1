@@ -308,6 +308,9 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
             Route::get('/{creatorId}', [\App\Http\Controllers\Admin\AdminSalesController::class, 'show'])->name('show');
         });
 
+        // Chamadas de vídeo (spec 24/09)
+        Route::get('/chamadas', [\App\Http\Controllers\Admin\AdminVideoCallController::class, 'index'])->name('chamadas.index');
+
         // Posts em Destaque
         Route::prefix('featured-posts')->name('featured-posts.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\AdminFeaturedPostController::class, 'index'])->name('index');

@@ -87,6 +87,38 @@
                 <div class="mb-6">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
+                            <label for="video_calls_enabled" class="block text-sm font-medium text-gray-700 mb-2">
+                                Chamada de vídeo paga no chat ligada
+                            </label>
+                            <p class="text-sm text-gray-500">
+                                Ligada, a criadora vê o bloco "Chamada de vídeo" na página de planos e o fã vê o botão
+                                no chat. Fica desligada até a sala de vídeo estar no ar.
+                            </p>
+                        </div>
+                        <div class="ml-4">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="video_calls_enabled" name="video_calls_enabled" value="1" {{ $video_calls_enabled ? 'checked' : '' }} class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="video_call_tolerance_minutes" class="block text-sm font-medium text-gray-700 mb-2">
+                        Chamada de vídeo: minutos de atraso da criadora antes de devolver ao fã
+                    </label>
+                    <input type="number" id="video_call_tolerance_minutes" name="video_call_tolerance_minutes"
+                           value="{{ $video_call_tolerance_minutes }}" min="0" max="240" step="1"
+                           class="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    <p class="mt-2 text-sm text-gray-500">
+                        Passou o horário marcado mais esse tempo e ela não entrou na sala: o valor volta pra carteira do fã, sozinho.
+                    </p>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
                             <label for="card_enabled" class="block text-sm font-medium text-gray-700 mb-2">
                                 Pagamento com cartão de crédito ligado
                             </label>

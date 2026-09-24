@@ -43,6 +43,8 @@ class PlatformSettingController extends Controller
             'pix_release_days' => $pixReleaseDays,
             'card_release_days' => $cardReleaseDays,
             'card_enabled' => PlatformSetting::isCardEnabled(),
+            'video_calls_enabled' => PlatformSetting::isVideoCallsEnabled(),
+            'video_call_tolerance_minutes' => PlatformSetting::getVideoCallToleranceMinutes(),
             'affiliate_commission_percentage' => $affiliateCommissionPercentage,
             'affiliate_commission_limit' => $affiliateCommissionLimit,
             'email_verification_required' => $emailVerificationRequired,
@@ -70,6 +72,8 @@ class PlatformSettingController extends Controller
             'pix_release_days' => 'nullable|integer|min:0',
             'card_release_days' => 'nullable|integer|min:0',
             'card_enabled' => 'nullable|boolean',
+            'video_calls_enabled' => 'nullable|boolean',
+            'video_call_tolerance_minutes' => 'nullable|integer|min:0|max:240',
             'affiliate_commission_percentage' => 'required|numeric|min:0|max:100',
             'affiliate_commission_limit' => 'required|integer|min:0',
             'email_verification_required' => 'nullable|boolean',
@@ -109,6 +113,8 @@ class PlatformSettingController extends Controller
         PlatformSetting::setPixReleaseDays($validated['pix_release_days'] ?? 0);
         PlatformSetting::setCardReleaseDays($validated['card_release_days'] ?? 0);
         PlatformSetting::setValue('card_enabled', $request->boolean('card_enabled') ? '1' : '0', 'Cartão de crédito ligado na plataforma (0 = só PIX)');
+        PlatformSetting::setValue('video_calls_enabled', $request->boolean('video_calls_enabled') ? '1' : '0', 'Chamada de vídeo paga no chat ligada');
+        PlatformSetting::setValue('video_call_tolerance_minutes', (string) (int) ($validated['video_call_tolerance_minutes'] ?? 30), 'Minutos de atraso da criadora antes de devolver a chamada ao fã');
         PlatformSetting::setAffiliateCommissionPercentage($validated['affiliate_commission_percentage']);
         PlatformSetting::setAffiliateCommissionLimit($validated['affiliate_commission_limit']);
         PlatformSetting::setEmailVerificationRequired($validated['email_verification_required'] ?? false);
