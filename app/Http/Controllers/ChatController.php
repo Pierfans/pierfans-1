@@ -155,11 +155,15 @@ class ChatController extends Controller
         
         // Busca todas as mensagens da conversa
         $messages = $conversation->messages()
-            ->with('user')
+            ->with(['user', 'videoCall'])
             ->orderBy('created_at', 'asc')
             ->get();
 
-        return view('chat.show', compact('conversation', 'otherParticipant', 'messages'));
+        // Chamada de vídeo (spec 24/09): botão de pedir só pro fã, com a criadora oferecendo e sem pedido aberto
+        $podePedirChamada = \App\Http\Controllers\VideoCallController::porQueNaoPodePedir($conversation, $user) === null;
+        $criadoraDaConversa = $conversation->creator;
+
+        return view('chat.show', compact('conversation', 'otherParticipant', 'messages', 'podePedirChamada', 'criadoraDaConversa'));
     }
 
     /**

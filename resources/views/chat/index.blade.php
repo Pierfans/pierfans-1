@@ -283,7 +283,9 @@
                                 </div>
                                 @if($conversation['last_message'])
                                     <p class="text-sm text-[#706f6c] truncate">
-                                        @if($conversation['last_message']['message_type'] === 'image')
+                                        @if($conversation['last_message']['message_type'] === 'video_call')
+                                            📹 Chamada de vídeo
+                                        @elseif($conversation['last_message']['message_type'] === 'image')
                                             [Imagem]
                                         @else
                                             {{ $conversation['last_message']['content'] }}

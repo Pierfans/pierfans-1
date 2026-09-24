@@ -355,6 +355,13 @@
                     </div>
                     <p class="text-sm text-green-600">• Está online</p>
                 </div>
+                @if($podePedirChamada)
+                    <button type="button" onclick="abrirChamadaModal()"
+                            class="px-3 py-2 rounded-full text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 transition-colors"
+                            title="Chamada de vídeo de {{ $criadoraDaConversa->video_call_minutes }} min">
+                        📹 R$ {{ number_format($criadoraDaConversa->video_call_price, 2, ',', '.') }}
+                    </button>
+                @endif
                 <button class="text-[#706f6c] hover:text-[#1b1b18]">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -384,7 +391,11 @@
                             @endif
                         @endif
                         <div class="message-content">
-                            @if($message->content)
+                            @if($message->message_type === 'video_call' && $message->videoCall)
+                                {{-- O JS desenha a partir do payload, o mesmo do polling: um renderizador só --}}
+                                <div class="chamada-card" data-chamada-id="{{ $message->videoCall->id }}" data-message-id="{{ $message->id }}"
+                                     data-payload='@json($message->toChatPayload(Auth::user()))'></div>
+                            @elseif($message->content)
                                 <p>{{ $message->content }}</p>
                             @endif
 
@@ -454,6 +465,30 @@
     </div>
 
     <!-- Modal para visualizar imagem ampliada -->
+    @if($podePedirChamada)
+    {{-- Chamada de vídeo (spec 24/09): o fã pede e paga com saldo; o valor fica reservado --}}
+    <div id="chamadaModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;align-items:center;justify-content:center" onclick="if(event.target===this)fecharChamadaModal()">
+        <div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:92%">
+            <h3 class="font-semibold text-lg mb-2">Chamada de vídeo com {{ strtolower($otherParticipant->name) }}</h3>
+            <p class="text-sm text-gray-600 mb-3">
+                {{ $criadoraDaConversa->video_call_minutes }} minutos por
+                <strong>R$ {{ number_format($criadoraDaConversa->video_call_price, 2, ',', '.') }}</strong>, pagos com o seu saldo.
+            </p>
+            <label class="text-sm text-gray-700">Sugerir um horário (opcional)</label>
+            <input type="datetime-local" id="chamadaSugestao" class="w-full border rounded-lg px-3 py-2 mb-3">
+            <p class="text-xs text-gray-500 mb-4">
+                O valor fica reservado e só vai pra ela quando a chamada acontecer. Se ela recusar ou não
+                aparecer, volta pra sua carteira.
+            </p>
+            <div class="flex gap-2">
+                <button type="button" onclick="fecharChamadaModal()" class="flex-1 px-4 py-2 rounded-lg border">Cancelar</button>
+                <button type="button" id="chamadaPagar" onclick="pedirChamada()" class="flex-1 px-4 py-2 rounded-lg bg-pink-500 text-white font-semibold">Pagar com saldo</button>
+            </div>
+            <p id="chamadaErro" class="text-sm text-red-600 mt-2" style="display:none"></p>
+        </div>
+    </div>
+    @endif
+
     <div id="imageModal" class="modal-overlay" onclick="closeImageModal()">
         <img id="modalImage" class="image-modal" src="" alt="Imagem ampliada" onclick="event.stopPropagation()">
     </div>
@@ -522,6 +557,83 @@
             });
         }
 
+        // ---- Chamada de vídeo (spec 24/09) ----
+        function chamadaCardHtml(message) {
+            const c = message.video_call;
+            const atual = c.last_message_id === message.id;
+            let html = `<p>${escapeHtml(message.content || '')}</p>`;
+            html += `<p class="message-time">${escapeHtml(c.status_label)}</p>`;
+            if (!atual) return html;
+
+            let acoes = '';
+            if (c.pode_marcar) {
+                const valor = c.scheduled_local || c.suggested_local || '';
+                acoes += `<input type="datetime-local" id="chamadaHorario-${c.id}" value="${valor}" class="border rounded-lg px-2 py-1 text-sm w-full mb-2">
+                    <button type="button" class="paid-lock-button" onclick="marcarChamada(${c.id}, this)">${c.status === 'scheduled' ? 'Remarcar' : 'Marcar'}</button>
+                    <button type="button" class="paid-lock-button" style="background:#e5e7eb;color:#111" onclick="recusarChamada(${c.id}, this)">Recusar</button>`;
+            }
+            if (c.pode_entrar) {
+                // Primeira entrega: sem sala ainda. A segunda troca este botão pelo link da chamada.
+                acoes += `<button type="button" class="paid-lock-button" disabled title="Em breve">Entrar na chamada (em breve)</button>`;
+            }
+            if (acoes) html += `<div class="chamada-acoes mt-2">${acoes}<div class="paid-lock-erro" style="display:none"></div></div>`;
+            return html;
+        }
+
+        function chamadaPost(url, body, botao, erroEl) {
+            if (botao) botao.disabled = true;
+            if (erroEl) erroEl.style.display = 'none';
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+            .then(r => r.json().then(data => ({ ok: r.ok, data })))
+            .then(({ ok, data }) => {
+                if (data.recarregar && data.redirect) { window.location.href = data.redirect; return null; }
+                if (!ok || !data.success) throw new Error(data.message || 'Não deu certo. Tente de novo.');
+                if (data.chat_message) {
+                    addMessageToDOM(data.chat_message);
+                    lastMessageId = Math.max(lastMessageId, data.chat_message.id);
+                    scrollToBottom();
+                }
+                return data;
+            })
+            .catch(e => {
+                if (erroEl) { erroEl.textContent = e.message; erroEl.style.display = 'block'; } else { alert(e.message); }
+                if (botao) botao.disabled = false;
+                return null;
+            });
+        }
+
+        function abrirChamadaModal() { const m = document.getElementById('chamadaModal'); if (m) m.style.display = 'flex'; }
+        function fecharChamadaModal() { const m = document.getElementById('chamadaModal'); if (m) m.style.display = 'none'; }
+
+        function pedirChamada() {
+            const botao = document.getElementById('chamadaPagar');
+            const erro = document.getElementById('chamadaErro');
+            chamadaPost(`/chat/${conversationId}/chamada`, { suggested_at: document.getElementById('chamadaSugestao').value || null }, botao, erro)
+                .then(data => { if (data) { fecharChamadaModal(); const b = document.querySelector('[onclick="abrirChamadaModal()"]'); if (b) b.remove(); } });
+        }
+
+        function marcarChamada(id, botao) {
+            const card = botao.closest('.chamada-card');
+            chamadaPost(`/chat/chamada/${id}/marcar`, { scheduled_at: document.getElementById('chamadaHorario-' + id).value || null }, botao, card.querySelector('.paid-lock-erro'));
+        }
+
+        function recusarChamada(id, botao) {
+            if (!confirm('Recusar a chamada? O valor volta pra carteira do fã agora.')) return;
+            const card = botao.closest('.chamada-card');
+            chamadaPost(`/chat/chamada/${id}/recusar`, {}, botao, card.querySelector('.paid-lock-erro'));
+        }
+
+        // Cards que vieram do servidor: desenha com o mesmo renderizador do polling
+        document.querySelectorAll('.chamada-card[data-payload]').forEach(el => {
+            const message = JSON.parse(el.getAttribute('data-payload'));
+            el.innerHTML = chamadaCardHtml(message);
+            el.removeAttribute('data-payload');
+        });
+
         // Adiciona uma mensagem ao DOM
         function addMessageToDOM(message) {
             const isOwn = message.user_id === currentUserId;
@@ -547,7 +659,11 @@
 
             let contentHtml = '';
 
-            if (message.content) {
+            if (message.message_type === 'video_call' && message.video_call) {
+                // Card novo desta chamada: os anteriores perdem os botões (só o último age)
+                document.querySelectorAll(`.chamada-card[data-chamada-id="${message.video_call.id}"] .chamada-acoes`).forEach(e => e.remove());
+                contentHtml += `<div class="chamada-card" data-chamada-id="${message.video_call.id}" data-message-id="${message.id}">${chamadaCardHtml(message)}</div>`;
+            } else if (message.content) {
                 contentHtml += `<p>${escapeHtml(message.content)}</p>`;
             }
 
