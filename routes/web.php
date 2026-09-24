@@ -191,6 +191,10 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
         // Antes das rotas com {conversationId} de proposito, pra nao serem engolidas por elas.
         Route::get('/message/{message}/media', [\App\Http\Controllers\PaidMessageController::class, 'media'])->name('media');
         Route::post('/message/{message}/unlock', [\App\Http\Controllers\PaidMessageController::class, 'unlock'])->name('unlock');
+        // Chamada de vídeo paga (spec 24/09). Antes das rotas com {conversationId} pelo mesmo motivo.
+        Route::post('/chamada/{videoCall}/marcar', [\App\Http\Controllers\VideoCallController::class, 'marcar'])->name('chamada.marcar');
+        Route::post('/chamada/{videoCall}/recusar', [\App\Http\Controllers\VideoCallController::class, 'recusar'])->name('chamada.recusar');
+        Route::post('/{conversationId}/chamada', [\App\Http\Controllers\VideoCallController::class, 'pedir'])->name('chamada.pedir');
         Route::get('/start/{userId}', [\App\Http\Controllers\ChatController::class, 'startConversation'])->name('start');
         Route::get('/{conversationId}', [\App\Http\Controllers\ChatController::class, 'show'])->name('show');
         Route::post('/{conversationId}/message', [\App\Http\Controllers\ChatController::class, 'sendMessage'])->name('send-message');
