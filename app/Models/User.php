@@ -30,6 +30,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'creator_status',
         'accepts_pix',
         'accepts_card',
+        'video_call_enabled',
+        'video_call_price',
+        'video_call_minutes',
         'creator_rejection_reason',
         'creator_full_name',
         'creator_cpf',
@@ -97,6 +100,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_active' => 'boolean',
             'accepts_pix' => 'boolean',
             'accepts_card' => 'boolean',
+            'video_call_enabled' => 'boolean',
             'blocked_at' => 'datetime',
             'creator_onboarding' => 'boolean',
         ];

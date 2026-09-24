@@ -16,6 +16,7 @@ class Message extends Model
         'file_path',
         'file_disk',
         'price',
+        'video_call_id',
         'read_at',
     ];
 
@@ -46,6 +47,14 @@ class Message extends Model
     public function purchases(): HasMany
     {
         return $this->hasMany(MessagePurchase::class);
+    }
+
+    /**
+     * Chamada de vídeo (spec 24/09): mensagem do tipo video_call aponta pro pedido.
+     */
+    public function videoCall(): BelongsTo
+    {
+        return $this->belongsTo(VideoCall::class);
     }
 
     /**
@@ -102,6 +111,8 @@ class Message extends Model
             'price'     => $this->isPaid() ? (float) $this->price : null,
             'unlocked'  => $aberta,
             'media_url' => ($aberta && $this->file_path) ? route('chat.media', $this->id) : null,
+            // Chamada de vídeo: o card desenha o estado ATUAL da chamada, não o da hora da mensagem
+            'video_call' => $this->video_call_id ? $this->videoCall?->toPayload($viewer) : null,
         ];
     }
 

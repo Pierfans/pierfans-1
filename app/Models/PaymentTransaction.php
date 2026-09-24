@@ -13,6 +13,7 @@ class PaymentTransaction extends Model
         'creator_id',
         'post_id',
         'message_id',
+        'video_call_id',
         'request_number',
         'transaction_id',
         'type',

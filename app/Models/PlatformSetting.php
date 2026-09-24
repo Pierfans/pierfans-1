@@ -374,4 +374,19 @@ class PlatformSetting extends Model
     {
         return (string) self::getValue('card_enabled', '0') === '1';
     }
+
+    /**
+     * Chamada de vídeo paga no chat ligada na plataforma. Desligada até a segunda entrega
+     * (a sala de vídeo) estar no ar. Spec de 24/09.
+     */
+    public static function isVideoCallsEnabled(): bool
+    {
+        return (string) self::getValue('video_calls_enabled', '0') === '1';
+    }
+
+    /** Quanto a criadora pode atrasar antes do robô devolver o dinheiro ao fã (no_show). */
+    public static function getVideoCallToleranceMinutes(): int
+    {
+        return max(0, (int) self::getValue('video_call_tolerance_minutes', 30));
+    }
 }
