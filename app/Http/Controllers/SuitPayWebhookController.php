@@ -531,6 +531,8 @@ class SuitPayWebhookController extends Controller
 
             // Recarga feita pra abrir uma mensagem trancada do chat: abre agora.
             \App\Http\Controllers\PaidMessageController::desbloquearAposRecarga($transaction);
+            // Recarga feita pra pagar uma chamada de vídeo: paga agora.
+            \App\Http\Controllers\VideoCallController::concluirAposRecarga($transaction);
 
             Log::info('SALDO CREDITADO NA CARTEIRA VIA WEBHOOK', [
                 'transactionId' => $transaction->id,

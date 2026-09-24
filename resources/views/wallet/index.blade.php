@@ -296,6 +296,10 @@
                 method: 'POST',
                 data: {
                     amount: amount,
+                    // O que esta recarga vai abrir/pagar quando o PIX cair. Vem da URL que o chat
+                    // montou. Antes de 25/09 nada disso era enviado e a mensagem não abria sozinha.
+                    message_id: new URLSearchParams(location.search).get('message_id') || '',
+                    video_call_id: new URLSearchParams(location.search).get('video_call_id') || '',
                     _token: $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(response) {
