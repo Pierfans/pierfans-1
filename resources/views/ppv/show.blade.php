@@ -121,7 +121,7 @@
                 @endif
 
                 {{-- Trocar método: só aparece se a criadora aceitar o outro (bento 21/09) --}}
-                @if($method === 'pix' && $creator->accepts_card)
+                @if($method === 'pix' && $creator->acceptsMethod('card'))
                     <div class="mt-6 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">
                         Prefere cartão?
                         <a href="{{ route('ppv.show', [$post->id, 'card']) }}" class="text-green-600 font-medium">Pagar com cartão</a>

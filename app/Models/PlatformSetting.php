@@ -364,4 +364,14 @@ class PlatformSetting extends Model
             'username' => $get('username') ?: 'Taynaandrade',
         ];
     }
+
+    /**
+     * Cartao de credito ligado na plataforma inteira. Desligado por padrao (bento 24/09, audio 19:
+     * "o SuitPay nao liberou por enquanto, pode tirar a parte do cartao e deixar desativado").
+     * Quem le e o User::acceptsMethod('card'), por onde passam assinatura, avulso e a tela de PIX.
+     */
+    public static function isCardEnabled(): bool
+    {
+        return (string) self::getValue('card_enabled', '0') === '1';
+    }
 }

@@ -121,7 +121,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function acceptsMethod(?string $method): bool
     {
         return match ($method) {
-            'card'  => (bool) $this->accepts_card,
+            'card'  => (bool) $this->accepts_card && \App\Models\PlatformSetting::isCardEnabled(),
             'pix'   => (bool) $this->accepts_pix,
             default => true,
         };
@@ -133,7 +133,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function defaultCheckoutMethod(): string
     {
-        return $this->accepts_pix ? 'pix' : 'card';
+        return $this->acceptsMethod('card') && ! $this->accepts_pix ? 'card' : 'pix';
     }
 
     /**

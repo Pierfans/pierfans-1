@@ -81,6 +81,15 @@ class SubscriptionPlanController extends Controller
         $aceitaPix = $request->boolean('accepts_pix');
         $aceitaCartao = $request->boolean('accepts_card');
 
+        // Cartao desligado na plataforma (bento 24/09): PIX e a unica forma que vende, entao
+        // nao pode ficar desligado. O accepts_card dela fica guardado pra quando o cartao voltar.
+        if (!$aceitaPix && !\App\Models\PlatformSetting::isCardEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Por enquanto o PIX é a única forma de pagamento disponível e precisa ficar ligado.',
+            ], 400);
+        }
+
         if (!$aceitaPix && !$aceitaCartao) {
             return response()->json([
                 'success' => false,

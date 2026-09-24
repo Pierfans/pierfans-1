@@ -84,6 +84,34 @@
                     </p>
                 </div>
 
+                <div class="mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <label for="card_enabled" class="block text-sm font-medium text-gray-700 mb-2">
+                                Pagamento com cartão de crédito ligado
+                            </label>
+                            <p class="text-sm text-gray-500">
+                                Desligado, o site vende só no PIX: some o "pagar com cartão", a criadora não vê a opção
+                                e a URL de cartão é recusada. Ligue quando o SuitPay liberar o cartão. Nada é apagado:
+                                a porcentagem acima e o que cada criadora escolheu continuam guardados.
+                            </p>
+                        </div>
+                        <div class="ml-4">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    id="card_enabled"
+                                    name="card_enabled"
+                                    value="1"
+                                    {{ $card_enabled ? 'checked' : '' }}
+                                    class="sr-only peer"
+                                >
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-start">
                         <svg class="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -42,6 +42,7 @@ class PlatformSettingController extends Controller
             'chat_release_days' => $chatReleaseDays,
             'pix_release_days' => $pixReleaseDays,
             'card_release_days' => $cardReleaseDays,
+            'card_enabled' => PlatformSetting::isCardEnabled(),
             'affiliate_commission_percentage' => $affiliateCommissionPercentage,
             'affiliate_commission_limit' => $affiliateCommissionLimit,
             'email_verification_required' => $emailVerificationRequired,
@@ -68,6 +69,7 @@ class PlatformSettingController extends Controller
             'chat_release_days' => 'nullable|integer|min:0',
             'pix_release_days' => 'nullable|integer|min:0',
             'card_release_days' => 'nullable|integer|min:0',
+            'card_enabled' => 'nullable|boolean',
             'affiliate_commission_percentage' => 'required|numeric|min:0|max:100',
             'affiliate_commission_limit' => 'required|integer|min:0',
             'email_verification_required' => 'nullable|boolean',
@@ -106,6 +108,7 @@ class PlatformSettingController extends Controller
         PlatformSetting::setChatReleaseDays((int) ($validated['chat_release_days'] ?? 7));
         PlatformSetting::setPixReleaseDays($validated['pix_release_days'] ?? 0);
         PlatformSetting::setCardReleaseDays($validated['card_release_days'] ?? 0);
+        PlatformSetting::setValue('card_enabled', $request->boolean('card_enabled') ? '1' : '0', 'Cartão de crédito ligado na plataforma (0 = só PIX)');
         PlatformSetting::setAffiliateCommissionPercentage($validated['affiliate_commission_percentage']);
         PlatformSetting::setAffiliateCommissionLimit($validated['affiliate_commission_limit']);
         PlatformSetting::setEmailVerificationRequired($validated['email_verification_required'] ?? false);

@@ -239,6 +239,7 @@
                         </span>
                     </label>
 
+                    @if(\App\Models\PlatformSetting::isCardEnabled())
                     <label style="display:flex;align-items:center;gap:10px;margin:14px 0;cursor:pointer">
                         <input type="checkbox" id="accepts_card" {{ Auth::user()->accepts_card ? 'checked' : '' }}>
                         <span>
@@ -251,6 +252,14 @@
                         No cartão a taxa cobrada pelo banco é bem maior que no PIX, por isso a diferença.
                         Você precisa aceitar pelo menos uma forma de pagamento.
                     </p>
+                    @else
+                    {{-- Cartao desligado na plataforma (bento 24/09). O checkbox fica escondido com o valor
+                         dela guardado, porque o JS que salva le os dois ids. --}}
+                    <input type="checkbox" id="accepts_card" {{ Auth::user()->accepts_card ? 'checked' : '' }} hidden>
+                    <p class="plan-description" style="margin-top:12px">
+                        <strong>Cartão de crédito:</strong> em breve. Por enquanto as vendas são só no PIX.
+                    </p>
+                    @endif
                 </div>
                 @foreach($plans as $plan)
                     <div class="plan-card">
