@@ -261,6 +261,38 @@
                     </p>
                     @endif
                 </div>
+
+                @if(\App\Models\PlatformSetting::isVideoCallsEnabled())
+                {{-- Chamada de vídeo paga (bento, áudio 11; spec 24/09). O fã pede pelo chat,
+                     paga com saldo e o valor fica reservado até ela entrar na sala. --}}
+                <div class="plan-card">
+                    <h3 class="plan-title">Chamada de vídeo</h3>
+                    <p class="plan-description">
+                        Seus fãs pedem pelo chat e pagam na hora. O valor fica reservado e entra no seu
+                        saldo quando a chamada acontece. Você marca o horário.
+                    </p>
+                    <label style="display:flex;align-items:center;gap:10px;margin:14px 0;cursor:pointer">
+                        <input type="checkbox" id="video_call_enabled" {{ Auth::user()->video_call_enabled ? 'checked' : '' }}>
+                        <span><strong>Oferecer chamada de vídeo</strong></span>
+                    </label>
+                    <div style="display:flex;gap:12px;flex-wrap:wrap">
+                        <div style="flex:1;min-width:140px">
+                            <label class="plan-description" for="video_call_price">Preço (R$)</label>
+                            <input type="number" id="video_call_price" min="1" step="0.01" class="w-full px-3 py-2 border rounded-lg"
+                                   value="{{ Auth::user()->video_call_price ? number_format(Auth::user()->video_call_price, 2, '.', '') : '' }}" placeholder="100.00">
+                        </div>
+                        <div style="flex:1;min-width:140px">
+                            <label class="plan-description" for="video_call_minutes">Duração (min)</label>
+                            <input type="number" id="video_call_minutes" min="5" max="120" step="1" class="w-full px-3 py-2 border rounded-lg"
+                                   value="{{ Auth::user()->video_call_minutes ?? '' }}" placeholder="15">
+                        </div>
+                    </div>
+                    <p class="plan-description" style="margin-top:12px">
+                        Você recebe <strong>{{ number_format(100 - $platformPercentage, 0) }}%</strong> de cada chamada
+                        realizada. Se você recusar ou não entrar na sala, o fã recebe o valor de volta.
+                    </p>
+                </div>
+                @endif
                 @foreach($plans as $plan)
                     <div class="plan-card">
                         <h3 class="plan-title">{{ $plan->name }}</h3>
@@ -413,6 +445,10 @@
                 _token: document.querySelector('input[name="_token"]').value,
                 accepts_pix: document.getElementById('accepts_pix').checked ? 1 : 0,
                 accepts_card: document.getElementById('accepts_card').checked ? 1 : 0,
+                // Chamada de vídeo: o bloco só existe com o interruptor do admin ligado
+                video_call_enabled: document.getElementById('video_call_enabled')?.checked ? 1 : 0,
+                video_call_price: document.getElementById('video_call_price')?.value || '',
+                video_call_minutes: document.getElementById('video_call_minutes')?.value || '',
                 plans: plansArray
             };
             
@@ -436,7 +472,7 @@
                 if (data.success) {
                     showModal();
                 } else {
-                    alert('Erro ao salvar planos. Tente novamente.');
+                    alert(data.message || 'Erro ao salvar planos. Tente novamente.');
                 }
             })
             .catch(error => {

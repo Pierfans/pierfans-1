@@ -70,6 +70,9 @@ class SubscriptionPlanController extends Controller
         $request->validate([
             'accepts_pix' => 'nullable|boolean',
             'accepts_card' => 'nullable|boolean',
+            'video_call_enabled' => 'nullable|boolean',
+            'video_call_price' => 'nullable|numeric|min:1|max:9999',
+            'video_call_minutes' => 'nullable|integer|min:5|max:120',
             'plans' => 'required|array',
             'plans.*.id' => 'required|exists:subscription_plans,id',
             'plans.*.price' => 'required|string',
@@ -97,10 +100,25 @@ class SubscriptionPlanController extends Controller
             ], 400);
         }
 
-        Auth::user()->update([
+        // Chamada de vídeo (spec 24/09): só grava com o interruptor global ligado; ligar exige preço e duração.
+        $chamada = [];
+        if (\App\Models\PlatformSetting::isVideoCallsEnabled()) {
+            $ligada = $request->boolean('video_call_enabled');
+            $preco = $request->filled('video_call_price') ? round((float) $request->input('video_call_price'), 2) : null;
+            $minutos = $request->filled('video_call_minutes') ? (int) $request->input('video_call_minutes') : null;
+            if ($ligada && ($preco === null || $minutos === null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pra oferecer chamada de vídeo, informe o preço e a duração.',
+                ], 400);
+            }
+            $chamada = ['video_call_enabled' => $ligada, 'video_call_price' => $preco, 'video_call_minutes' => $minutos];
+        }
+
+        Auth::user()->update(array_merge([
             'accepts_pix' => $aceitaPix,
             'accepts_card' => $aceitaCartao,
-        ]);
+        ], $chamada));
 
         foreach ($request->plans as $planData) {
             $plan = SubscriptionPlan::where('id', $planData['id'])
