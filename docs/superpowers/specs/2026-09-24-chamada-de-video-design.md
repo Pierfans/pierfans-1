@@ -23,7 +23,7 @@
 | conversation_id, creator_id, user_id | fk | de quem é (user_id = fã) |
 | message_id | fk nullable | primeira mensagem do pedido na conversa |
 | price, duration_minutes | decimal, int | copiados da configuração dela no momento do pedido |
-| status | enum | `requested`, `scheduled`, `done`, `refunded` |
+| status | enum | `awaiting_payment`, `requested`, `scheduled`, `done`, `refunded` |
 | suggested_at | datetime nullable | sugestão do fã |
 | scheduled_at | datetime nullable | horário marcado por ela (UTC) |
 | creator_joined_at | datetime nullable | quando ela entrou; é o que torna a chamada `done` |
@@ -32,6 +32,8 @@
 | timestamps | | |
 
 Índices: `(conversation_id, status)`, `(creator_id, status)`, `(user_id)`.
+
+`awaiting_payment` (decidido no plano, 24/09): a linha nasce quando o fã clica em pagar. Com saldo, vira `requested` na mesma requisição. Sem saldo, o fã vai pra recarga com `video_call_id`, e o webhook conclui o pagamento quando o PIX cai. Sem dinheiro, sem mensagem na conversa e invisível pra criadora; não conta como pedido aberto nem entra em saldo. Linha que nunca foi paga fica parada, sem efeito.
 
 ### Colunas na `users`
 `video_call_enabled` (bool, padrão false), `video_call_price` (decimal nullable), `video_call_minutes` (int nullable).
