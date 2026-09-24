@@ -358,6 +358,8 @@ class User extends Authenticatable implements MustVerifyEmail
         // por padrao), porque a compra e sempre com saldo e a forma de pagamento original
         // ficou la atras, na recarga da carteira.
         $releasedAmount += \App\Models\MessagePurchase::creatorAmount($this->id, released: true);
+        // Chamada de vídeo: só status done, prazo do chat contado da entrada dela (spec 24/09)
+        $releasedAmount += \App\Models\VideoCall::creatorAmount($this->id, released: true);
 
         // Subtrai saques pendentes e transferidos (valor + taxa do saque)
         $pendingWithdrawals = $this->withdrawals()
@@ -425,6 +427,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // PPV ainda no prazo de liberação
         $pendingAmount += \App\Models\PostPurchase::creatorAmount($this->id, released: false);
         $pendingAmount += \App\Models\MessagePurchase::creatorAmount($this->id, released: false);
+        $pendingAmount += \App\Models\VideoCall::creatorAmount($this->id, released: false);
 
         return (float) $pendingAmount;
     }
@@ -537,6 +540,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // (bento 21/09: 5% de tudo que a criadora vender, não só da assinatura).
         $releasedAmount += \App\Models\PostPurchase::affiliateAmount($this->id, released: true);
         $releasedAmount += \App\Models\MessagePurchase::affiliateAmount($this->id, released: true);
+        $releasedAmount += \App\Models\VideoCall::affiliateAmount($this->id, released: true);
         
         // Subtrai saques pendentes e transferidos do afiliado (valor + taxa do saque)
         $pendingWithdrawals = $this->affiliateWithdrawals()
@@ -597,6 +601,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $pendingAmount += \App\Models\PostPurchase::affiliateAmount($this->id, released: false);
         $pendingAmount += \App\Models\MessagePurchase::affiliateAmount($this->id, released: false);
+        $pendingAmount += \App\Models\VideoCall::affiliateAmount($this->id, released: false);
         
         return (float) $pendingAmount;
     }

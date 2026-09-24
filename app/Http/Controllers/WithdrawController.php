@@ -26,6 +26,8 @@ class WithdrawController extends Controller
         // Saldos (mock)
         $availableBalance = $user->getAvailableBalance();
         $pendingBalance = $user->getPendingBalance();
+        // Chamadas pedidas e ainda não realizadas: nem dela nem do fã. Só pra ela saber que existe.
+        $reservedCalls = \App\Models\VideoCall::reservado($user->id);
 
         // Configurações de saque
         $minWithdrawAmount = PlatformSetting::getMinWithdrawAmount();
@@ -51,7 +53,7 @@ class WithdrawController extends Controller
             ? $user->manualCredits()->where('type', 'creator')->where('amount', '<', 0)->latest()->first()
             : null;
 
-        return view('withdraw.index', compact('availableBalance', 'pendingBalance', 'extract', 'bankAccounts', 'minWithdrawAmount', 'dailyWithdrawLimit', 'ultimoDebito'));
+        return view('withdraw.index', compact('availableBalance', 'pendingBalance', 'reservedCalls', 'extract', 'bankAccounts', 'minWithdrawAmount', 'dailyWithdrawLimit', 'ultimoDebito'));
     }
 
     /**

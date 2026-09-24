@@ -173,6 +173,15 @@
                             R$ {{ number_format($pendingBalance, 2, ',', '.') }}
                         </p>
                     </div>
+                    @if(($reservedCalls ?? 0) > 0)
+                    <div>
+                        <p class="text-sm text-[#706f6c] mb-2">Reservado em chamadas marcadas</p>
+                        <p class="text-2xl font-bold text-[#1b1b18]">
+                            R$ {{ number_format($reservedCalls, 2, ',', '.') }}
+                        </p>
+                        <p class="text-xs text-[#706f6c]">Entra no saldo quando a chamada acontecer.</p>
+                    </div>
+                    @endif
                 </div>
 
                 <button
