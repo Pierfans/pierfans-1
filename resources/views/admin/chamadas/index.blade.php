@@ -36,7 +36,7 @@
                             <tr>
                                 <td class="px-6 py-4 text-sm text-gray-500">{{ $c->id }}</td>
                                 <td class="px-6 py-4 text-sm">{{ $sp($c->created_at) }}</td>
-                                <td class="px-6 py-4 text-sm">@{{ $c->creator->username ?? $c->creator_id }}</td>
+                                <td class="px-6 py-4 text-sm">{{ '@' . ($c->creator->username ?? $c->creator_id) }}</td>
                                 <td class="px-6 py-4 text-sm">{{ $c->user->name ?? $c->user_id }} (#{{ $c->user_id }})</td>
                                 <td class="px-6 py-4 text-sm">R$ {{ number_format($c->amount_paid, 2, ',', '.') }}<br><span class="text-xs text-gray-500">criadora R$ {{ number_format($c->creator_amount, 2, ',', '.') }}</span></td>
                                 <td class="px-6 py-4 text-sm">{{ $c->duration_minutes }} min</td>
