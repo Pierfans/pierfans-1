@@ -111,7 +111,7 @@
                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                                            value="{{ $user->username ?? '' }}"
                                            placeholder="Ex.: jujuferrari" maxlength="30" autocomplete="off" required>
-                                    <p class="mt-1.5 text-sm text-gray-500">Seu perfil vai ficar em pierfans.com/<span id="username-preview" class="font-semibold">{{ $user->username ?: 'seunome' }}</span>. Só letras, números, _ e -, sem espaço. É assim que outras criadoras vão te marcar.</p>
+                                    <p class="mt-1.5 text-sm text-gray-500">Seu perfil vai ficar em pierfans.com/<span id="username-preview" class="font-semibold">{{ $user->username ?: 'seunome' }}</span>. Só letras, números, _ e -, sem ponto nem espaço. É assim que outras criadoras vão te marcar.</p>
                                     <div class="error-message text-red-500 text-sm mt-1"></div>
                                 </div>
 

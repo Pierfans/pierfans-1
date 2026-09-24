@@ -64,6 +64,26 @@ class CreatorController extends Controller
 
         $validated = [];
 
+        // Em portugues de proposito: o site roda com locale 'en' e sem pasta de traducao, entao a
+        // mensagem padrao saia em ingles ("The username field must only contain letters...").
+        // Log do Apache de 06/09 a 24/09: quem tomava 422 aqui tentava de novo igual e desistia.
+        $mensagens = [
+            'required' => 'Campo obrigatório.',
+            'max' => 'Muito longo.',
+            'username.alpha_dash' => 'Seu @ só pode ter letras, números, _ e -. Ponto e espaço não podem.',
+            'username.unique' => 'Esse @ já está em uso. Escolha outro.',
+            'username.max' => 'Seu @ pode ter no máximo 30 caracteres.',
+            'creator_cpf.size' => 'CPF precisa ter 11 números.',
+            'creator_cpf.regex' => 'CPF precisa ter 11 números.',
+            'creator_birth_date.date' => 'Data de nascimento inválida.',
+            'creator_birth_date.before' => 'Data de nascimento inválida.',
+            'creator_phone.max' => 'Telefone muito longo. Use DDD + número.',
+            'creator_zipcode.size' => 'CEP precisa ter 8 números.',
+            'creator_zipcode.regex' => 'CEP precisa ter 8 números.',
+            'creator_state.size' => 'Use a sigla do estado, com 2 letras (ex.: SP).',
+        ];
+
+        try {
         switch ($step) {
             case 1: // Dados pessoais
                 // Criadora costuma digitar o @ na frente (a Marcinha ficou com '@marcinha' gravado)
@@ -80,7 +100,7 @@ class CreatorController extends Controller
                     }],
                     'creator_birth_date' => 'required|date|before:today',
                     'creator_phone' => 'required|string|max:20',
-                ]);
+                ], $mensagens);
                 break;
 
             case 2: // Endereço
@@ -92,7 +112,7 @@ class CreatorController extends Controller
                     'creator_neighborhood' => 'required|string|max:255',
                     'creator_city' => 'required|string|max:255',
                     'creator_state' => 'required|string|size:2',
-                ]);
+                ], $mensagens);
                 break;
 
             case 4: // Documentos
@@ -152,6 +172,16 @@ class CreatorController extends Controller
                     'success' => false,
                     'message' => 'Step inválido.',
                 ], 400);
+        }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // 422 nao cai em log nenhum, e foi por isso que o "nao consigo virar criador" do
+            // Bento (24/09) levou uma sessao inteira pra localizar. Só os campos, sem valor (LGPD).
+            \Log::warning('Onboarding de criador: etapa recusada', [
+                'user_id' => $user->id,
+                'step' => (int) $step,
+                'campos' => array_keys($e->errors()),
+            ]);
+            throw $e;
         }
 
         // Atualiza o usuário

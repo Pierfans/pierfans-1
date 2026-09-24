@@ -163,6 +163,13 @@
                 showError('creator_cpf', 'CPF inválido — confira os números');
                 isValid = false;
             }
+            // Mesma regra do servidor (alpha_dash:ascii). Quem vem do Instagram digita o @ de lá,
+            // que costuma ter ponto, e tomava 422 em inglês (log de 06/09 a 24/09).
+            const username = $('#username').val();
+            if (username && !/^[A-Za-z0-9_-]+$/.test(username)) {
+                showError('username', 'Seu @ só pode ter letras, números, _ e -. Ponto e espaço não podem.');
+                isValid = false;
+            }
         }
 
         return isValid;
