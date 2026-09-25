@@ -17,7 +17,7 @@ class RodarChamadas extends Command
 
     protected $description = 'Devolve ao fã as chamadas de vídeo que a criadora não fez ou que passaram do prazo';
 
-    public function handle(): int
+    public function handle(\App\Services\LiveKitService $livekit): int
     {
         $n = 0;
         VideoCall::whereIn('status', VideoCall::ABERTAS)->orderBy('id')->chunkById(100, function ($chamadas) use (&$n) {
@@ -30,6 +30,24 @@ class RodarChamadas extends Command
             }
         });
         $this->info("{$n} devolvida(s)");
+
+        // Segunda entrega: derruba a sala no fim da duração, contado no servidor. Quem fechou
+        // a página antes não importa; token vencido não entra de novo.
+        $f = 0;
+        VideoCall::where('status', 'done')->whereNull('ended_at')->whereNotNull('creator_joined_at')->orderBy('id')
+            ->chunkById(100, function ($chamadas) use (&$f, $livekit) {
+                foreach ($chamadas as $chamada) {
+                    $fim = $chamada->fimDaChamada();
+                    if ($fim && now()->gte($fim)) {
+                        if (! $chamada->room_name || $livekit->deleteRoom($chamada->room_name)) {
+                            $chamada->update(['ended_at' => now()]);
+                            $f++;
+                            $this->line("#{$chamada->id} sala fechada");
+                        }
+                    }
+                }
+            });
+        $this->info("{$f} sala(s) fechada(s)");
 
         return self::SUCCESS;
     }
