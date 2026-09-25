@@ -52,7 +52,7 @@ try {
 
     // 8. sem saldo: recarga com o id
     $fa->fresh()->getOrCreateWallet()->subtractBalance(200, 'zera');
-    Auth::login($fa);
+    Auth::login($fa->fresh()); // fresh: no tinker o objeto antigo guarda a carteira em cache; numa requisicao real o usuario e sempre novo
     $r = $ctrl->pedir($req([]), $conversa->id);
     $d = json_decode($r->getContent(), true);
     echo "sem saldo -> ", $r->getStatusCode(), " recarregar=", var_export($d['recarregar'] ?? null, true), " redirect=", $d['redirect'] ?? '-', "\n";
@@ -60,7 +60,7 @@ try {
     echo "  status={$aguardando->status} (esperado awaiting_payment) | abertas na conversa: ", \App\Models\VideoCall::where('conversation_id', $conversa->id)->whereIn('status', \App\Models\VideoCall::ABERTAS)->count(), " (esperado 0)\n";
     // recarga cai (simula o webhook): PaymentTransaction com video_call_id + credito + concluir
     $fa->fresh()->getOrCreateWallet()->addBalance(100, null, 'recarga simulada');
-    $tx = \App\Models\PaymentTransaction::create(['user_id' => $fa->id, 'video_call_id' => $aguardando->id, 'request_number' => (string) \Illuminate\Support\Str::uuid(), 'type' => 'pix', 'status' => 'paid', 'amount' => 100]);
+    $tx = \App\Models\PaymentTransaction::create(['user_id' => $fa->id, 'video_call_id' => $aguardando->id, 'request_number' => (string) \Illuminate\Support\Str::uuid(), 'type' => 'pix', 'status' => 'paid_out', 'amount' => 100]);
     \App\Http\Controllers\VideoCallController::concluirAposRecarga($tx);
     echo "  apos recarga: status=", $aguardando->fresh()->status, " (esperado requested) saldo fa ", $fa->fresh()->getOrCreateWallet()->balance, " (esperado 50)\n";
 } catch (\Throwable $e) {

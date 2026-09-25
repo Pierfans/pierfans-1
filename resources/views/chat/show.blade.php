@@ -394,7 +394,7 @@
                             @if($message->message_type === 'video_call' && $message->videoCall)
                                 {{-- O JS desenha a partir do payload, o mesmo do polling: um renderizador só --}}
                                 <div class="chamada-card" data-chamada-id="{{ $message->videoCall->id }}" data-message-id="{{ $message->id }}"
-                                     data-payload='@json($message->toChatPayload(Auth::user()))'></div>
+                                     data-payload="{{ json_encode($message->toChatPayload(Auth::user())) }}"></div>
                             @elseif($message->content)
                                 <p>{{ $message->content }}</p>
                             @endif
