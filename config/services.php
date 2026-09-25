@@ -48,4 +48,11 @@ return [
         'base_url' => env('DIDIT_BASE_URL', 'https://verification.didit.me'),
     ],
 
+    // Chamada de vídeo (spec 24/09). Projeto 'pierfans' no LiveKit Cloud, plano grátis.
+    'livekit' => [
+        'url' => env('LIVEKIT_URL'),
+        'api_key' => env('LIVEKIT_API_KEY'),
+        'api_secret' => env('LIVEKIT_API_SECRET'),
+    ],
+
 ];
