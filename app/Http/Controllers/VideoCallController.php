@@ -268,11 +268,12 @@ class VideoCallController extends Controller
      * do estado: cron rodando duas vezes ou clique repetido não credita duas vezes.
      * Devolve a mensagem gravada, ou null se não havia o que devolver.
      */
-    public static function devolver(VideoCall $chamada, string $motivo): ?Message
+    public static function devolver(VideoCall $chamada, string $motivo, bool $forcar = false): ?Message
     {
-        return DB::transaction(function () use ($chamada, $motivo) {
+        return DB::transaction(function () use ($chamada, $motivo, $forcar) {
             $chamada = VideoCall::lockForUpdate()->find($chamada->id);
-            if (! $chamada || ! $chamada->isOpen()) {
+            // $forcar = admin devolvendo uma chamada 'done' por denúncia (única intervenção humana prevista)
+            if (! $chamada || ! ($chamada->isOpen() || ($forcar && $chamada->status === 'done'))) {
                 return null;
             }
 
@@ -293,6 +294,7 @@ class VideoCallController extends Controller
             $texto = match ($motivo) {
                 'refused' => 'Recusou a chamada. ' . $valor . ' voltaram pra carteira do fã.',
                 'no_show' => 'A criadora não entrou na chamada. ' . $valor . ' voltaram pra carteira do fã.',
+                'admin'   => 'A equipe devolveu a chamada. ' . $valor . ' voltaram pra carteira do fã.',
                 default   => 'O pedido passou do prazo. ' . $valor . ' voltaram pra carteira do fã.',
             };
 

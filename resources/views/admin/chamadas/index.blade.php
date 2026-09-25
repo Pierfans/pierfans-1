@@ -7,7 +7,11 @@
         <div class="mb-6">
             <h1 class="text-3xl font-bold text-gray-900">Chamadas de vídeo</h1>
             <p class="text-gray-600 mt-2">Pedidos pagos pelos fãs. O dinheiro fica reservado até a criadora entrar na sala.</p>
+            <p class="text-gray-600 mt-1">Este mês: <strong>{{ $mesQtd }}</strong> realizada(s), <strong>{{ $mesMin }}</strong> minuto(s). O plano grátis do LiveKit dá por volta de 37 horas por mês.</p>
         </div>
+
+        @if(session('success'))<div class="mb-4 p-3 rounded bg-green-50 text-green-700">{{ session('success') }}</div>@endif
+        @if(session('error'))<div class="mb-4 p-3 rounded bg-red-50 text-red-700">{{ session('error') }}</div>@endif
 
         <div class="mb-6 bg-white rounded-lg shadow-sm p-4">
             <div class="flex flex-wrap gap-2">
@@ -25,7 +29,7 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            @foreach(['#', 'Pedido em', 'Criadora', 'Fã', 'Valor', 'Duração', 'Estado', 'Marcada pra', 'Ela entrou', 'Devolução'] as $th)
+                            @foreach(['#', 'Pedido em', 'Criadora', 'Fã', 'Valor', 'Duração', 'Estado', 'Marcada pra', 'Ela entrou', 'Devolução', 'Ações'] as $th)
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ $th }}</th>
                             @endforeach
                         </tr>
@@ -44,9 +48,19 @@
                                 <td class="px-6 py-4 text-sm">{{ $sp($c->scheduled_at) }}</td>
                                 <td class="px-6 py-4 text-sm">{{ $sp($c->creator_joined_at) }}</td>
                                 <td class="px-6 py-4 text-sm">{{ $c->refund_reason ? $c->refund_reason . ' em ' . $sp($c->refunded_at) : '-' }}</td>
+                                <td class="px-6 py-4 text-sm">
+                                    @if(in_array($c->status, ['requested', 'scheduled', 'done']))
+                                        <form method="POST" action="{{ route('admin.chamadas.devolver', $c->id) }}" onsubmit="return confirm('Devolver R$ {{ number_format($c->amount_paid, 2, ',', '.') }} ao fã?')">
+                                            @csrf
+                                            <button type="submit" class="text-red-600 hover:underline">Devolver ao fã</button>
+                                        </form>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="10" class="px-6 py-8 text-center text-gray-500">Nenhuma chamada.</td></tr>
+                            <tr><td colspan="11" class="px-6 py-8 text-center text-gray-500">Nenhuma chamada.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

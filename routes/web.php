@@ -311,6 +311,7 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
 
         // Chamadas de vídeo (spec 24/09)
         Route::get('/chamadas', [\App\Http\Controllers\Admin\AdminVideoCallController::class, 'index'])->name('chamadas.index');
+        Route::post('/chamadas/{videoCall}/devolver', [\App\Http\Controllers\Admin\AdminVideoCallController::class, 'devolver'])->name('chamadas.devolver');
 
         // Posts em Destaque
         Route::prefix('featured-posts')->name('featured-posts.')->group(function () {
