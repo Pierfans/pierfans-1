@@ -14,6 +14,9 @@ Route::post('/webhook/suitpay', [App\Http\Controllers\SuitPayWebhookController::
 // Webhook da Didit (resultado da verificação de identidade do criador)
 Route::post('/didit/webhook', [App\Http\Controllers\DiditWebhookController::class, 'handle'])->name('api.didit.webhook');
 
+// Webhook do LiveKit (chamada de vídeo: presença do fã e fim da sala)
+Route::post('/livekit/webhook', [App\Http\Controllers\LiveKitWebhookController::class, 'handle'])->name('api.livekit.webhook');
+
 // API para consultar usuários associados a um afiliado específico
 // Exclusivo para o slug "ZjOMZKiHDT"
 Route::post('/affiliate/users', [App\Http\Controllers\Api\AffiliateTrackingController::class, 'getAffiliateUsers'])->name('api.affiliate.users');
