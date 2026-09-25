@@ -18,6 +18,7 @@ class VideoCall extends Model
     protected $fillable = [
         'conversation_id', 'creator_id', 'user_id', 'message_id', 'payment_transaction_id',
         'price', 'duration_minutes', 'status', 'suggested_at', 'scheduled_at', 'creator_joined_at',
+        'room_name', 'user_joined_at', 'ended_at',
         'amount_paid', 'platform_percentage', 'platform_amount',
         'affiliate_user_id', 'affiliate_amount', 'creator_amount',
         'refund_reason', 'refunded_at',
@@ -33,6 +34,8 @@ class VideoCall extends Model
         'suggested_at'        => 'datetime',
         'scheduled_at'        => 'datetime',
         'creator_joined_at'   => 'datetime',
+        'user_joined_at'      => 'datetime',
+        'ended_at'            => 'datetime',
         'refunded_at'         => 'datetime',
     ];
 
