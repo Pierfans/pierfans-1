@@ -156,6 +156,58 @@ class VideoCallController extends Controller
         });
     }
 
+    /**
+     * GET /chat/chamada/{videoCall}/entrar — abre a sala. Única porta pro LiveKit.
+     * Criadora entrando em 'scheduled' vira 'done' aqui mesmo ("ela entrou = aconteceu",
+     * decisão do Pedro 24/09): o sinal é nosso, o webhook só complementa.
+     */
+    public function entrar(VideoCall $videoCall, \App\Services\LiveKitService $livekit)
+    {
+        $user = Auth::user();
+        $souCriadora = $videoCall->creator_id === $user->id;
+        if (! $souCriadora && $videoCall->user_id !== $user->id) {
+            abort(403, 'Você não participa desta chamada.');
+        }
+        if (! PlatformSetting::isVideoCallsEnabled() || ! $livekit->configurado()) {
+            return redirect()->route('chat.show', $videoCall->conversation_id)->with('error', 'Chamada de vídeo indisponível no momento.');
+        }
+        if (! $videoCall->janelaAberta()) {
+            return redirect()->route('chat.show', $videoCall->conversation_id)->with('error', 'Fora do horário da chamada.');
+        }
+
+        if ($souCriadora && $videoCall->status === 'scheduled') {
+            DB::transaction(function () use ($videoCall) {
+                $c = VideoCall::lockForUpdate()->find($videoCall->id);
+                if ($c->status === 'scheduled') {
+                    $c->update(['status' => 'done', 'creator_joined_at' => now(), 'room_name' => 'chamada-' . $c->id]);
+                    self::mensagem($c, $c->creator_id, 'Entrou na chamada.');
+                }
+            });
+            $videoCall->refresh();
+        }
+        if (! $videoCall->room_name) {
+            $videoCall->update(['room_name' => 'chamada-' . $videoCall->id]);
+        }
+
+        $fim = $videoCall->fimDaChamada();
+        $tolerancia = PlatformSetting::getVideoCallToleranceMinutes();
+        // Token vale até o fim da duração (mais a tolerância enquanto ela não entrou), nunca menos de 1 min
+        $limite = $videoCall->status === 'done' ? $fim : $fim->copy()->addMinutes($tolerancia);
+        $ttl = max(60, now()->diffInSeconds($limite, false));
+        $outro = User::withoutGlobalScope('active')->find($souCriadora ? $videoCall->user_id : $videoCall->creator_id);
+
+        return view('chat.chamada', [
+            'chamada'     => $videoCall,
+            'token'       => $livekit->tokenDeAcesso($videoCall->room_name, $user->id, $souCriadora ? '@' . $user->username : $user->name, (int) $ttl),
+            'wsUrl'       => $livekit->wsUrl(),
+            'souCriadora' => $souCriadora,
+            'outroNome'   => $souCriadora ? $outro->name : '@' . $outro->username,
+            // fim em epoch (segundos) pro cronômetro não depender do relógio do celular
+            'fimEpoch'    => $videoCall->status === 'done' ? $fim->getTimestamp() : null,
+            'esperando'   => $videoCall->status !== 'done',
+        ]);
+    }
+
     /** Recarga que nasceu de um pedido sem saldo: paga agora. Chamado pelo webhook e pelo cartão. */
     public static function concluirAposRecarga(PaymentTransaction $transacao): void
     {

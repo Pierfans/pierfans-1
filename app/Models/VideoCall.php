@@ -71,6 +71,14 @@ class VideoCall extends Model
         );
     }
 
+    /** Fim da chamada, contado no servidor: entrada da criadora (ou horário marcado) + duração. */
+    public function fimDaChamada(): ?\Carbon\Carbon
+    {
+        $inicio = $this->creator_joined_at ?? $this->scheduled_at;
+
+        return $inicio ? $inicio->copy()->addMinutes((int) $this->duration_minutes) : null;
+    }
+
     public function motivoDevolucao(): ?string
     {
         return VideoCallRules::motivoDevolucao(
@@ -133,6 +141,7 @@ class VideoCall extends Model
             'pode_marcar'      => $souCriadora && $aberta,
             'pode_recusar'     => $souCriadora && $aberta,
             'pode_entrar'      => $this->janelaAberta(),
+            'entrar_url'       => $this->janelaAberta() ? route('chat.chamada.entrar', $this->id) : null,
             'last_message_id'  => (int) Message::where('video_call_id', $this->id)->max('id'),
         ];
     }

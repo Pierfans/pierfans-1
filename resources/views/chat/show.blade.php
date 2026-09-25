@@ -572,9 +572,8 @@
                     <button type="button" class="paid-lock-button" onclick="marcarChamada(${c.id}, this)">${c.status === 'scheduled' ? 'Remarcar' : 'Marcar'}</button>
                     <button type="button" class="paid-lock-button" style="background:#e5e7eb;color:#111" onclick="recusarChamada(${c.id}, this)">Recusar</button>`;
             }
-            if (c.pode_entrar) {
-                // Primeira entrega: sem sala ainda. A segunda troca este botão pelo link da chamada.
-                acoes += `<button type="button" class="paid-lock-button" disabled title="Em breve">Entrar na chamada (em breve)</button>`;
+            if (c.pode_entrar && c.entrar_url) {
+                acoes += `<a href="${c.entrar_url}" target="_blank" rel="noopener" class="paid-lock-button" style="display:inline-block;text-decoration:none">Entrar na chamada</a>`;
             }
             if (acoes) html += `<div class="chamada-acoes mt-2">${acoes}<div class="paid-lock-erro" style="display:none"></div></div>`;
             return html;

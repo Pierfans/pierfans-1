@@ -194,6 +194,7 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
         // Chamada de vídeo paga (spec 24/09). Antes das rotas com {conversationId} pelo mesmo motivo.
         Route::post('/chamada/{videoCall}/marcar', [\App\Http\Controllers\VideoCallController::class, 'marcar'])->name('chamada.marcar');
         Route::post('/chamada/{videoCall}/recusar', [\App\Http\Controllers\VideoCallController::class, 'recusar'])->name('chamada.recusar');
+        Route::get('/chamada/{videoCall}/entrar', [\App\Http\Controllers\VideoCallController::class, 'entrar'])->name('chamada.entrar');
         Route::post('/{conversationId}/chamada', [\App\Http\Controllers\VideoCallController::class, 'pedir'])->name('chamada.pedir');
         Route::get('/start/{userId}', [\App\Http\Controllers\ChatController::class, 'startConversation'])->name('start');
         Route::get('/{conversationId}', [\App\Http\Controllers\ChatController::class, 'show'])->name('show');
