@@ -40,7 +40,8 @@
 (function () {
     const token = @json($token);
     const wsUrl = @json($wsUrl);
-    const fimEpoch = @json($fimEpoch);          // null enquanto a criadora não entrou
+    let fimEpoch = @json($fimEpoch);            // null enquanto a criadora não entrou
+    const estadoUrl = @json(route('chat.chamada.estado', $chamada->id));
     const voltar = @json(route('chat.show', $chamada->conversation_id));
     const aviso = document.getElementById('aviso');
     const remoto = document.getElementById('remoto');
@@ -70,15 +71,29 @@
     }
 
     // Cronômetro: fim vem do servidor em epoch. Zerou, desconecta. O servidor também derruba a sala.
-    if (fimEpoch) {
+    let cronometro = null;
+    function iniciarCronometro() {
+        if (cronometro || !fimEpoch) return;
         const tick = () => {
             const s = Math.max(0, fimEpoch - Math.floor(Date.now() / 1000));
             tempo.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
             if (s <= 0) encerrar('Tempo esgotado. A chamada terminou.');
         };
         tick();
-        setInterval(tick, 1000);
+        cronometro = setInterval(tick, 1000);
     }
+    iniciarCronometro();
+
+    // Fã que entrou antes da criadora: pergunta ao servidor até ela entrar (e também quando
+    // alguém conecta na sala), aí o cronômetro começa com o fim contado no servidor.
+    function consultarEstado() {
+        if (fimEpoch) return;
+        fetch(estadoUrl, { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(d => { if (d.fimEpoch) { fimEpoch = d.fimEpoch; iniciarCronometro(); } })
+            .catch(() => {});
+    }
+    if (!fimEpoch) setInterval(consultarEstado, 5000);
 
     room
         .on(RoomEvent.TrackSubscribed, (track) => {
@@ -90,6 +105,7 @@
             }
         })
         .on(RoomEvent.TrackUnsubscribed, (track) => { track.detach().forEach(el => el.remove()); })
+        .on(RoomEvent.ParticipantConnected, () => { consultarEstado(); })
         .on(RoomEvent.ParticipantDisconnected, () => { aviso.style.display = 'block'; aviso.textContent = 'A outra pessoa saiu.'; })
         .on(RoomEvent.Disconnected, () => { if (!encerrou) encerrar('Chamada encerrada.'); });
 

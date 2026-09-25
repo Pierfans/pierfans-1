@@ -208,6 +208,25 @@ class VideoCallController extends Controller
         ]);
     }
 
+    /**
+     * GET /chat/chamada/{videoCall}/estado — a página da sala consulta enquanto espera a
+     * criadora (teste real 25/09: o fã que entrava antes ficava em "aguardando" pra sempre).
+     */
+    public function estado(VideoCall $videoCall)
+    {
+        $user = Auth::user();
+        if ($videoCall->creator_id !== $user->id && $videoCall->user_id !== $user->id) {
+            abort(403);
+        }
+        $fim = $videoCall->status === 'done' ? $videoCall->fimDaChamada() : null;
+
+        return response()->json([
+            'status'   => $videoCall->status,
+            'fimEpoch' => $fim ? $fim->getTimestamp() : null,
+            'ended'    => $videoCall->ended_at !== null,
+        ]);
+    }
+
     /** Recarga que nasceu de um pedido sem saldo: paga agora. Chamado pelo webhook e pelo cartão. */
     public static function concluirAposRecarga(PaymentTransaction $transacao): void
     {

@@ -195,6 +195,7 @@ Route::middleware(['auth', 'not.blocked'])->group(function () {
         Route::post('/chamada/{videoCall}/marcar', [\App\Http\Controllers\VideoCallController::class, 'marcar'])->name('chamada.marcar');
         Route::post('/chamada/{videoCall}/recusar', [\App\Http\Controllers\VideoCallController::class, 'recusar'])->name('chamada.recusar');
         Route::get('/chamada/{videoCall}/entrar', [\App\Http\Controllers\VideoCallController::class, 'entrar'])->name('chamada.entrar');
+        Route::get('/chamada/{videoCall}/estado', [\App\Http\Controllers\VideoCallController::class, 'estado'])->name('chamada.estado');
         Route::post('/{conversationId}/chamada', [\App\Http\Controllers\VideoCallController::class, 'pedir'])->name('chamada.pedir');
         Route::get('/start/{userId}', [\App\Http\Controllers\ChatController::class, 'startConversation'])->name('start');
         Route::get('/{conversationId}', [\App\Http\Controllers\ChatController::class, 'show'])->name('show');

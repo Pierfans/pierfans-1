@@ -188,6 +188,15 @@
             cursor: default;
         }
 
+        /* Chamada de vídeo: ações do card (teste real 25/09: campo sem borda e botões empilhados) */
+        .chamada-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .chamada-acoes input[type=datetime-local] { flex-basis: 100%; padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #333; background: #fff; }
+        .chamada-acoes .paid-lock-button { flex: 1; width: auto; margin: 0; }
+        .chamada-acoes .chamada-recusar { background: #f3f4f6; color: #374151; }
+        .chamada-acoes a.paid-lock-button { flex-basis: 100%; text-align: center; text-decoration: none; display: block; background: #16a34a; color: #fff; }
+        .message.own .chamada-acoes a.paid-lock-button { background: #fff; color: #16a34a; }
+        .message.own .chamada-acoes input[type=datetime-local] { border-color: rgba(255,255,255,.6); }
+
         .paid-lock-erro {
             margin-top: 8px;
             font-size: 12px;
@@ -570,10 +579,10 @@
                 const valor = c.scheduled_local || c.suggested_local || '';
                 acoes += `<input type="datetime-local" id="chamadaHorario-${c.id}" value="${valor}" class="border rounded-lg px-2 py-1 text-sm w-full mb-2">
                     <button type="button" class="paid-lock-button" onclick="marcarChamada(${c.id}, this)">${c.status === 'scheduled' ? 'Remarcar' : 'Marcar'}</button>
-                    <button type="button" class="paid-lock-button" style="background:#e5e7eb;color:#111" onclick="recusarChamada(${c.id}, this)">Recusar</button>`;
+                    <button type="button" class="paid-lock-button chamada-recusar" onclick="recusarChamada(${c.id}, this)">Recusar</button>`;
             }
             if (c.pode_entrar && c.entrar_url) {
-                acoes += `<a href="${c.entrar_url}" target="_blank" rel="noopener" class="paid-lock-button" style="display:inline-block;text-decoration:none">Entrar na chamada</a>`;
+                acoes += `<a href="${c.entrar_url}" target="_blank" rel="noopener" class="paid-lock-button">Entrar na chamada</a>`;
             }
             if (acoes) html += `<div class="chamada-acoes mt-2">${acoes}<div class="paid-lock-erro" style="display:none"></div></div>`;
             return html;
