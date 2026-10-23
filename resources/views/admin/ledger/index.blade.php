@@ -55,10 +55,10 @@
                     <p class="text-sm text-gray-500">Caixa da plataforma</p>
                     @if($platformCash !== null)
                         <p class="text-3xl font-bold {{ $platformCash >= 0 ? 'text-gray-900' : 'text-red-600' }} mt-1">R$ {{ number_format($platformCash, 2, ',', '.') }}</p>
-                        <p class="text-sm text-gray-500 mt-1">O que sobra pra plataforma depois de separar o que é dos usuários.</p>
+                        <p class="text-sm text-gray-500 mt-1">O que sobra pra plataforma depois de separar o que é dos usuários e R$ {{ number_format($feeReserve, 2, ',', '.') }} da taxa da SuitPay que a plataforma paga quando eles sacarem.</p>
                         @if($platformCash < 0)
-                            {{-- O total das retiradas manuais vem do extrato (recon), não chapado: se houver outra, a frase continua certa. --}}
-                            <p class="text-sm text-red-600 mt-2 font-medium">{{ $recon && $recon['manualTotal'] != 0 ? 'Está negativo porque no começo saíram R$ ' . number_format(abs($recon['manualTotal']), 2, ',', '.') . ' direto no painel do SuitPay, mais do que a plataforma tinha pra sacar. O lucro novo vai cobrindo essa diferença; enquanto não zerar, não dá pra sacar.' : 'Está negativo: hoje a conta não cobre o que é dos usuários, então não dá pra sacar.' }}</p>
+                            {{-- Não culpar a retirada manual de 03/07: ela fica no extrato pra sempre e a frase mentia em qualquer negativo depois (Márcia, 23/10). --}}
+                            <p class="text-sm text-red-600 mt-2 font-medium">Está negativo: a conta ainda não cobre o que é dos usuários mais a taxa dos saques deles. As próximas vendas cobrem a diferença; enquanto não zerar, não dá pra sacar.</p>
                         @elseif($platformMax > 0)
                             <button type="button" onclick="document.getElementById('modalSaque').classList.remove('hidden')"
                                     class="mt-3 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium">

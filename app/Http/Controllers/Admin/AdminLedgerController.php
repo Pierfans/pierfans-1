@@ -89,16 +89,15 @@ class AdminLedgerController extends Controller
         $owedToWallets = round($owedRows->where('tipo', 'carteira')->sum('valor'), 2);
         // O caixa não desconta saque pendente aqui: quem faz isso é o pendingOut(), que soma
         // valor + taxa da SuitPay. Descontar nos dois lugares tiraria o mesmo dinheiro duas vezes.
-        $owedForCash   = round($owedRows->where('tipo', '!=', self::TIPO_SAQUE)->sum('valor'), 2);
+        $feeReserve    = $this->feeReserve($owedRows);
 
-        // Caixa da plataforma = saldo real, menos os saldos dos usuários, menos tudo que já está
-        // prometido a sair da conta em saques pendentes (valor + taxa da SuitPay, de qualquer dono).
+        // Caixa da plataforma = saldo real, menos os saldos dos usuários, menos a taxa que a SuitPay
+        // vai cobrar quando criadores e afiliados sacarem esse saldo, menos tudo que já está prometido
+        // a sair da conta em saques pendentes (valor + taxa da SuitPay, de qualquer dono).
         // Derivado do saldo REAL, não da soma de comissões: assim retirada manual no painel e saque
         // pelo app já vêm descontados sozinhos — não tem como sacar o mesmo dinheiro duas vezes.
         // null quando não há extrato importado (sem saldo real, a conta não existe).
-        $platformCash = $recon
-            ? round($recon['liveBalance'] - $owedForCash - $this->pendingOut(['creator', 'affiliate', 'platform']), 2)
-            : null;
+        $platformCash = $recon ? $this->platformCash($recon, $owedRows) : null;
 
         // Teto do saque da plataforma: a SuitPay debita valor + 3,5% da conta, então o valor pedido
         // precisa caber COM a taxa dentro do caixa. Sacar o caixa cheio comeria o dinheiro dos criadores.
@@ -147,22 +146,39 @@ class AdminLedgerController extends Controller
             'grossSales', 'creatorPaid', 'affiliatePaid', 'feeIn', 'feeOut', 'withdrawFee',
             'cashoutTotal', 'platformNet', 'subTotal', 'ppvTotal', 'walletSales',
             'entradas', 'subSuitpay', 'ppvSuitpay', 'depositTotal',
-            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'owedToUsers', 'owedToWallets', 'owedRows', 'ledgerStart', 'recon', 'filtered'
+            'platformCash', 'platformMax', 'platformAccounts', 'feeOutPct', 'feeReserve', 'owedToUsers', 'owedToWallets', 'owedRows', 'ledgerStart', 'recon', 'filtered'
         ));
     }
 
     /**
-     * Passivo da plataforma: tudo que é dos usuários e está na conta — o que criadores e
-     * afiliados podem sacar (liberado + no prazo) MAIS o saldo de carteira que os assinantes
-     * depositaram e ainda não gastaram. Carteira é dinheiro deles: entra no caixa do SuitPay,
-     * mas vira receita só quando é gasto. Sem contar aqui, o caixa da plataforma promete o
-     * que não é seu.
-     * Reusa os mesmos métodos da tela de saque de propósito — se divergir, o card mente.
-     * ponytail: ~40 usuários, algumas queries cada. Cachear (60s) se a tela pesar.
+     * Caixa da plataforma: saldo real menos o passivo (saldos de criadores, afiliados e carteiras),
+     * a taxa de saída que esse saldo ainda vai custar e os saques pendentes. Uma conta só pro card
+     * e pro sacar(): se as duas divergirem, a tela oferece um saque que o botão recusa.
      */
-    private function owedToUsers(): float
+    private function platformCash(array $recon, \Illuminate\Support\Collection $owedRows): float
     {
-        return round($this->owedBreakdown()->where('tipo', '!=', self::TIPO_SAQUE)->sum('valor'), 2);
+        // O saque pendente fica de fora aqui: o pendingOut() já soma valor + taxa da SuitPay.
+        // Descontar nos dois lugares tiraria o mesmo dinheiro duas vezes.
+        $owed = $owedRows->where('tipo', '!=', self::TIPO_SAQUE)->sum('valor');
+
+        return round($recon['liveBalance'] - $owed - $this->feeReserve($owedRows)
+            - $this->pendingOut(['creator', 'affiliate', 'platform']), 2);
+    }
+
+    /**
+     * Taxa da SuitPay que vai sair da conta quando criadores e afiliados sacarem o saldo deles.
+     * O 1º saque do dia é grátis pro usuário, então quem paga é a plataforma; sem reservar, o caixa
+     * mostrava esse dinheiro como livre e cada saque de criador o deixava negativo (21/10: a Márcia
+     * sacou o máximo, a @jujuferrari sacou R$ 96 em seguida e o caixa foi a -3,35, a taxa de 3,36).
+     * Só o percentual, sem o piso de 0,99: o saque mínimo (R$ 50) já dá taxa acima do piso.
+     * Carteira fica de fora: não é sacável, só vira saldo de criador quando é gasta.
+     * ponytail: reserva a mais quando o saque é o 2º do dia (aí o usuário paga a taxa). Erra pro lado seguro.
+     */
+    private function feeReserve(\Illuminate\Support\Collection $owedRows): float
+    {
+        $sacavel = $owedRows->whereIn('tipo', ['criador', 'afiliado'])->sum('valor');
+
+        return round($sacavel * PlatformSetting::suitpayFeeOutPercent() / 100, 2);
     }
 
     /** Rótulo do saque pendente — usado pra separar o que entra no caixa do que não entra. */
@@ -303,8 +319,7 @@ class AdminLedgerController extends Controller
             // Trava os saques pendentes: dois cliques ao mesmo tempo não podem sacar o mesmo caixa.
             Withdrawal::where('status', 'pending')->lockForUpdate()->get();
 
-            $cash = round($recon['liveBalance'] - $this->owedToUsers()
-                - $this->pendingOut(['creator', 'affiliate', 'platform']), 2);
+            $cash = $this->platformCash($recon, $this->owedBreakdown());
             // A SuitPay debita valor + taxa da conta: o saque precisa caber com a taxa dentro do caixa.
             $custo = $amount + PlatformSetting::suitpayFeeOut($amount);
 
